@@ -207,3 +207,80 @@ def _convert_chat_tool(tool: dict) -> dict:
         "description": fn.get("description", ""),
         "input_schema": fn.get("parameters", {}),
     }
+
+
+# ---------------------------------------------------------------------------
+# OpenAI Responses API → OpenAI Chat Completions
+# ---------------------------------------------------------------------------
+
+
+def responses_to_chat(body: dict) -> dict:
+    """Convert an OpenAI Responses API request body to Chat Completions format.
+
+    Reference: docs/API中转站协议转换架构讨论.md §5
+    Note: previous_response_id requires state management and is not handled here.
+    """
+    result = {"model": body.get("model", "")}
+    messages = []
+
+    # 1. Instructions → system message
+    instructions = body.get("instructions", "")
+    if instructions:
+        messages.append({"role": "system", "content": instructions})
+
+    # 2. Input → messages
+    inp = body.get("input", "")
+    if isinstance(inp, str):
+        messages.append({"role": "user", "content": inp})
+    elif isinstance(inp, list):
+        for item in inp:
+            if isinstance(item, dict):
+                role = item.get("role", "user")
+                content = item.get("content", "")
+                if isinstance(content, list):
+                    content = " ".join(
+                        c.get("text", "") if isinstance(c, dict) else str(c)
+                        for c in content
+                    )
+                msg = {"role": role, "content": content}
+
+                # Convert tool_calls in assistant messages
+                if role == "assistant" and item.get("tool_calls"):
+                    msg["tool_calls"] = item["tool_calls"]
+
+                # Convert tool_call_id in tool messages
+                if role == "tool" and item.get("tool_call_id"):
+                    msg["tool_call_id"] = item["tool_call_id"]
+
+                messages.append(msg)
+
+    result["messages"] = messages
+
+    # 3. Tools → reformat
+    tools = body.get("tools", [])
+    if tools:
+        converted = []
+        for t in tools:
+            fn = t.get("function", t)
+            converted.append({
+                "type": "function",
+                "function": {
+                    "name": fn.get("name", ""),
+                    "description": fn.get("description", ""),
+                    "parameters": fn.get("parameters", fn.get("input_schema", {})),
+                },
+            })
+        result["tools"] = converted
+
+    # 4. Pass through common fields
+    for field in ("max_tokens", "temperature", "top_p", "stream", "stop", "metadata", "user"):
+        if field in body:
+            result[field] = body[field]
+
+    # 5. Strip Responses-specific fields
+    result.pop("previous_response_id", None)
+    result.pop("input", None)
+    result.pop("instructions", None)
+    result.pop("reasoning", None)
+
+    return result

@@ -156,6 +156,114 @@ def chat_to_anthropic_sse(
         yield _make_event("message_stop", {"type": "message_stop"})
 
 
+def anthropic_to_chat_sse(
+    anthropic_events: Iterator[dict[str, Any]],
+) -> Generator[str, None, None]:
+    """Convert Anthropic SSE event dicts to OpenAI Chat Completions SSE chunks.
+
+    Input: iterator of dicts with keys: event (str), data (dict).
+    Yields: SSE data lines (strings) in OpenAI Chat format.
+
+    This is the reverse of chat_to_anthropic_sse.
+    """
+    chat_id = ""
+    model = ""
+    tool_buffers: dict[int, dict] = {}  # index -> {id, name, arguments}
+    first_chunk = True
+
+    for ev in anthropic_events:
+        event_type = ev.get("event", "")
+        data = ev.get("data", {})
+
+        if event_type == "message_start":
+            msg = data.get("message", {})
+            chat_id = msg.get("id", chat_id)
+            model = msg.get("model", model)
+            yield _format_chat_chunk(chat_id, model, {"role": "assistant"})
+
+        elif event_type == "content_block_start":
+            block = data.get("content_block", {})
+            idx = data.get("index", 0)
+            btype = block.get("type", "")
+
+            if btype == "tool_use":
+                tool_id = block.get("id", "")
+                tool_name = block.get("name", "")
+                tool_buffers[idx] = {"id": tool_id, "name": tool_name, "arguments": ""}
+                yield _format_chat_chunk(chat_id, model, {
+                    "tool_calls": [{
+                        "index": idx,
+                        "id": tool_id,
+                        "type": "function",
+                        "function": {"name": tool_name, "arguments": ""},
+                    }],
+                })
+
+        elif event_type == "content_block_delta":
+            delta = data.get("delta", {})
+            dtype = delta.get("type", "")
+            idx = data.get("index", 0)
+
+            if dtype == "text_delta":
+                text = delta.get("text", "")
+                yield _format_chat_chunk(chat_id, model, {"content": text})
+
+            elif dtype == "input_json_delta":
+                partial = delta.get("partial_json", "")
+                if idx not in tool_buffers:
+                    tool_buffers[idx] = {"id": "", "name": "", "arguments": ""}
+                tool_buffers[idx]["arguments"] += partial
+                yield _format_chat_chunk(chat_id, model, {
+                    "tool_calls": [{
+                        "index": idx,
+                        "function": {"arguments": partial},
+                    }],
+                })
+
+        elif event_type == "message_delta":
+            msg_delta = data.get("delta", {})
+            stop_reason = msg_delta.get("stop_reason")
+            usage = data.get("usage", {})
+
+            sr_map = {"end_turn": "stop", "max_tokens": "length", "tool_use": "tool_calls"}
+            chat_finish = sr_map.get(stop_reason, "stop") if stop_reason else None
+
+            final_chunk = {}
+            if chat_finish:
+                final_chunk["finish_reason"] = chat_finish
+                if usage:
+                    final_chunk["usage"] = {
+                        "prompt_tokens": usage.get("input_tokens", 0),
+                        "completion_tokens": usage.get("output_tokens", 0),
+                        "total_tokens": usage.get("input_tokens", 0) + usage.get("output_tokens", 0),
+                    }
+            yield _format_chat_chunk(chat_id, model, {}, finish_reason=chat_finish, usage=final_chunk.get("usage"))
+
+        elif event_type == "message_stop":
+            yield "data: [DONE]\n\n"
+
+
+def _format_chat_chunk(
+    chat_id: str,
+    model: str,
+    delta: dict,
+    finish_reason: str | None = None,
+    usage: dict | None = None,
+) -> str:
+    """Format a chunk as an OpenAI Chat SSE data line."""
+    chunk = {
+        "id": chat_id or f"chatcmpl-{int(__import__('time').time())}",
+        "object": "chat.completion.chunk",
+        "model": model or "unknown",
+        "choices": [{"index": 0, "delta": delta}],
+    }
+    if finish_reason:
+        chunk["choices"][0]["finish_reason"] = finish_reason
+    if usage:
+        chunk["usage"] = usage
+    return f"data: {json.dumps(chunk, ensure_ascii=False)}\n\n"
+
+
 def _make_event(event: str, data: dict) -> dict[str, Any]:
     """Create an SSE event dict."""
     return {"event": event, "data": data}

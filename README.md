@@ -160,41 +160,157 @@ uniapi-py/
 
 ### 管理 API (`/api/*`)
 
+#### 公共
+
+| Endpoint | 描述 |
+|----------|------|
+| `GET /api/status` | 系统状态、品牌信息 |
+| `GET /api/status/channel` | 渠道状态列表 |
+| `GET /api/models/display` | 模型列表含定价 |
+| `GET /api/available_models` | 可用模型列表 |
+| `GET /api/models` | 模型列表 |
+| `GET /api/home_page_content` | 首页内容 |
+| `GET /api/about` | 关于页面 |
+| `GET /api/tools/display` | 工具列表 |
+| `GET /api/channel/types` | 可用渠道类型 |
+
+#### 认证 (Session)
+
 | Endpoint | Auth | 描述 |
 |----------|------|------|
-| `GET /api/status` | Public | 系统状态、品牌信息 |
-| `GET /api/models/display` | Public | 模型列表含定价 |
 | `POST /api/user/login` | Public | 登录，返回 session cookie |
 | `POST /api/user/register` | Public | 注册新用户 |
+| `GET /api/user/logout` | UserAuth | 登出 |
 | `GET /api/user/self` | UserAuth | 当前用户信息 |
-| `GET/POST /api/user/` | AdminAuth | 列出/创建用户 |
-| `GET/PUT/DELETE /api/user/:id` | AdminAuth | 获取/更新/删除用户 |
-| `POST /api/user/totp/disable/:id` | AdminAuth | 禁用 TOTP |
+| `PUT /api/user/self` | UserAuth | 更新个人信息 |
+| `GET /api/user/aff` | UserAuth | 推广信息 |
+| `GET /api/user/token` | UserAuth | 获取 access token |
+| `GET /api/user/get-by-token` | UserAuth | 通过 token 获取用户 |
+| `GET /api/user/available_models` | UserAuth | 可用模型 |
+
+#### 用户管理 (Admin, role >= 10)
+
+| Endpoint | 描述 |
+|----------|------|
+| `GET /api/user/` | 列出用户 |
+| `GET /api/user/search` | 搜索用户 |
+| `POST /api/user/` | 创建用户 |
+| `PUT /api/user/` | 更新用户 |
+| `GET /api/user/{user_id}` | 获取用户详情 |
+| `DELETE /api/user/{user_id}` | 删除用户 |
+| `POST /api/user/totp/disable/{user_id}` | 禁用 TOTP |
+| `GET /api/group/` | 用户组列表 |
+
+#### Token 管理
+
+| Endpoint | Auth | 描述 |
+|----------|------|------|
 | `GET /api/token/` | UserAuth | 列出令牌 |
-| `POST/PUT/DELETE /api/token/` | UserAuth | 创建/更新/删除令牌 |
+| `GET /api/token/search` | UserAuth | 搜索令牌 |
+| `GET /api/token/{token_id}` | UserAuth | 获取令牌详情 |
+| `POST /api/token/` | UserAuth | 创建令牌 |
+| `PUT /api/token/` | UserAuth | 更新令牌 |
+| `DELETE /api/token/{token_id}` | UserAuth | 删除令牌 |
 | `POST /api/token/consume` | TokenAuth | 外部配额消费 |
 | `GET /api/token/balance` | TokenAuth | 令牌余额 |
+| `GET /api/token/transactions` | TokenAuth | 交易记录 |
+| `GET /api/token/logs` | TokenAuth | 令牌使用日志 |
+
+#### 日志
+
+| Endpoint | Auth | 描述 |
+|----------|------|------|
 | `GET /api/log/self` | UserAuth | 个人日志 |
+| `GET /api/log/self/stat` | UserAuth | 个人日志统计 |
+| `GET /api/log/self/search` | UserAuth | 搜索个人日志 |
 | `GET /api/log/` | AdminAuth | 全部日志 |
+| `GET /api/log/stat` | AdminAuth | 日志统计 |
+| `GET /api/log/search` | AdminAuth | 搜索日志 |
 | `DELETE /api/log/` | AdminAuth | 删除旧日志 |
-| `GET /api/option/` | RootAuth | 系统配置 |
-| `PUT /api/option/` | RootAuth | 更新配置 |
-| `GET /api/channel/types` | Public | 可用渠道类型 |
-| `GET /api/group/` | AdminAuth | 用户组列表 |
+
+#### 渠道管理 (Admin)
+
+| Endpoint | 描述 |
+|----------|------|
+| `GET /api/channel/` | 列出渠道 |
+| `GET /api/channel/search` | 搜索渠道 |
+| `POST /api/channel/` | 创建渠道 |
+| `PUT /api/channel/` | 更新渠道 |
+| `GET /api/channel/{channel_id}` | 获取渠道详情 |
+| `DELETE /api/channel/{channel_id}` | 删除渠道 |
+| `GET /api/channel/test` | 测试所有渠道 |
+| `GET /api/channel/test/{channel_id}` | 测试单个渠道 |
+| `GET /api/channel/default-pricing` | 默认定价 |
+| `GET /api/channel/metadata` | 渠道元数据 |
+| `DELETE /api/channel/disabled` | 清理已禁用渠道 |
+
+#### 系统配置 (Root, role >= 100)
+
+| Endpoint | 描述 |
+|----------|------|
+| `GET /api/option/` | 系统配置列表 |
+| `PUT /api/option/` | 更新系统配置 |
+
+#### 充值 & 兑换
+
+| Endpoint | Auth | 描述 |
+|----------|------|------|
+| `GET /api/topup/` | AdminAuth | 充值记录列表 |
+| `POST /api/topup/` | UserAuth | 创建充值 |
+| `PUT /api/topup/` | AdminAuth | 更新充值 |
+| `GET /api/recharge/self` | UserAuth | 个人充值记录 |
+| `POST /api/recharge/` | UserAuth | 创建充值请求 |
+| `GET /api/recharge/` | AdminAuth | 全部充值请求 |
+| `POST /api/recharge/{recharge_id}/approve` | AdminAuth | 审批充值 |
+| `POST /api/recharge/{recharge_id}/reject` | AdminAuth | 拒绝充值 |
+| `GET /api/redemption/` | AdminAuth | 兑换码列表 |
+| `GET /api/redemption/search` | AdminAuth | 搜索兑换码 |
+| `GET /api/redemption/{redemption_id}` | AdminAuth | 兑换码详情 |
+| `POST /api/redemption/` | AdminAuth | 创建兑换码 |
+| `PUT /api/redemption/` | AdminAuth | 更新兑换码 |
+| `DELETE /api/redemption/{redemption_id}` | AdminAuth | 删除兑换码 |
+
+#### Dashboard
+
+| Endpoint | Auth | 描述 |
+|----------|------|------|
+| `GET /api/user/dashboard` | UserAuth | 使用量仪表盘（admin 可看全局） |
+| `GET /api/user/dashboard/users` | AdminAuth | 用户列表（仪表盘筛选用） |
+
+#### 预算 (Budget)
+
+| Endpoint | Auth | 描述 |
+|----------|------|------|
+| `GET /api/v1/budget/status` | UserAuth | 预算状态 |
+| `GET /api/v1/budget/history` | UserAuth | 预算历史 |
+| `GET /api/v1/admin/budgets` | AdminAuth | 全部预算 |
+| `GET /api/v1/admin/budgets/stats` | AdminAuth | 预算统计 |
+| `PUT /api/v1/admin/budgets/{user_id}` | AdminAuth | 更新用户预算 |
+| `POST /api/v1/admin/budgets/reset/{user_id}` | AdminAuth | 重置用户预算 |
+
+#### 前端页面 (Web)
+
+| Endpoint | 描述 |
+|----------|------|
+| `GET /` | SPA 入口 |
+| `GET /login` | 登录页 |
+| `GET /assets/{path}` | 静态资源 |
+| `GET /{path}` | SPA fallback |
 
 ### 中继 API (`/v1/*`)
 
-| Endpoint | Format | DeepSeek | GLM |
-|----------|--------|----------|-----|
-| `POST /v1/chat/completions` | OpenAI Chat | Direct | `/api/paas/v4/...` |
-| `POST /v1/messages` | Claude Messages | Direct (零转换) | `open.bigmodel.cn/api/anthropic` |
-| `POST /v1/responses` | OpenAI Response | Converted to Chat | Converted to Chat |
-| `GET /v1/models` | OpenAI | Model list | Model list |
+| Endpoint | Format | DeepSeek | GLM | Qwen | Kimi | MiniMax |
+|----------|--------|----------|-----|------|------|---------|
+| `POST /v1/chat/completions` | OpenAI Chat | Direct | `/api/paas/v4/...` | Direct | Direct | Direct |
+| `POST /v1/messages` | Claude Messages | Direct (`/anthropic`) | `open.bigmodel.cn/api/anthropic` | Direct | Direct | Direct |
+| `POST /v1/responses` | OpenAI Response | Converted to Chat | Converted to Chat | Converted | Converted | Converted |
+| `GET /v1/models` | OpenAI | Model list | Model list | Model list | Model list | Model list |
+| `GET /v1/models/{model_id}` | OpenAI | Model detail | Model detail | Model detail | Model detail | Model detail |
 
 ### Auth
 
-- **管理 API**: Session cookie (`itsdangerous URLSafeTimedSerializer`)
-- **中继 API**: Bearer token (`Authorization: Bearer <key>`)
+- **管理 API**: Session cookie (`itsdangerous URLSafeTimedSerializer`)，也支持 `Authorization: Bearer <access_token>` 回退
+- **中继 API**: Bearer token (`Authorization: Bearer <key>`)，支持 `token_key:channel_id` 格式锚定渠道
 - **响应格式**: `{"success": bool, "message"?: str, "data"?: T, "total"?: int}`
 
 ## 配置
@@ -202,10 +318,21 @@ uniapi-py/
 | Env Var | 默认值 | 说明 |
 |---------|--------|------|
 | `SERVER_PORT` | 8000 | 服务端口 |
+| `DEBUG` | false | 调试模式 |
 | `SQLITE_PATH` | uniapi.db | SQLite 数据库路径 |
 | `SQL_DSN` | — | MySQL/PostgreSQL DSN |
 | `SESSION_SECRET` | auto | Session cookie 签名密钥 |
+| `TOKEN_KEY_PREFIX` | sk- | Token 密钥前缀 |
+| `API_RATE_LIMIT` | 480 | 管理 API 每分钟请求上限 |
+| `RELAY_RATE_LIMIT` | 480 | 中继 API 每分钟请求上限 |
 | `DEEPSEEK_API_KEY` | — | DeepSeek API key |
+| `GLM_API_KEY` | — | GLM (智谱) API key |
+| `QWEN_API_KEY` | — | Qwen (百炼) API key |
+| `KIMI_API_KEY` | — | Kimi (Moonshot) API key |
+| `MINIMAX_API_KEY` | — | MiniMax API key |
+| `BUDGET_REDIS_URL` | — | Redis 地址 (留空且 BUDGET_ENABLED=false 禁用) |
+| `BUDGET_ENABLED` | false | 启用预算系统 |
+| `DEFAULT_MONTHLY_BUDGET` | 800.0 | 默认月预算 |
 
 ## 测试
 

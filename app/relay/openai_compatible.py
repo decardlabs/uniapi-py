@@ -95,21 +95,18 @@ async def relay_chat_completion(
         raw_stream = stream_chat_completion(client, upstream_url, body, headers)
 
         if output_format == "anthropic":
-            # Wrap with SSE converter
             from app.relay.sse_converter import chat_to_anthropic_sse, _format_anthropic_sse
 
             async def converted_stream():
-                # Collect raw lines into a list for the sync converter
                 lines: list[str] = []
                 async for line in raw_stream:
                     if line.startswith("data: "):
                         lines.append(line.strip())
-                    elif line.startswith("data:") and line.strip() == "data: [DONE]":
+                    elif line.strip() == "data: [DONE]":
                         lines.append("data: [DONE]")
 
-                # Convert synchronously
-                events = list(chat_to_anthropic_sse(iter(lines)))
-                for event in events:
+                # Yield events one at a time as the generator produces them
+                for event in chat_to_anthropic_sse(iter(lines)):
                     yield _format_anthropic_sse(event["event"], event["data"])
 
             return StreamingResponse(

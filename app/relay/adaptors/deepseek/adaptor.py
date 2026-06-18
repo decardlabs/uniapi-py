@@ -12,15 +12,12 @@ from app.relay.adaptor import BaseAdaptor, ModelConfig
 from app.relay.adaptors.deepseek import pricing
 from app.relay.adaptors.deepseek.request import normalize_request
 from app.relay.meta import RelayMeta
+from app.relay.mode import RelayMode
 
 DEEPSEEK_CHANNEL_TYPE = 39
 DEFAULT_BASE_URL = "https://api.deepseek.com/v1"
 ANTHROPIC_BASE_URL = "https://api.deepseek.com/anthropic"
 
-# Relay mode constants matching app.relay.mode.RelayMode
-_CHAT = 1       # ChatCompletions
-_RESPONSE = 11  # ResponseAPI
-_CLAUDE = 12    # ClaudeMessages
 
 
 class DeepSeekAdaptor(BaseAdaptor):
@@ -29,14 +26,14 @@ class DeepSeekAdaptor(BaseAdaptor):
     DEFAULT_BASE_URL = DEFAULT_BASE_URL
 
     def get_request_url(self, meta: RelayMeta, relay_mode: int = 1) -> str:
-        if relay_mode == _CLAUDE:
+        if relay_mode == RelayMode.CLAUDE_MESSAGES:
             return f"{ANTHROPIC_BASE_URL}/v1/messages"
         base = meta.base_url or self.DEFAULT_BASE_URL
         path = self._get_path_for_mode(relay_mode)
         return f"{base.rstrip('/')}{path}"
 
     def _get_path_for_mode(self, relay_mode: int) -> str:
-        if relay_mode == _CLAUDE:
+        if relay_mode == RelayMode.CLAUDE_MESSAGES:
             return f"{ANTHROPIC_BASE_URL}/v1/messages"
         return "/chat/completions"
 

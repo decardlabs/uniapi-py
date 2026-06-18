@@ -12,6 +12,13 @@ from sqlalchemy import select, text
 from app.config import settings
 from app.database import async_session_factory, engine
 from app.exceptions import AppException, app_exception_handler
+from app.middleware import (
+    AuditMiddleware,
+    PIIMaskMiddleware,
+    RateLimitMiddleware,
+    RequestIDMiddleware,
+    RequestTimingMiddleware,
+)
 from app.models.base import Base
 
 # Ensure all models are registered in Base.metadata
@@ -23,6 +30,31 @@ import app.models.channel  # noqa: F401
 import app.models.ability  # noqa: F401
 import app.models.budget  # noqa: F401
 from app.config import settings
+
+
+def _build_fusion_registry():
+    """Build the fusion adapter registry from settings."""
+    from app.fusion.adapters.registry import AdapterRegistry
+
+    enabled = [
+        ("deepseek", "deepseek-v4-pro", settings.deepseek_api_key),
+        ("minimax", "MiniMax-M3", settings.minimax_api_key),
+        ("glm", "glm-4-plus", settings.glm_api_key),
+    ]
+    registry = AdapterRegistry()
+    for provider, model_id, api_key in enabled:
+        if not api_key:
+            continue
+        registry.register_provider(
+            provider_name=provider,
+            openai_base_url={"deepseek": "https://api.deepseek.com", "minimax": "https://api.minimaxi.com/v1", "glm": "https://open.bigmodel.cn/api/paas/v4"}.get(provider, ""),
+            anthropic_base_url={"deepseek": "https://api.deepseek.com/anthropic", "minimax": "https://api.minimaxi.com/anthropic", "glm": "https://open.bigmodel.cn/api/anthropic"}.get(provider, ""),
+            api_key=api_key,
+            models=[{"id": model_id}],
+        )
+    if not registry.list_models():
+        return None
+    return registry
 
 
 @asynccontextmanager
@@ -45,6 +77,22 @@ async def lifespan(app: FastAPI) -> AsyncGenerator:
         )
         app.state.budget_arbiter = arbiter
         app.state.budget_redis = redis_client
+
+    # Initialize Fusion Engine
+    fusion_registry = _build_fusion_registry()
+    if fusion_registry:
+        from app.fusion.core.engine import FusionConfig, FusionEngine
+        fusion_config = FusionConfig(
+            panel=["deepseek-v4-pro", "MiniMax-M3", "glm-4-plus"],
+            judge="MiniMax-M3",
+            synthesizer="deepseek-v4-pro",
+            timeout_seconds=30,
+            retry_count=2,
+            fallback_model="deepseek-v4-pro",
+        )
+        app.state.fusion_engine = FusionEngine(fusion_registry, fusion_config)
+    else:
+        app.state.fusion_engine = None
 
     # Seed default data
     await _seed_defaults()
@@ -115,7 +163,7 @@ async def _seed_defaults():
 def create_app() -> FastAPI:
     app = FastAPI(
         title="UniAPI Python Backend",
-        version="0.1.0",
+        version="0.9.0",
         lifespan=lifespan,
     )
 
@@ -128,8 +176,39 @@ def create_app() -> FastAPI:
         allow_headers=["*"],
     )
 
+    # Middleware stack (order: outermost first)
+    app.add_middleware(AuditMiddleware)
+    app.add_middleware(
+        RateLimitMiddleware,
+        api_rpm=settings.api_rate_limit,
+        relay_rpm=settings.relay_rate_limit,
+    )
+    app.add_middleware(PIIMaskMiddleware)
+    app.add_middleware(RequestTimingMiddleware)
+    app.add_middleware(RequestIDMiddleware)
+
     # Exception handlers
     app.add_exception_handler(AppException, app_exception_handler)
+
+    # Health check (before web router to avoid catch-all interception)
+    @app.get("/health")
+    async def health():
+        return {"status": "healthy", "service": "uniapi-py", "version": "0.9.0"}
+
+    # Admin stats
+    @app.get("/api/admin/stats")
+    async def admin_stats():
+        from app.relay.registry import registry
+        models = []
+        for ct in [39, 41, 50, 25, 27]:
+            a = registry.get(ct)
+            if a:
+                models.extend(a.get_supported_models().keys())
+        return {
+            "total_requests": 0,
+            "models_count": len(set(models)),
+            "note": "Detailed stats require Prometheus integration",
+        }
 
     # Register routers
     from app.routers.api.auth import router as auth_router

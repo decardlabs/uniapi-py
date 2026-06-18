@@ -9,6 +9,7 @@ from __future__ import annotations
 from app.relay.adaptor import BaseAdaptor, ModelConfig
 from app.relay.adaptors.qwen import pricing
 from app.relay.meta import RelayMeta
+from app.relay.mode import RelayMode
 
 QWEN_CHANNEL_TYPE = 50
 DEFAULT_BASE_URL = "https://dashscope.aliyuncs.com/compatible-mode/v1"
@@ -21,13 +22,13 @@ class QwenAdaptor(BaseAdaptor):
     DEFAULT_BASE_URL = DEFAULT_BASE_URL
 
     def get_request_url(self, meta: RelayMeta, relay_mode: int = 1) -> str:
-        if relay_mode == 12:  # CLAUDE_MESSAGES
+        if relay_mode == RelayMode.CLAUDE_MESSAGES:
             return ANTHROPIC_BASE_URL
         base = meta.base_url or self.DEFAULT_BASE_URL
         return f"{base.rstrip('/')}/chat/completions"
 
     def _get_path_for_mode(self, relay_mode: int) -> str:
-        if relay_mode == 12:
+        if relay_mode == RelayMode.CLAUDE_MESSAGES:
             return ANTHROPIC_BASE_URL
         return "/chat/completions"
 

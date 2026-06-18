@@ -4,6 +4,7 @@ from abc import ABC, abstractmethod
 from typing import Any, Optional
 
 from app.relay.meta import RelayMeta
+from app.relay.mode import RelayMode
 
 
 class ModelConfig:
@@ -48,19 +49,22 @@ class BaseAdaptor(ABC):
     def _format_from_mode(self, relay_mode: int) -> str:
         """Map relay mode to format name used in NATIVE_FORMATS."""
         mapping = {
-            1: "chat_completions",
-            2: "completions",
-            3: "embeddings",
-            4: "moderations",
-            5: "images_generations",
-            6: "images_edits",
-            7: "audio_speech",
-            8: "audio_transcription",
-            9: "audio_translation",
-            10: "rerank",
-            11: "response_api",
-            12: "claude_messages",
-            13: "realtime",
+            RelayMode.CHAT_COMPLETIONS: "chat_completions",
+            RelayMode.COMPLETIONS: "completions",
+            RelayMode.EMBEDDINGS: "embeddings",
+            RelayMode.MODERATIONS: "moderations",
+            RelayMode.IMAGES_GENERATIONS: "images_generations",
+            RelayMode.IMAGES_EDITS: "images_edits",
+            RelayMode.AUDIO_SPEECH: "audio_speech",
+            RelayMode.AUDIO_TRANSCRIPTION: "audio_transcription",
+            RelayMode.AUDIO_TRANSLATION: "audio_translation",
+            RelayMode.RERANK: "rerank",
+            RelayMode.RESPONSE_API: "response_api",
+            RelayMode.CLAUDE_MESSAGES: "claude_messages",
+            RelayMode.REALTIME: "realtime",
+            RelayMode.VIDEOS: "videos",
+            RelayMode.OCR: "ocr",
+            RelayMode.PROXY: "proxy",
         }
         return mapping.get(relay_mode, "chat_completions")
 

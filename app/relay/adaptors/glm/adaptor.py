@@ -11,6 +11,7 @@ from app.relay.adaptor import BaseAdaptor, ModelConfig
 from app.relay.adaptors.glm import pricing
 from app.relay.adaptors.glm.auth import generate_glm_token
 from app.relay.meta import RelayMeta
+from app.relay.mode import RelayMode
 
 GLM_CHANNEL_TYPE = 41  # matches Go's channeltype.GLM
 DEFAULT_BASE_URL = "https://open.bigmodel.cn/api/paas/v4"
@@ -23,13 +24,13 @@ class GLMAdaptor(BaseAdaptor):
     DEFAULT_BASE_URL = DEFAULT_BASE_URL
 
     def get_request_url(self, meta: RelayMeta, relay_mode: int = 1) -> str:
-        if relay_mode == 12:  # CLAUDE_MESSAGES
+        if relay_mode == RelayMode.CLAUDE_MESSAGES:
             return f"{ANTHROPIC_BASE_URL}/v1/messages"
         base = meta.base_url or self.DEFAULT_BASE_URL
         return f"{base.rstrip('/')}/chat/completions"
 
     def _get_path_for_mode(self, relay_mode: int) -> str:
-        if relay_mode == 12:
+        if relay_mode == RelayMode.CLAUDE_MESSAGES:
             return f"{ANTHROPIC_BASE_URL}/v1/messages"
         return "/chat/completions"
 
