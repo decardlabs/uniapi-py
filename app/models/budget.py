@@ -15,6 +15,7 @@ class Budget(Base):
     monthly_budget: Mapped[float] = mapped_column(Float, default=800.0)
     consumed: Mapped[float] = mapped_column(Float, default=0.0)
     frozen: Mapped[float] = mapped_column(Float, default=0.0)
+    budget_period: Mapped[str] = mapped_column(String(7), default="")
     created_at: Mapped[int] = mapped_column(BigInteger, default=0)
     updated_at: Mapped[int] = mapped_column(BigInteger, default=0)
 

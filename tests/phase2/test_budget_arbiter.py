@@ -223,3 +223,58 @@ class TestBudgetStatus:
         assert "remaining" in status
         assert "consumed_pct" in status
         assert status["monthly"] > 0
+
+
+class TestPeriodReset:
+    """Budget should reset automatically on period change."""
+
+    async def test_auto_resets_on_period_change(self, arbiter):
+        """When current period differs from budget.budget_period, consumed resets."""
+        from sqlalchemy import select
+        async with async_session_factory() as db:
+            budget = Budget(
+                user_id=400, monthly_budget=800.0,
+                consumed=100.0, frozen=0.0,
+                budget_period="2026-05",
+                created_at=int(time.time() * 1000),
+                updated_at=int(time.time() * 1000),
+            )
+            db.add(budget)
+            await db.commit()
+
+        decision = await arbiter.pre_check(
+            user_id=400, model="deepseek-v4-pro",
+            estimated_input_tokens=100, estimated_output_tokens=50,
+        )
+        assert decision.status == "approved"
+
+        async with async_session_factory() as db:
+            result = await db.execute(select(Budget).where(Budget.user_id == 400))
+            budget = result.scalar_one()
+            assert budget.consumed == 0.0
+            assert budget.budget_period == arbiter._compute_period()
+
+    async def test_no_reset_within_same_period(self, arbiter):
+        """When period matches, consumed should not reset."""
+        period = arbiter._compute_period()
+        from sqlalchemy import select
+        async with async_session_factory() as db:
+            budget = Budget(
+                user_id=401, monthly_budget=800.0,
+                consumed=50.0, frozen=0.0,
+                budget_period=period,
+                created_at=int(time.time() * 1000),
+                updated_at=int(time.time() * 1000),
+            )
+            db.add(budget)
+            await db.commit()
+
+        await arbiter.pre_check(
+            user_id=401, model="deepseek-v4-pro",
+            estimated_input_tokens=100, estimated_output_tokens=50,
+        )
+
+        async with async_session_factory() as db:
+            result = await db.execute(select(Budget).where(Budget.user_id == 401))
+            budget = result.scalar_one()
+            assert budget.consumed == 50.0  # not reset

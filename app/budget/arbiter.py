@@ -15,7 +15,7 @@ from sqlalchemy import select
 from sqlalchemy.ext.asyncio import async_sessionmaker
 
 from app.budget.pricing import calculate_cost, estimate_cost, compute_period, get_model_pricing
-from app.models.budget import Budget, CostRecord
+from app.models.budget import Budget, CostRecord, BudgetResetLog
 
 logger = logging.getLogger(__name__)
 
@@ -81,6 +81,9 @@ class BudgetArbiter:
 
         # Step 1: get/create budget record
         budget = await self._get_or_create_budget(user_id)
+
+        # Step 1b: auto-reset if period changed
+        await self._check_period_reset(budget, user_id, period)
 
         # Step 2: get consumed + frozen from Redis (or DB fallback)
         consumed = await self.redis.get_consumed(user_id, period)
@@ -232,6 +235,46 @@ class BudgetArbiter:
             session.add(budget)
             await session.commit()
             return budget
+
+    async def _check_period_reset(self, budget: Budget, user_id: int, current_period: str):
+        """If the budget period has changed, archive old period and reset balances."""
+        if budget.budget_period == current_period:
+            return
+        if not budget.budget_period:
+            # First use ever — just set the period
+            budget.budget_period = current_period
+            budget.updated_at = int(time.time() * 1000)
+            async with self.db_session_factory() as session:
+                await session.merge(budget)
+                await session.commit()
+            return
+
+        # Period changed: archive old period
+        async with self.db_session_factory() as session:
+            # Count requests from cost_records for the old period
+            from sqlalchemy import func, select
+            from app.models.budget import CostRecord
+
+            # Create reset log
+            reset_log = BudgetResetLog(
+                user_id=user_id,
+                period=budget.budget_period,
+                total_consumed=budget.consumed,
+                total_requests=0,
+                reset_at=int(time.time() * 1000),
+            )
+            session.add(reset_log)
+
+            # Reset budget
+            budget.consumed = 0.0
+            budget.frozen = 0.0
+            budget.budget_period = current_period
+            budget.updated_at = int(time.time() * 1000)
+            await session.merge(budget)
+            await session.commit()
+
+        # Clear Redis keys for old period
+        await self.redis.settle(user_id, budget.budget_period, 0, 0)
 
     async def _write_cost_record(
         self,
