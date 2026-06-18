@@ -24,8 +24,11 @@ class AdaptorRegistry:
         return [cls() for cls in self._registry.values()]
 
 
-# Global registry - auto-register DeepSeek
+# Global registry - auto-register DeepSeek and GLM
 registry = AdaptorRegistry()
 
 from app.relay.adaptors.deepseek.adaptor import DEEPSEEK_CHANNEL_TYPE, DeepSeekAdaptor  # noqa: E402
+from app.relay.adaptors.glm.adaptor import GLM_CHANNEL_TYPE, GLMAdaptor  # noqa: E402
+
 registry.register(DEEPSEEK_CHANNEL_TYPE, DeepSeekAdaptor)
+registry.register(GLM_CHANNEL_TYPE, GLMAdaptor)

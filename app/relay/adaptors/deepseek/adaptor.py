@@ -48,3 +48,6 @@ class DeepSeekAdaptor(BaseAdaptor):
 
     def get_supported_models(self) -> dict[str, ModelConfig]:
         return dict(pricing.MODEL_PRICING)
+
+    def get_channel_type(self) -> int:
+        return DEEPSEEK_CHANNEL_TYPE
