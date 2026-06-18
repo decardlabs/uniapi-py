@@ -1,0 +1,202 @@
+{
+  "chat": {
+    "iframe_title": "聊天界面",
+    "not_available": "聊天不可用",
+    "not_configured": "管理员尚未配置聊天服务。"
+  },
+  "playground": {
+    "actions": {
+      "copy": "复制",
+      "delete": "删除",
+      "edit": "编辑",
+      "message_options": "消息选项",
+      "retry": "重试"
+    },
+    "chat": {
+      "clear": "清除",
+      "disable_focus": "禁用专注模式",
+      "empty_state": {
+        "description": "选择一个模型并在下方输入您的消息",
+        "title": "开始与 AI 对话"
+      },
+      "enable_focus": "启用专注模式",
+      "export": "导出",
+      "focus": "专注",
+      "generating": "正在生成...",
+      "generating_mobile": "生成中...",
+      "input": {
+        "hint_no_model": "请从侧边栏选择一个模型以开始",
+        "hint_no_token": "请从侧边栏选择一个 API 令牌以开始",
+        "placeholder_default": "输入您的消息... (Shift+Enter 换行)",
+        "placeholder_generating": "正在生成响应...",
+        "placeholder_no_model": "选择一个模型以开始聊天...",
+        "placeholder_no_token": "选择一个 API 令牌以开始聊天...",
+        "send": "发送",
+        "stop": "停止"
+      },
+      "model_label": "模型:",
+      "preview": "预览",
+      "preview_desc": "这是您的消息渲染后的样子",
+      "processing": "正在处理..."
+    },
+    "delete": {
+      "cancel": "取消",
+      "confirm": "删除消息",
+      "description": "确定要删除此消息吗？此操作无法撤销。",
+      "preview_label": "{{role}} 消息:",
+      "title": "删除 {{role}} 消息"
+    },
+    "edit": {
+      "attachments_hint": "您可以将鼠标悬停在附件上并点击 × 按钮来删除单个附件。",
+      "attachments_label": "消息附件 ({{count}})",
+      "cancel": "取消",
+      "content_label": "{{role}} 消息内容",
+      "description": "修改消息内容。您可以使用 \u003c1\u003eCtrl+Enter\u003c/1\u003e 保存或 \u003c3\u003eEsc\u003c/3\u003e 取消。",
+      "save": "保存更改",
+      "shortcuts": {
+        "cancel": "取消",
+        "save": "保存"
+      },
+      "stats": {
+        "chars": "字符",
+        "modified": "已修改",
+        "words": "词"
+      },
+      "title": "编辑 {{role}} 消息"
+    },
+    "export": {
+      "button_label": "导出为 JSON",
+      "button_sublabel": "结构化数据格式",
+      "cancel": "取消",
+      "description": "以 JSON 格式导出您的对话。文件将包含用于验证的唯一摘要。",
+      "filename_hint": "日期和摘要将自动添加。扩展名将设置为 .json",
+      "filename_label": "自定义文件名（可选）",
+      "from_model": " 来自 {{model}}",
+      "generating": "正在生成导出文件...",
+      "ready_to_export": "准备导出 {{count}} 条消息",
+      "title": "导出对话"
+    },
+    "notifications": {
+      "channel_metadata_error": "加载模型过滤的渠道元数据失败",
+      "copied_message": "消息已复制到剪贴板",
+      "copied_title": "已复制！",
+      "copy_failed_message": "复制消息到剪贴板失败",
+      "copy_failed_title": "复制失败",
+      "error_title": "错误",
+      "load_models_error": "从所选令牌加载模型失败",
+      "load_tokens_error": "加载 API 令牌失败",
+      "message_deleted_message": "消息已从对话中移除",
+      "message_deleted_title": "消息已删除",
+      "message_edited_message": "消息已成功更新",
+      "message_edited_title": "消息已编辑",
+      "no_models_channel_error": "没有模型匹配所选渠道 ({{channel}})。请调整过滤器或选择其他渠道。",
+      "no_models_title": "无可用模型",
+      "no_models_token_error": "从所选令牌加载模型失败。所选令牌未配置模型。",
+      "no_tokens_error": "从所选令牌加载模型失败。请添加一个启用的 API 令牌以使用 Playground。",
+      "no_tokens_title": "无可用 API 令牌"
+    },
+    "parameters": {
+      "channel": {
+        "browse_all": "留空以浏览所有渠道的模型。",
+        "label": "渠道过滤器",
+        "loading": "加载中...",
+        "no_match": "没有渠道匹配您的搜索。",
+        "placeholder": "按渠道过滤",
+        "showing_associated": "显示与 {{channel}} 关联的模型。"
+      },
+      "extended_thinking": {
+        "description": "允许 Claude 显示其推理过程",
+        "label": "启用扩展思考"
+      },
+      "frequency_penalty": {
+        "description": "惩罚频繁出现的 Token: -2.0 到 2.0",
+        "label": "频率惩罚"
+      },
+      "max_completion_tokens": {
+        "description": "最大补全 Token 数（优先于 max_tokens）",
+        "label": "最大补全 Token"
+      },
+      "max_tokens": {
+        "description": "最大响应长度",
+        "label": "最大 Token"
+      },
+      "model": {
+        "active": "当前模型: {{model}}。",
+        "channels_label": "渠道: {{channels}}",
+        "label": "模型",
+        "loading": "正在加载模型...",
+        "more_channels": "+{{count}} 更多",
+        "no_available": "当前令牌和渠道选择没有可用模型。",
+        "no_match": "没有模型匹配您的搜索。",
+        "no_models": "无可用模型",
+        "no_models_for_selection": "所选令牌和渠道没有可用模型。",
+        "search_hint": "搜索以查找模型，然后按 Enter 或点击选择。",
+        "search_placeholder": "搜索模型"
+      },
+      "presence_penalty": {
+        "description": "惩罚重复出现的 Token: -2.0 到 2.0",
+        "label": "存在惩罚"
+      },
+      "reasoning_effort": {
+        "description": "推理努力程度（适用于 DeepSeek 等支持的模型）",
+        "label": "推理努力",
+        "options": {
+          "high": "高",
+          "low": "低",
+          "medium": "中",
+          "none": "无"
+        }
+      },
+      "show_reasoning": {
+        "description": "显示 AI 推理过程（如果可用）",
+        "label": "显示推理内容"
+      },
+      "stop_sequences": {
+        "description": "在这些序列处停止生成（逗号分隔）",
+        "label": "停止序列",
+        "placeholder": "逗号分隔的停止序列"
+      },
+      "system_message": {
+        "description": "系统消息提供上下文和指令，指导 AI 在整个对话中的行为",
+        "label": "系统消息",
+        "placeholder": "输入系统指令以指导 AI 的行为和响应..."
+      },
+      "temperature": {
+        "description": "控制随机性: 0 = 专注, 2 = 创意",
+        "label": "温度"
+      },
+      "thinking_budget": {
+        "description": "思考内容的最大 Token 数（最小 1024）",
+        "label": "思考预算 Token"
+      },
+      "title": "模型与参数",
+      "token": {
+        "create_link": "创建令牌",
+        "label": "API 令牌",
+        "loading": "加载中...",
+        "no_enabled": "未找到启用的令牌。",
+        "no_tokens": "无可用令牌",
+        "select_placeholder": "选择令牌",
+        "unlimited": "无限"
+      },
+      "top_k": {
+        "description": "Top-K 采样: 限制 Token 选择为前 K 个最可能的",
+        "label": "Top K（候选数）"
+      },
+      "top_p": {
+        "description": "核采样: 0.1 = 专注, 1.0 = 多样",
+        "label": "Top P（核采样）"
+      }
+    },
+    "roles": {
+      "assistant": "助手",
+      "error": "错误",
+      "message": "消息",
+      "system": "系统",
+      "system_message": "系统消息",
+      "user": "用户"
+    },
+    "system_prompt": "你是一个乐于助人的 AI 助手，在技术主题、创造性任务和分析推理等多个领域拥有专业知识。\\n\\n## 上下文和能力\\n\\n你的回答应基于你的训练数据，并适应用户的需求。当不确定时事或超出你训练范围的信息时，请承认这些限制，而不是进行猜测。\\n\\n**你擅长：**\\n- 将复杂问题分解为清晰、可管理的步骤\\n- 提供带有正确语法高亮和解释的代码示例\\n- 分析数据并提供基于证据的见解\\n- 关注语气、风格和受众的创意写作\\n- 通过清晰的解释和示例教授概念\\n\\n**你不能：**\\n- 访问外部 URL、浏览网页或检索实时信息\\n- 执行代码、运行命令或与外部系统交互\\n- 访问此对话之外的文件、数据库或个人数据\\n\\n## 回答指南\\n\\n**根据任务调整你的风格：**\\n- 技术问题 → 精确、结构化的回答，带有代码/示例\\n- 创意请求 → 引人入胜、富有想象力的回答\\n- 分析任务 → 基于证据的推理，得出清晰的结论\\n- 简单查询 → 直接回答（如果相关，提供详细说明）\\n- 复杂问题 → 分步分解并进行解释\\n\\n**格式清晰：**\\n- 使用 Markdown 进行结构化（标题、列表、代码块、强调）\\n- 包含带有语言标签的代码块以进行语法高亮\\n- 将长回答分成逻辑部分\\n- 使用表格、要点和编号以提高可读性\\n\\n**真诚互动：**\\n- 当需求模棱两可时，提出澄清问题\\n- 直接承认不确定性或限制\\n- 在适当时提供替代方法\\n- 自然地改变语言（避免重复措辞）\\n- 展示复杂或主观话题的推理\\n\\n## 处理敏感内容\\n\\n对于潜在有害、非法或敏感的话题：\\n- 在适当时提供事实性、教育性信息\\n- 解释风险、法律考虑和伦理含义\\n- 当请求可能造成伤害时，重定向到建设性的替代方案\\n- 拒绝明显宣扬非法活动或伤害的请求\\n\\n## 质量标准\\n\\n- **准确性**：基于知识回答，承认差距\\n- **清晰度**：使用精确的语言，定义技术术语\\n- **简洁性**：深度与问题复杂性相匹配\\n- **帮助性**：预测后续需求，提供后续步骤\\n- **尊重**：无论话题如何，保持专业、同理心的语气",
+    "title": "AI 调试台"
+  }
+}

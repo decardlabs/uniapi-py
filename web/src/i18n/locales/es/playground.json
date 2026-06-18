@@ -1,0 +1,202 @@
+{
+  "chat": {
+    "iframe_title": "Interfaz de chat",
+    "not_available": "Chat no disponible",
+    "not_configured": "El servicio de chat no ha sido configurado por el administrador."
+  },
+  "playground": {
+    "actions": {
+      "copy": "Copiar",
+      "delete": "Eliminar",
+      "edit": "Editar",
+      "message_options": "Opciones del mensaje",
+      "retry": "Reintentar"
+    },
+    "chat": {
+      "clear": "Limpiar",
+      "disable_focus": "Desactivar modo enfoque",
+      "empty_state": {
+        "description": "Selecciona un modelo y escribe tu mensaje a continuación",
+        "title": "Inicia una conversación con la IA"
+      },
+      "enable_focus": "Activar modo enfoque",
+      "export": "Exportar",
+      "focus": "Enfoque",
+      "generating": "Generando...",
+      "generating_mobile": "Gen...",
+      "input": {
+        "hint_no_model": "Selecciona un modelo en la barra lateral para comenzar",
+        "hint_no_token": "Selecciona un token API en la barra lateral para comenzar",
+        "placeholder_default": "Escribe tu mensaje... (Shift+Enter para nueva línea)",
+        "placeholder_generating": "Generando respuesta...",
+        "placeholder_no_model": "Selecciona un modelo para comenzar a chatear...",
+        "placeholder_no_token": "Selecciona un token API para comenzar a chatear...",
+        "send": "Enviar",
+        "stop": "Detener"
+      },
+      "model_label": "Modelo:",
+      "preview": "Vista previa",
+      "preview_desc": "Así se mostrará tu mensaje",
+      "processing": "se está procesando..."
+    },
+    "delete": {
+      "cancel": "Cancelar",
+      "confirm": "Eliminar mensaje",
+      "description": "¿Seguro que deseas eliminar este mensaje? Esta acción no se puede deshacer.",
+      "preview_label": "Mensaje {{role}}:",
+      "title": "Eliminar mensaje {{role}}"
+    },
+    "edit": {
+      "attachments_hint": "Puedes eliminar archivos adjuntos individuales haciendo clic en el botón × que aparece al pasar el cursor.",
+      "attachments_label": "Archivos adjuntos ({{count}})",
+      "cancel": "Cancelar",
+      "content_label": "Contenido del mensaje {{role}}",
+      "description": "Modifica el contenido del mensaje. Usa \u003c1\u003eCtrl+Enter\u003c/1\u003e para guardar o \u003c3\u003eEsc\u003c/3\u003e para cancelar.",
+      "save": "Guardar cambios",
+      "shortcuts": {
+        "cancel": "para cancelar",
+        "save": "para guardar"
+      },
+      "stats": {
+        "chars": "caracteres",
+        "modified": "Modificado",
+        "words": "palabras"
+      },
+      "title": "Editar mensaje {{role}}"
+    },
+    "export": {
+      "button_label": "Exportar como JSON",
+      "button_sublabel": "Formato de datos estructurado",
+      "cancel": "Cancelar",
+      "description": "Exporta tu conversación en formato JSON. El archivo incluirá un hash único para verificación.",
+      "filename_hint": "La fecha y el hash se añadirán automáticamente. La extensión será .json",
+      "filename_label": "Nombre de archivo personalizado (opcional)",
+      "from_model": " desde {{model}}",
+      "generating": "Generando archivo de exportación...",
+      "ready_to_export": "Listo para exportar {{count}} mensaje{{plural}}",
+      "title": "Exportar conversación"
+    },
+    "notifications": {
+      "channel_metadata_error": "No se pudieron cargar los metadatos del canal para filtrar modelos",
+      "copied_message": "Mensaje copiado al portapapeles",
+      "copied_title": "¡Copiado!",
+      "copy_failed_message": "No se pudo copiar el mensaje",
+      "copy_failed_title": "Error al copiar",
+      "error_title": "Error",
+      "load_models_error": "No se pudieron cargar los modelos del token seleccionado",
+      "load_tokens_error": "No se pudieron cargar los tokens API",
+      "message_deleted_message": "El mensaje se eliminó de la conversación",
+      "message_deleted_title": "Mensaje eliminado",
+      "message_edited_message": "El mensaje se actualizó correctamente",
+      "message_edited_title": "Mensaje editado",
+      "no_models_channel_error": "Ningún modelo coincide con el canal seleccionado ({{channel}}). Ajusta el filtro o elige otro canal.",
+      "no_models_title": "No hay modelos disponibles",
+      "no_models_token_error": "No se pudieron cargar modelos para el token seleccionado. No tiene modelos configurados.",
+      "no_tokens_error": "No se pudieron cargar modelos para el token seleccionado. Agrega un token API habilitado para usar el playground.",
+      "no_tokens_title": "No hay tokens API disponibles"
+    },
+    "parameters": {
+      "channel": {
+        "browse_all": "Déjalo en blanco para explorar modelos de todos los canales.",
+        "label": "Filtro de canal",
+        "loading": "Cargando...",
+        "no_match": "Ningún canal coincide con tu búsqueda.",
+        "placeholder": "Filtrar por canal",
+        "showing_associated": "Mostrando modelos asociados a {{channel}}."
+      },
+      "extended_thinking": {
+        "description": "Permite que Claude muestre su razonamiento",
+        "label": "Habilitar razonamiento extendido"
+      },
+      "frequency_penalty": {
+        "description": "Penaliza tokens frecuentes: -2.0 a 2.0",
+        "label": "Penalización de frecuencia"
+      },
+      "max_completion_tokens": {
+        "description": "Máximo de tokens de respuesta (preferido sobre max_tokens)",
+        "label": "Tokens máximos de respuesta"
+      },
+      "max_tokens": {
+        "description": "Longitud máxima de la respuesta",
+        "label": "Tokens máximos"
+      },
+      "model": {
+        "active": "Modelo activo: {{model}}.",
+        "channels_label": "Canales: {{channels}}",
+        "label": "Modelo",
+        "loading": "Cargando modelos...",
+        "more_channels": "+{{count}} más",
+        "no_available": "No hay modelos disponibles para el token y canal actuales.",
+        "no_match": "Ningún modelo coincide con tu búsqueda.",
+        "no_models": "No hay modelos disponibles",
+        "no_models_for_selection": "No hay modelos disponibles para el token y canal seleccionados.",
+        "search_hint": "Busca un modelo, luego presiona Enter o haz clic para seleccionarlo.",
+        "search_placeholder": "Buscar modelos"
+      },
+      "presence_penalty": {
+        "description": "Penaliza tokens repetidos: -2.0 a 2.0",
+        "label": "Penalización de presencia"
+      },
+      "reasoning_effort": {
+        "description": "Nivel de esfuerzo de razonamiento (para modelos compatibles como DeepSeek)",
+        "label": "Esfuerzo de razonamiento",
+        "options": {
+          "high": "Alto",
+          "low": "Bajo",
+          "medium": "Medio",
+          "none": "Ninguno"
+        }
+      },
+      "show_reasoning": {
+        "description": "Muestra el razonamiento de la IA cuando esté disponible",
+        "label": "Mostrar razonamiento"
+      },
+      "stop_sequences": {
+        "description": "Detén la generación en estas secuencias (separadas por comas)",
+        "label": "Secuencias de parada",
+        "placeholder": "Secuencias separadas por comas"
+      },
+      "system_message": {
+        "description": "Los mensajes del sistema dan contexto e instrucciones que guían a la IA durante la conversación",
+        "label": "Mensaje del sistema",
+        "placeholder": "Introduce instrucciones del sistema que guiarán a la IA..."
+      },
+      "temperature": {
+        "description": "Controla la aleatoriedad: 0 = enfocado, 2 = creativo",
+        "label": "Temperatura"
+      },
+      "thinking_budget": {
+        "description": "Tokens máximos para el razonamiento (mínimo 1024)",
+        "label": "Tokens de razonamiento"
+      },
+      "title": "Modelo y parámetros",
+      "token": {
+        "create_link": "Crear un token",
+        "label": "Token API",
+        "loading": "Cargando...",
+        "no_enabled": "No se encontraron tokens habilitados.",
+        "no_tokens": "No hay tokens disponibles",
+        "select_placeholder": "Selecciona un token",
+        "unlimited": "Ilimitado"
+      },
+      "top_k": {
+        "description": "Muestreo Top-K: limita las opciones a los K tokens más probables",
+        "label": "Top K"
+      },
+      "top_p": {
+        "description": "Muestreo núcleo: 0.1 = enfocado, 1.0 = diverso",
+        "label": "Top P"
+      }
+    },
+    "roles": {
+      "assistant": "Asistente",
+      "error": "Error",
+      "message": "Mensaje",
+      "system": "Sistema",
+      "system_message": "Mensaje del sistema",
+      "user": "Usuario"
+    },
+    "system_prompt": "Eres un asistente de IA servicial con experiencia en múltiples dominios técnicos, creativos y analíticos.\n\n## Contexto y capacidades\n\nTus respuestas deben basarse en tus datos de entrenamiento y adaptarse a las necesidades del usuario. Cuando tengas dudas sobre hechos recientes o fuera de tu conocimiento, reconoce esas limitaciones en lugar de especular.\n\n**Destacas en:**\n- Descomponer problemas complejos en pasos claros y manejables\n- Proporcionar ejemplos de código bien explicados\n- Analizar datos y ofrecer conclusiones sustentadas\n- Escribir de forma creativa respetando el tono y la audiencia\n- Enseñar conceptos mediante explicaciones claras y ejemplos\n\n**No puedes:**\n- Acceder a URL externas, navegar por la web ni obtener información en tiempo real\n- Ejecutar código, comandos o interactuar con sistemas externos\n- Acceder a archivos, bases de datos o datos personales fuera de esta conversación\n\n## Guías de respuesta\n\n**Adapta tu estilo a la tarea:**\n- Preguntas técnicas → respuestas precisas y estructuradas con código/ejemplos\n- Solicitudes creativas → respuestas atractivas e imaginativas\n- Análisis → razonamiento sustentado con conclusiones claras\n- Consultas simples → respuestas directas (amplía si es útil)\n- Problemas complejos → explicaciones paso a paso\n\n**Formato para mayor claridad:**\n- Usa Markdown (encabezados, listas, bloques de código, énfasis)\n- Incluye bloques de código con etiquetas de lenguaje\n- Divide las respuestas largas en secciones lógicas\n- Emplea tablas, viñetas y numeraciones para facilitar la lectura\n\n**Interactúa con autenticidad:**\n- Haz preguntas aclaratorias cuando haya ambigüedad\n- Reconoce directamente la incertidumbre o los límites\n- Ofrece enfoques alternativos cuando corresponda\n- Varía tu lenguaje de forma natural\n- Explica tu razonamiento en temas complejos o subjetivos\n\n## Manejo de contenido sensible\n\nPara temas potencialmente dañinos, ilegales o sensibles:\n- Proporciona información factual y educativa cuando corresponda\n- Explica riesgos, consideraciones legales e implicaciones éticas\n- Redirige hacia alternativas constructivas si la solicitud puede causar daño\n- Rechaza solicitudes que promuevan actividades ilegales o dañinas\n\n## Estándares de calidad\n\n- **Precisión**: fundamenta las respuestas y reconoce las lagunas\n- **Claridad**: usa lenguaje preciso y define términos técnicos\n- **Concisión**: ajusta la profundidad según la complejidad\n- **Utilidad**: anticipa necesidades posteriores y ofrece próximos pasos\n- **Respeto**: mantén un tono profesional y empático en todo momento",
+    "title": "AI Playground"
+  }
+}

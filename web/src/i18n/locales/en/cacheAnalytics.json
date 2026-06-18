@@ -1,0 +1,49 @@
+{
+  "cacheAnalytics": {
+    "title": "Cache Analytics",
+    "description": "Observe cache hit effectiveness after the DeepSeek billing upgrade.",
+    "unauthorized": "Administrator access is required.",
+    "errors": {
+      "fetch_failed": "Failed to fetch cache analytics data."
+    },
+    "filters": {
+      "from": "From",
+      "to": "To",
+      "model": "Model",
+      "channel_id": "Channel ID",
+      "request_format": "API Format",
+      "compare_date": "Compare Date",
+      "all_models": "All models",
+      "all_channels": "All channels",
+      "all_formats": "All formats",
+      "last_7d": "Last 7D",
+      "apply": "Apply"
+    },
+    "cards": {
+      "cache_hit_rate": "Cache Hit Rate",
+      "estimated_savings_rate": "Estimated Savings Rate",
+      "cached_prompt_tokens": "Cached Prompt Tokens",
+      "total_quota": "Total Quota"
+    },
+    "sections": {
+      "trend": "Trend",
+      "breakdown": "Breakdown"
+    },
+    "table": {
+      "model": "Model",
+      "channel": "Channel",
+      "request_format": "API Format",
+      "requests": "Requests",
+      "prompt_tokens": "Prompt Tokens",
+      "cached_prompt_tokens": "Cached Prompt Tokens",
+      "cache_hit_rate": "Cache Hit Rate",
+      "quota": "Quota"
+    },
+    "compare": {
+      "before": "Before Upgrade",
+      "after": "After Upgrade",
+      "delta": "Hit Rate Delta"
+    },
+    "empty": "No cache analytics data in this range."
+  }
+}

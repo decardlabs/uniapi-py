@@ -21,3 +21,5 @@ Thumbs.db
 # Build artifacts
 dist/
 build/
+webui/
+web/node_modules/

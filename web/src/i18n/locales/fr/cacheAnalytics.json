@@ -1,0 +1,49 @@
+{
+  "cacheAnalytics": {
+    "title": "Analytique du cache",
+    "description": "Observez l'efficacité du cache après la mise à niveau de facturation DeepSeek.",
+    "unauthorized": "Accès administrateur requis.",
+    "errors": {
+      "fetch_failed": "Échec du chargement des données d'analytique du cache."
+    },
+    "filters": {
+      "from": "Du",
+      "to": "Au",
+      "model": "Modèle",
+      "channel_id": "ID du canal",
+      "request_format": "Format API",
+      "compare_date": "Date de comparaison",
+      "all_models": "Tous les modèles",
+      "all_channels": "Tous les canaux",
+      "all_formats": "Tous les formats",
+      "last_7d": "7 derniers jours",
+      "apply": "Appliquer"
+    },
+    "cards": {
+      "cache_hit_rate": "Taux de hit cache",
+      "estimated_savings_rate": "Taux d'économie estimé",
+      "cached_prompt_tokens": "Tokens prompt en cache",
+      "total_quota": "Quota total"
+    },
+    "sections": {
+      "trend": "Tendance",
+      "breakdown": "Détail"
+    },
+    "table": {
+      "model": "Modèle",
+      "channel": "Canal",
+      "request_format": "Format API",
+      "requests": "Requêtes",
+      "prompt_tokens": "Tokens prompt",
+      "cached_prompt_tokens": "Tokens prompt en cache",
+      "cache_hit_rate": "Taux de cache",
+      "quota": "Quota"
+    },
+    "compare": {
+      "before": "Avant la mise à niveau",
+      "after": "Après la mise à niveau",
+      "delta": "Delta du taux de hit"
+    },
+    "empty": "Aucune donnée d'analytique du cache pour cette période."
+  }
+}

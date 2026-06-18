@@ -1,0 +1,100 @@
+{
+  "dashboard": {
+    "cards": {
+      "avg_cost": "Costo promedio por solicitud",
+      "avg_daily": "Promedio diario: {{value}}",
+      "quota_used": "Cuota utilizada",
+      "tokens_consumed": "Tokens consumidos",
+      "tokens_per_request": "{{value}} tokens por solicitud",
+      "total_requests": "Solicitudes totales"
+    },
+    "description": "Supervisa el uso de la API y las estadísticas de tu cuenta",
+    "errors": {
+      "fetch_failed": "No se pudieron obtener los datos del panel",
+      "future": "La fecha final no puede estar en el futuro",
+      "label": "Error",
+      "range_limit_admin": "El rango no puede exceder 1 año",
+      "range_limit_user": "El rango no puede exceder 7 días",
+      "range_order": "La fecha inicial debe ser anterior o igual a la final",
+      "too_old_admin": "La fecha inicial no puede superar 1 año",
+      "too_old_user": "La fecha inicial no puede superar 7 días"
+    },
+    "fallbacks": {
+      "model": "Modelo desconocido",
+      "owner": "desconocido",
+      "token": "token sin nombre",
+      "user": "Usuario desconocido"
+    },
+    "filters": {
+      "all_users": "Todos los usuarios",
+      "apply": "Aplicar",
+      "from": "Desde",
+      "from_aria": "Fecha inicial",
+      "loading": "Cargando...",
+      "seven_days": "7 d",
+      "thirty_days": "30 d",
+      "to": "Hasta",
+      "to_aria": "Fecha final",
+      "today": "Hoy",
+      "user": "Usuario",
+      "user_aria": "Seleccionar usuario"
+    },
+    "insights": {
+      "busiest_day": "Día más activo",
+      "models_in_use": "Modelos en uso",
+      "peak_token_day": "Pico de tokens",
+      "requests_per_model": "{{value}} solicitudes por modelo"
+    },
+    "labels": {
+      "no_data": "Sin datos",
+      "no_value": "—",
+      "quota": "Cuota",
+      "quota_consumed": "{{value}} consumidos",
+      "requests": "Solicitudes",
+      "requests_value": "{{value}} solicitudes",
+      "tokens": "Tokens",
+      "tokens_value": "{{value}} tokens"
+    },
+    "loading": "Actualizando el panel…",
+    "login_required": "Inicia sesión para acceder al panel.",
+    "metrics": {
+      "expenses": "Gastos",
+      "requests": "Solicitudes",
+      "tokens": "Tokens"
+    },
+    "overview": {
+      "subtitle": "Totales y líderes para el período seleccionado",
+      "title": "Resumen de uso",
+      "updated": "Actualizado:"
+    },
+    "sections": {
+      "metric_label": "Indicador: {{metric}}",
+      "metric_placeholder": "Selecciona el indicador",
+      "model_usage": "Uso por modelo",
+      "token_usage": "Uso de tokens",
+      "user_usage": "Uso por usuario"
+    },
+    "title": "Panel",
+    "empty": {
+      "title": "Sin datos",
+      "description": "Comienza a realizar solicitudes API para ver estadísticas de uso y gráficos aquí."
+    },
+    "top_models": {
+      "highest_cost": "Mayor costo",
+      "most_requests": "Más solicitudes",
+      "most_tokens": "Más tokens",
+      "title": "Modelos destacados del período"
+    },
+    "pool_summary": {
+      "title": "Resumen de Pools de Presupuesto",
+      "subtitle": "Asignación y uso de los pools de presupuesto activos",
+      "no_pools": "No hay pools de presupuesto activos",
+      "go_to_pools": "Ir a Pools de Presupuesto",
+      "total_budget": "Presupuesto Total",
+      "total_allocated": "Asignado",
+      "total_available": "Disponible",
+      "pool_count": "Pools Activos",
+      "view_all": "Ver Todo"
+    }
+  }
+}

@@ -1,0 +1,889 @@
+{
+  "channels": {
+    "actions": {
+      "add": "Ajouter un canal",
+      "add_mobile": "Ajouter un canal",
+      "delete": "Supprimer",
+      "disable": "Désactiver",
+      "edit": "Modifier",
+      "enable": "Activer",
+      "test": "Tester"
+    },
+    "columns": {
+      "actions": "Actions",
+      "created": "Créé",
+      "group": "Groupe",
+      "id": "ID",
+      "name": "Nom",
+      "priority": "Priorité",
+      "response": "Réponse",
+      "status": "Statut",
+      "testing_model": "Modèle de test",
+      "type": "Type",
+      "weight": "Poids"
+    },
+    "confirm": {
+      "delete": "Voulez-vous vraiment supprimer ce canal ?",
+      "delete_disabled": "Voulez-vous vraiment supprimer tous les canaux désactivés ? Cette action est irréversible."
+    },
+    "description": "Configurer et gérer les canaux de routage API",
+    "edit": {
+      "actions": {
+        "cancel": "Annuler",
+        "create": "Créer le canal",
+        "creating": "Création...",
+        "test_channel": "Tester le canal",
+        "update": "Mettre à jour le canal",
+        "updating": "Mise à jour..."
+      },
+      "ai_proxy": {
+        "knowledge": {
+          "help": "Identifiant de la base de connaissances pour la récupération de connaissances AI Proxy.",
+          "label": "ID de connaissances",
+          "placeholder": "ID de la base de connaissances"
+        }
+      },
+      "aws": {
+        "ak": {
+          "help": "ID de clé d'accès AWS avec autorisations pour appeler Bedrock.",
+          "label": "Clé d'accès (Access Key) *",
+          "placeholder": "AKIA..."
+        },
+        "heading": "Configuration AWS Bedrock",
+        "note": "La clé API finale sera construite comme : AK|SK|Region",
+        "region": {
+          "help": "Région AWS pour Bedrock (ex: us-east-1). Doit correspondre à l'emplacement de vos modèles/profils.",
+          "label": "Région *",
+          "placeholder": "us-east-1"
+        },
+        "sk": {
+          "help": "Clé d'accès secrète AWS pour l'ID de clé d'accès ci-dessus.",
+          "label": "Clé secrète (Secret Key) *",
+          "placeholder": "Clé secrète"
+        }
+      },
+      "azure": {
+        "endpoint": {
+          "help": "Votre point de terminaison de ressource, ex: https://votre-ressource.openai.azure.com",
+          "label": "Point de terminaison Azure OpenAI *",
+          "placeholder": "https://votre-ressource.openai.azure.com"
+        },
+        "heading": "Configuration Azure OpenAI",
+        "version": {
+          "help": "Version API par défaut utilisée lorsque la requête n'en spécifie pas (ex: 2024-03-01-preview).",
+          "label": "Version API",
+          "note": "Défaut : 2024-03-01-preview. Peut être remplacé par les paramètres de requête.",
+          "placeholder": "2024-03-01-preview",
+          "warning_label": "Important :",
+          "warning_text": "Le nom du modèle doit être votre nom de déploiement, pas le nom du modèle d'origine."
+        }
+      },
+      "buttons": {
+        "fill_template": "Remplir le modèle",
+        "format_json": "Formater JSON",
+        "load_defaults": "Charger les valeurs par défaut"
+      },
+      "channel_type": {
+        "15": {
+          "tip": "Obtenez AK (Clé API) et SK (Clé secrète) depuis la console Baidu"
+        },
+        "18": {
+          "tip": "API version WebSocket"
+        },
+        "29": {
+          "description": "Groq-hosted LLaMA-style models via OpenAI schema."
+        },
+        "40": {
+          "description": "Anciennement ByteDance Doubao"
+        },
+        "47": {
+          "tip": "Pour le service d'inférence V2, obtenez la clé API depuis Baidu IAM"
+        },
+        "48": {
+          "tip": "API version HTTP"
+        },
+        "50": {
+          "description": "Canal compatible OpenAI, prend en charge l'URL de base personnalisée"
+        },
+        "51": {
+          "description": "Format compatible Gemini OpenAI"
+        },
+        "53": {
+          "description": "Surface compatible OpenAI de GitHub Copilot (jeton échangé via GitHub)",
+          "tip": "La clé du canal doit être un jeton d'accès GitHub ; l'URL de base est par défaut https://api.githubcopilot.com"
+        }
+      },
+      "cloudflare": {
+        "account": {
+          "help": "Votre ID de compte Cloudflare pour la passerelle AI.",
+          "label": "ID de compte",
+          "placeholder": "d8d7c61dbc334c32d3ced580e4bf42b4"
+        }
+      },
+      "common": {
+        "add": "Add",
+        "base_url": {
+          "fixed_note": "Using default: {{url}}",
+          "help_editable": "Custom API base URL. Leave empty to use the default URL.",
+          "help_readonly": "The API base URL for this channel type is fixed and cannot be modified.",
+          "label": "API Base URL",
+          "placeholder": "https://api.example.com"
+        },
+        "format_json": "Format JSON"
+      },
+      "coze": {
+        "auth_type": {
+          "help": "Choisissez comment vous authentifier auprès de Coze : Jeton d'accès personnel ou OAuth JWT.",
+          "label": "Type d'authentification",
+          "placeholder": "Sélectionnez le type d'authentification"
+        },
+        "heading": "Configuration Coze",
+        "jwt": {
+          "help": "Configuration JSON pour Coze OAuth JWT : client_type, client_id, coze_www_base, coze_api_base, private_key, public_key_id.",
+          "label": "Configuration OAuth JWT *",
+          "placeholder": "Configuration OAuth JWT au format JSON :\n{{example}}",
+          "required": "Champs requis : client_type, client_id, coze_www_base, coze_api_base, private_key, public_key_id"
+        },
+        "pat": {
+          "help": "Votre jeton d'accès personnel Coze (pat_...).",
+          "label": "Jeton d'accès personnel *",
+          "placeholder": "pat_..."
+        },
+        "user": {
+          "help": "ID utilisateur Coze facultatif utilisé pour les opérations de bot (si requis par votre configuration).",
+          "label": "ID utilisateur",
+          "placeholder": "ID utilisateur pour les opérations de bot"
+        }
+      },
+      "description": {
+        "create": "Créer un nouveau canal API",
+        "edit": "Mettre à jour la configuration du canal"
+      },
+      "errors": {
+        "operation_failed": "L'opération a échoué",
+        "request_failed_title": "La requête a échoué",
+        "unexpected_title": "Erreur inattendue"
+      },
+      "fields": {
+        "api_key": {
+          "help": "Identifiants pour le fournisseur sélectionné. Stockés chiffrés. Laissez vide lors de la modification pour conserver l'existant.",
+          "label": "Clé API",
+          "note": "La clé API actuelle est masquée pour des raisons de sécurité. Entrez une nouvelle clé uniquement si vous souhaitez la mettre à jour.",
+          "placeholder_create": "Entrez la clé API",
+          "placeholder_edit": "Laissez vide pour conserver la clé existante"
+        },
+        "base_url": {
+          "help": "Point de terminaison de l'API du fournisseur (ex: https://api.openai.com). Laissez vide pour utiliser la valeur par défaut du fournisseur choisi.",
+          "label": "URL de base (Facultatif)",
+          "placeholder": "ex: https://api.openai.com"
+        },
+        "name": {
+          "help": "Identifiant lisible. Utilisez fournisseur/environnement dans le nom, par exemple \"OpenAI GPT-4 Production\".",
+          "label": "Nom du canal *",
+          "placeholder": "Entrez le nom du canal"
+        },
+        "priority": {
+          "help": "Les nombres inférieurs sont essayés en premier lorsque plusieurs canaux prennent en charge un modèle.",
+          "label": "Priorité"
+        },
+        "type": {
+          "help": "Sélectionnez le fournisseur en amont. Cela détermine les modèles, la méthode d'authentification et l'URL de base par défaut.",
+          "label": "Type de canal *",
+          "placeholder": "Sélectionnez le type de canal"
+        },
+        "weight": {
+          "help": "Poids d'équilibrage de charge entre les canaux ayant la même priorité. Un poids plus élevé reçoit plus de requêtes.",
+          "label": "Poids"
+        }
+      },
+      "groups": {
+        "add_placeholder": "Add custom group...",
+        "help": "Restreindre l'accès à des groupes d'utilisateurs spécifiques. Vide signifie que tous les utilisateurs peuvent y accéder. Le groupe par défaut est toujours conservé.",
+        "label": "Groupes *"
+      },
+      "inference_profile": {
+        "help": "Carte JSON du nom du modèle vers l'ARN du profil d'inférence AWS Bedrock. Utilisez pour router certains modèles via des profils d'inférence Bedrock spécifiques.",
+        "label": "Carte ARN de profil d'inférence (AWS Bedrock)",
+        "note": "Mapper les noms de modèles aux ARN de profil d'inférence AWS Bedrock (facultatif)",
+        "placeholder": "Mappage ARN de profil d'inférence AWS Bedrock :\n{{example}}"
+      },
+      "key": {
+        "help": "The API key for authentication with the provider.",
+        "label": "API Key"
+      },
+      "loading": "Chargement du canal...",
+      "mcp": {
+        "blacklist_add": "Ajouter",
+        "blacklist_description": "Bloquer les outils MCP pour ce canal. Utilisez serveur.outil ou le nom de l'outil.",
+        "blacklist_label": "Liste noire des outils MCP",
+        "blacklist_placeholder": "serveur.nom_outil"
+      },
+      "model_configs": {
+        "format_error": "Impossible de formater model_configs : {{error}}",
+        "help": "Paramètres unifiés par modèle. Champs : ratio (multiplicateur de prix d'entrée), completion_ratio (multiplicateur de sortie), max_tokens (limite).",
+        "invalid": "Format de configurations de modèle invalide",
+        "invalid_short": "✗ Configuration invalide",
+        "label": "Configurations de modèle (JSON)",
+        "load_default": "Load Default",
+        "note": "Configurer la tarification et les limites par modèle (facultatif)",
+        "placeholder": "Configurations de modèle au format JSON :\n{{example}}",
+        "select_type_notice": "Sélectionnez un type de canal pour configurer les configurations de modèle.",
+        "valid": "✓ Configuration valide"
+      },
+      "model_mapping": {
+        "help": "Mapper les noms de modèles externes/hérités vers les noms de modèles réels de ce fournisseur. Objet JSON : { \"from\": \"to\" }.",
+        "label": "Mappage de modèles (JSON)",
+        "note": "Mapper les noms de modèles pour ce canal (facultatif)",
+        "placeholder": "Mappage de noms de modèles au format JSON :\n{{example}}"
+      },
+      "models": {
+        "add_custom": "Ajouter",
+        "clear": "Clear",
+        "clear_all": "Tout effacer",
+        "copy_title": "Cliquez pour copier le nom du modèle",
+        "custom_placeholder": "Ajouter un modèle personnalisé...",
+        "fill_all": "Remplir tous les modèles pris en charge ({{count}})",
+        "fill_related": "Remplir les modèles associés ({{count}})",
+        "help": "Modèles disponibles via ce canal. Laissez vide pour autoriser tous les modèles du fournisseur. Utilisez les boutons pour remplir les modèles associés/tous ; les doublons sont supprimés.",
+        "label": "Modèles pris en charge *",
+        "no_match": "No models found",
+        "no_selection": "No models selected",
+        "search_placeholder": "Rechercher des modèles...",
+        "select_type_notice": "Sélectionnez un type de canal pour configurer les modèles pris en charge.",
+        "selected_count": "Selected Models ({{count}})"
+      },
+      "name": {
+        "help": "A descriptive name for this channel to identify it in logs and lists.",
+        "label": "Channel Name *",
+        "placeholder": "My Channel"
+      },
+      "openai_compatible": {
+        "api_format": {
+          "help": "Sélectionnez quelle surface API en amont doit gérer les requêtes. ChatCompletion est la valeur par défaut historique ; choisissez Response lorsque l'amont attend des charges utiles API OpenAI Response.",
+          "label": "Format API en amont *",
+          "option": {
+            "chat_completion": "ChatCompletion (défaut)",
+            "response": "Response"
+          },
+          "placeholder": "Sélectionnez le format API en amont"
+        },
+        "base_url": {
+          "help": "URL de base du point de terminaison compatible OpenAI, ex: https://api.votre-fournisseur.com. /v1 est ajouté automatiquement si nécessaire.",
+          "label": "URL de base *",
+          "placeholder": "https://api.votre-fournisseur.com"
+        },
+        "heading": "Configuration compatible OpenAI"
+      },
+      "plugin": {
+        "params": {
+          "help": "Paramètres spécifiques au fournisseur/plugin si requis.",
+          "label": "Paramètres du plugin",
+          "placeholder": "Paramètres spécifiques au plugin"
+        }
+      },
+      "priority": {
+        "help": "Higher priority channels are tried first. Default is 0.",
+        "label": "Priority"
+      },
+      "ratelimit": {
+        "help": "Maximum requests per minute. 0 means unlimited.",
+        "label": "Rate Limit"
+      },
+      "spark": {
+        "version": {
+          "help": "Sélectionnez la version de l'API pour iFlytek Spark (ex: v3.5).",
+          "label": "Version Spark",
+          "placeholder": "Sélectionnez la version Spark"
+        }
+      },
+      "system_prompt": {
+        "help": "Texte facultatif ajouté comme message système à chaque requête envoyée via ce canal. Utilisez pour des garde-fous ou un style. Les clients peuvent toujours remplacer par leurs propres messages système.",
+        "label": "Invite système (System Prompt)",
+        "placeholder": "Invite système facultative à ajouter à toutes les requêtes"
+      },
+      "title": {
+        "create": "Créer un canal",
+        "edit": "Modifier le canal"
+      },
+      "tooling": {
+        "add_custom": "Add custom tool...",
+        "available_tools": "Available Tools",
+        "editor_disabled": "Fix JSON error to enable editor",
+        "errors": {
+          "invalid_json_message": "Corrigez le JSON des outils avant de modifier la liste blanche.",
+          "invalid_json_title": "JSON invalide"
+        },
+        "fix_json_notice": "Corrigez le JSON des outils ci-dessus pour gérer la liste blanche des outils intégrés.",
+        "format_error": "Impossible de formater la configuration des outils : {{error}}",
+        "help": "Définir la politique des outils intégrés à l'échelle du canal. Configurez la liste blanche et la tarification par appel pour les outils intégrés du fournisseur.",
+        "invalid": "Format de configuration des outils invalide",
+        "label": "Configuration des outils (JSON)",
+        "no_whitelist": "No tools whitelisted",
+        "note": "Configurer les listes blanches d'outils intégrés et la tarification par appel (facultatif)",
+        "placeholder": "Configuration des outils au format JSON :\n{{example}}",
+        "whitelist": {
+          "add_tool": "Ajouter un outil",
+          "custom_placeholder": "Nom de l'outil personnalisé",
+          "empty": "Aucun outil épinglé. Tous les outils intégrés restent disponibles.",
+          "known": "Outils connus :",
+          "pricing_required": "Définissez le prix pour débloquer \"{{tool}}\". Les requêtes restent bloquées jusqu'à ce que la tarification soit configurée.",
+          "subtitle": "Une liste blanche vide garde tous les outils du fournisseur disponibles.",
+          "title": "Liste blanche des outils intégrés"
+        },
+        "whitelist_editor": "Whitelist Editor",
+        "whitelisted_tools": "Whitelisted Tools ({{count}})"
+      },
+      "type": {
+        "help": "The provider type for this channel. Changing this may reset some fields.",
+        "label": "Channel Type *",
+        "not_found": "No channel type found.",
+        "placeholder": "Select a channel type",
+        "search": "Search channel type..."
+      },
+      "type_change": {
+        "cancel": "Cancel",
+        "confirm": "Change Type",
+        "description": "You are about to change the channel type from \"{{fromType}}\" to \"{{toType}}\".",
+        "title": "Change Channel Type?",
+        "warning": "Warning: This may reset some configuration fields specific to the previous channel type. Any unsaved changes may be lost."
+      },
+      "validation": {
+        "api_key_required": "La clé API est requise.",
+        "base_url_required": "L'URL de base est requise pour ce type de canal.",
+        "error_title": "Erreur de validation",
+        "inference_profile_invalid": "La carte ARN de profil d'inférence contient un JSON invalide.",
+        "invalid_json": "Format JSON invalide",
+        "invalid_json_short": "✗ JSON invalide",
+        "invalid_json_title": "JSON invalide",
+        "model_configs_message": "Les configurations de modèle sont invalides.",
+        "model_configs_title": "Configurations invalides",
+        "model_mapping_invalid": "Le mappage de modèles contient un JSON invalide.",
+        "oauth_invalid_json": "Le JSON de configuration OAuth JWT est invalide.",
+        "oauth_missing_field_message": "Configuration OAuth JWT manquante : {{field}}",
+        "oauth_missing_field_title": "Champ manquant",
+        "oauth_parse_message": "Erreur d'analyse OAuth JWT : {{error}}",
+        "oauth_parse_title": "Erreur d'analyse",
+        "valid_json": "✓ JSON valide"
+      },
+      "vertex": {
+        "credentials": {
+          "help": "Collez le JSON d'un compte de service avec les autorisations Vertex AI.",
+          "label": "Identifiants du compte de service *",
+          "placeholder": "Identifiants JSON du compte de service Google"
+        },
+        "heading": "Configuration Vertex AI",
+        "project": {
+          "help": "Votre ID de projet GCP hébergeant les ressources Vertex AI.",
+          "label": "ID de projet *",
+          "placeholder": "mon-id-projet"
+        },
+        "region": {
+          "help": "Région Google Cloud pour Vertex AI (ex: us-central1).",
+          "label": "Région *",
+          "placeholder": "us-central1"
+        }
+      },
+      "weight": {
+        "help": "Used for load balancing between channels of the same priority. Default is 0.",
+        "label": "Weight"
+      }
+    },
+    "empty": "Aucun canal trouvé. Créez votre premier canal pour commencer.",
+    "group_default": "défaut",
+    "notifications": {
+      "bulk_test_failed_title": "Échec du test global",
+      "bulk_test_started": "Test global des canaux démarré.",
+      "delete_disabled_success": "Canaux désactivés supprimés.",
+      "delete_failed_message": "Erreur inconnue",
+      "delete_failed_title": "Échec de la suppression",
+      "test_failed_message": "Erreur inconnue",
+      "test_failed_title": "Échec du test du canal",
+      "test_success": "Test du canal réussi.",
+      "testing_model_failed_message": "Impossible de mettre à jour le modèle de test",
+      "testing_model_failed_title": "Échec de l'enregistrement",
+      "testing_model_saved": "Modèle de test enregistré."
+    },
+    "response": {
+      "not_tested": "Non testé",
+      "prefix": "Temps de réponse :",
+      "tested_at": "Testé : {{local}} / {{utc}}Z"
+    },
+    "search": {
+      "id_label": "ID",
+      "placeholder": "Rechercher un canal par nom, type ou groupe..."
+    },
+    "status": {
+      "active": "Actif",
+      "disabled": "Désactivé",
+      "paused": "En pause"
+    },
+    "testing": {
+      "auto": "LE MOINS CHER"
+    },
+    "title": "Canaux",
+    "toolbar": {
+      "delete_disabled": "Supprimer désactivés",
+      "delete_disabled_mobile": "Supprimer tous les désactivés",
+      "test_all": "Tout tester",
+      "test_all_mobile": "Tester tous les canaux"
+    },
+    "type_unknown": "Type {{type}}"
+  },
+  "redemptions": {
+    "actions": {
+      "add": "Ajouter un remboursement",
+      "cancel": "Annuler",
+      "close": "Fermer",
+      "create": "Créer le remboursement",
+      "creating": "Création...",
+      "delete": "Supprimer",
+      "disable": "Désactiver",
+      "edit": "Modifier",
+      "enable": "Activer",
+      "generate": "Générer",
+      "refresh": "Actualiser",
+      "search": "Rechercher",
+      "update": "Mettre à jour le remboursement",
+      "updating": "Mise à jour..."
+    },
+    "columns": {
+      "actions": "Actions",
+      "code": "Code",
+      "created": "Créé",
+      "id": "ID",
+      "name": "Nom",
+      "quota": "Quota",
+      "status": "Statut"
+    },
+    "description": "Gérer les codes de recharge",
+    "dialog": {
+      "generated_codes": "Codes générés :",
+      "title": "Générer des codes de remboursement"
+    },
+    "edit": {
+      "description": {
+        "create": "Créer un nouveau code de remboursement",
+        "edit": "Mettre à jour les paramètres du code de remboursement"
+      },
+      "loading": "Chargement du remboursement...",
+      "notifications": {
+        "create_success": "Remboursement créé avec succès",
+        "failed": "L'opération a échoué",
+        "update_success": "Remboursement mis à jour avec succès"
+      },
+      "title": {
+        "create": "Créer un remboursement",
+        "edit": "Modifier le remboursement"
+      },
+      "validation": {
+        "count_max": "Le nombre ne peut pas dépasser 100",
+        "count_min": "Le nombre doit être positif",
+        "name_max": "Max 20 caractères",
+        "name_required": "Le nom est requis",
+        "quota_min": "Le quota ne peut pas être négatif"
+      }
+    },
+    "fields": {
+      "count": {
+        "label": "Nombre (1-100)"
+      },
+      "name": {
+        "label": "Nom",
+        "placeholder": "Entrez le nom du remboursement"
+      },
+      "quota": {
+        "label": "Quota"
+      }
+    },
+    "search": {
+      "dropdown_placeholder": "Tapez le nom du remboursement...",
+      "placeholder": "Rechercher des remboursements par nom..."
+    },
+    "status": {
+      "disabled": "Désactivé",
+      "unknown": "Inconnu",
+      "unused": "Inutilisé",
+      "used": "Utilisé"
+    },
+    "title": "Remboursements",
+    "toolbar": {
+      "created_time": "Heure de création",
+      "default": "Défaut",
+      "id": "ID",
+      "name": "Nom",
+      "quota": "Quota",
+      "redeemed_time": "Heure d'utilisation",
+      "status": "Statut"
+    }
+  },
+  "tokens": {
+    "edit": {
+      "actions": {
+        "cancel": "Annuler",
+        "create": "Créer le jeton",
+        "creating": "Création...",
+        "update": "Mettre à jour le jeton",
+        "updating": "Mise à jour..."
+      },
+      "aria": {
+        "help_label": "Aide : {{label}}"
+      },
+      "description": {
+        "create": "Créer un nouveau jeton API",
+        "edit": "Mettre à jour les paramètres du jeton"
+      },
+      "errors": {
+        "operation_failed": "L'opération a échoué",
+        "request_failed_title": "La requête a échoué",
+        "unexpected_title": "Erreur inattendue"
+      },
+      "fields": {
+        "expired_time": {
+          "day": "1 Jour",
+          "help": "Définissez quand ce jeton expire. Laissez vide pour jamais. Utilisez les boutons rapides pour les durées courantes.",
+          "hour": "1 Heure",
+          "label": "Heure d'expiration",
+          "minute": "1 Minute",
+          "month": "1 Mois",
+          "never": "N'expire jamais"
+        },
+        "name": {
+          "help": "Identifiant lisible pour ce jeton.",
+          "label": "Nom du jeton",
+          "placeholder": "Entrez le nom du jeton"
+        },
+        "remain_quota": {
+          "help": "Le quota est mesuré en jetons. L'USD est une estimation basée sur la tarification par unité configurée par l'administrateur.",
+          "label": "Quota restant",
+          "usd_hint": "Env. {{usd}} USD restants"
+        },
+        "subnet": {
+          "help": "Autoriser les requêtes uniquement depuis ces IP ou plages CIDR (ex: 192.168.1.0/24). Les entrées multiples sont séparées par des virgules.",
+          "label": "Restriction IP (Facultatif)",
+          "placeholder": "ex: 192.168.1.0/24 ou 10.0.0.1"
+        },
+        "unlimited": {
+          "help": "Si activé, ce jeton ignore les vérifications de quota restant.",
+          "label": "Quota illimité"
+        }
+      },
+      "loading": "Chargement du jeton...",
+      "models": {
+        "help": "Restreindre ce jeton à des modèles spécifiques. Laissez vide pour autoriser tous les modèles disponibles pour l'utilisateur/groupe.",
+        "label": "Modèles autorisés",
+        "search_placeholder": "Rechercher des modèles..."
+      },
+      "notifications": {
+        "create_success": "Jeton créé avec succès",
+        "update_success": "Jeton mis à jour avec succès"
+      },
+      "title": {
+        "create": "Créer un jeton",
+        "edit": "Modifier le jeton"
+      },
+      "validation": {
+        "error_title": "Erreur de validation",
+        "fix_fields": "Veuillez corriger les champs mis en évidence.",
+        "invalid_expiration": "Heure d'expiration invalide"
+      }
+    },
+    "page": {
+      "actions": {
+        "add": "Ajouter un jeton",
+        "add_mobile": "Ajouter un nouveau jeton",
+        "delete": "Supprimer",
+        "disable": "Désactiver",
+        "edit": "Modifier",
+        "enable": "Activer"
+      },
+      "columns": {
+        "actions": "Actions",
+        "created": "Créé",
+        "expires": "Expire",
+        "id": "ID",
+        "key": "Clé",
+        "last_access": "Dernier accès",
+        "name": "Nom",
+        "never": "Jamais",
+        "no_value": "—",
+        "remaining_quota": "Quota restant",
+        "remaining_title": "Restant : {{label}}",
+        "remaining_tooltip": "Ce jeton conserve plus de quota que l'allocation de votre compte.",
+        "status": "Statut",
+        "used_quota": "Quota utilisé",
+        "used_title": "Utilisé : {{label}}"
+      },
+      "confirm": {
+        "delete": "Voulez-vous vraiment supprimer le jeton \"{{label}}\" ?"
+      },
+      "description": "Gérez vos jetons d'accès API",
+      "dialog": {
+        "close": "Fermer",
+        "manual_copy_description": "L'accès au presse-papiers n'est pas disponible. Copiez la clé API ci-dessous manuellement pour continuer à l'utiliser.",
+        "manual_copy_title": "Copie manuelle requise"
+      },
+      "empty": "Aucun jeton trouvé. Créez votre premier jeton pour commencer.",
+      "key": {
+        "copied": "Copié !",
+        "copy": "Copier le jeton"
+      },
+      "quota": {
+        "unlimited": "Illimité"
+      },
+      "search": {
+        "id_label": "ID : {{id}}",
+        "placeholder": "Rechercher des jetons par nom...",
+        "quota_label": "Quota : {{quota}}"
+      },
+      "status": {
+        "disabled": "Désactivé",
+        "enabled": "Activé",
+        "exhausted": "Épuisé",
+        "expired": "Expiré",
+        "unknown": "Inconnu"
+      },
+      "table": {
+        "id_placeholder": "(ID {{id}})"
+      },
+      "title": "Jetons"
+    }
+  },
+  "users": {
+    "dialogs": {
+      "create": {
+        "actions": {
+          "close": "Fermer",
+          "create": "Créer"
+        },
+        "fields": {
+          "display_name": {
+            "label": "Nom d'affichage",
+            "placeholder": "Entrez le nom d'affichage"
+          },
+          "password": {
+            "label": "Mot de passe",
+            "placeholder": "Entrez le mot de passe"
+          },
+          "username": {
+            "label": "Nom d'utilisateur",
+            "placeholder": "Entrez le nom d'utilisateur"
+          }
+        },
+        "title": "Créer un utilisateur"
+      },
+      "topup": {
+        "actions": {
+          "close": "Fermer",
+          "submit": "Soumettre"
+        },
+        "fields": {
+          "pool_id": {
+            "label": "Source (facultatif)",
+            "placeholder": "Recharge directe",
+            "direct": "Recharge directe",
+            "hint": "Le quota sera déduit du pool budgétaire sélectionné"
+          },
+          "quota": {
+            "label": "Quota",
+            "placeholder": "Entrez le changement de quota"
+          },
+          "remark": {
+            "label": "Remarque",
+            "placeholder": "Facultatif"
+          }
+        },
+        "notifications": {
+          "error_title": "Échec de la recharge",
+          "error_message": "L'opération a échoué. Veuillez réessayer."
+        },
+        "title": "Recharger {{username}}"
+      }
+    },
+    "edit": {
+      "actions": {
+        "add": "Ajouter",
+        "cancel": "Annuler",
+        "create": "Créer l'utilisateur",
+        "creating": "Création...",
+        "update": "Mettre à jour l'utilisateur",
+        "updating": "Mise à jour..."
+      },
+      "aria": {
+        "help_display_name": "Aide : Nom d'affichage",
+        "help_email": "Aide : E-mail",
+        "help_group": "Aide : Groupe",
+        "help_password": "Aide : Mot de passe",
+        "help_quota": "Aide : Quota",
+        "help_username": "Aide : Nom d'utilisateur"
+      },
+      "description": {
+        "create": "Créer un nouveau compte utilisateur",
+        "edit": "Mettre à jour les informations de l'utilisateur"
+      },
+      "errors": {
+        "operation_failed": "L'opération a échoué",
+        "request_failed_title": "La requête a échoué",
+        "unexpected_title": "Erreur inattendue"
+      },
+      "fields": {
+        "display_name": {
+          "help": "Nom lisible facultatif affiché dans l'interface utilisateur.",
+          "label": "Nom d'affichage",
+          "placeholder": "Entrez le nom d'affichage"
+        },
+        "email": {
+          "help": "Adresse de contact facultative pour la réinitialisation du mot de passe et les notifications.",
+          "label": "E-mail",
+          "placeholder": "Entrez l'e-mail"
+        },
+        "group": {
+          "help": "Le groupe d'utilisateurs contrôle l'accès et la visibilité des modèles/canaux.",
+          "label": "Groupe *",
+          "placeholder": "Sélectionnez un groupe"
+        },
+        "mcp_tool_blacklist": {
+          "help": "Bloquer les outils MCP pour cet utilisateur. Utilisez server.tool ou le nom de l'outil.",
+          "label": "Liste noire des outils MCP",
+          "placeholder": "server.tool_name"
+        },
+        "password": {
+          "help": "La longueur minimale dépend de la politique. Laissez vide lors de la modification pour conserver inchangé.",
+          "label_create": "Mot de passe *",
+          "label_edit": "Nouveau mot de passe (laisser vide pour conserver l'actuel)",
+          "placeholder": "Entrez le mot de passe"
+        },
+        "quota": {
+          "help": "Les unités de quota sont des jetons. L'estimation USD utilise le ratio par unité configuré par l'administrateur.",
+          "label": "Quota ({{usd}})"
+        },
+        "username": {
+          "help": "Nom de connexion unique. Min 3 caractères.",
+          "label": "Nom d'utilisateur *",
+          "placeholder": "Entrez le nom d'utilisateur"
+        }
+      },
+      "loading": "Chargement de l'utilisateur...",
+      "notifications": {
+        "create_success": "Utilisateur créé avec succès",
+        "update_success": "Utilisateur mis à jour avec succès"
+      },
+      "title": {
+        "create": "Créer un utilisateur",
+        "edit": "Modifier l'utilisateur"
+      },
+      "validation": {
+        "display_name_max": "Le nom d'affichage doit comporter au plus 20 caractères",
+        "email_invalid": "Un e-mail valide est requis",
+        "email_max": "L'e-mail doit comporter au plus 50 caractères",
+        "error_title": "Erreur de validation",
+        "fix_fields": "Veuillez corriger les champs mis en évidence.",
+        "group_required": "Le groupe est requis",
+        "quota_min": "Le quota ne peut pas être négatif",
+        "username_max": "Le nom d'utilisateur doit comporter au plus 30 caractères",
+        "username_min": "Le nom d'utilisateur doit comporter au moins 3 caractères"
+      }
+    },
+    "page": {
+      "actions": {
+        "delete": "Supprimer",
+        "disable": "Désactiver",
+        "edit": "Modifier",
+        "enable": "Activer",
+        "topup": "Recharger"
+      },
+      "columns": {
+        "actions": "Actions",
+        "display_name": "Nom d'affichage",
+        "group": "Groupe",
+        "id": "ID",
+        "remaining_quota": "Quota restant",
+        "role": "Rôle",
+        "status": "Statut",
+        "used_quota": "Quota utilisé",
+        "username": "Nom d'utilisateur"
+      },
+      "description": "Gérer les utilisateurs",
+      "empty": "Aucun utilisateur trouvé. Ajoutez votre premier utilisateur pour commencer.",
+      "notifications": {
+        "action_failed_message": "Impossible d'appliquer le changement.",
+        "action_failed_title": "L'action a échoué",
+        "load_failed_message": "Échec du chargement des utilisateurs.",
+        "load_failed_title": "Accès refusé",
+        "search_failed_message": "La recherche a échoué.",
+        "search_failed_title": "La recherche a échoué"
+      },
+      "search": {
+        "id_label": "ID : {{id}}",
+        "placeholder": "Rechercher des utilisateurs par nom d'utilisateur...",
+        "role_label": "Rôle : {{role}}",
+        "status_label": "Statut : {{status}}"
+      },
+      "table": {
+        "quota": {
+          "unlimited": "Illimité"
+        },
+        "remaining_quota_title": "Restant : {{quota}}",
+        "role": {
+          "admin": "Admin",
+          "guest": "Invité",
+          "super_admin": "Super Admin",
+          "user": "Utilisateur"
+        },
+        "status": {
+          "disabled": "Désactivé",
+          "enabled": "Activé"
+        },
+        "used_quota_title": "Utilisé : {{quota}}"
+      },
+      "title": "Utilisateurs",
+      "toolbar": {
+        "add_user": "Ajouter un utilisateur",
+        "sort": {
+          "created_time": "Heure de création",
+          "default": "Défaut",
+          "id": "ID",
+          "quota": "Quota restant",
+          "used_quota": "Quota utilisé",
+          "username": "Nom d'utilisateur"
+        },
+        "sort_order": {
+          "asc": "ASC",
+          "desc": "DESC"
+        }
+      }
+    }
+  },
+  "recharges": {
+    "title": "Gestion des Recharges",
+    "description": "Examiner et traiter les demandes de recharge des utilisateurs",
+    "empty": "Aucune demande de recharge",
+    "columns": {
+      "id": "ID",
+      "user": "Utilisateur",
+      "amount": "Montant",
+      "status": "Statut",
+      "remark": "Remarque",
+      "admin_note": "Note Admin",
+      "created": "Date de création",
+      "actions": "Actions"
+    },
+    "status": {
+      "pending": "En attente",
+      "approved": "Approuvé",
+      "rejected": "Rejeté"
+    },
+    "actions": {
+      "review": "Examiner",
+      "approve_btn": "Approuver",
+      "reject_submit": "Rejeter",
+      "reject_reason_placeholder": "Entrez le motif du rejet (obligatoire)...",
+      "cancel": "Annuler"
+    },
+    "notifications": {
+      "approved": "✅ Demande approuvée ! Le solde de l'utilisateur a été mis à jour.",
+      "rejected": "❌ Demande rejetée.",
+      "failed": "Échec de l'opération. Veuillez réessayer.",
+      "reason_required": "⚠️ Veuillez entrer un motif de rejet."
+    }
+  }
+}

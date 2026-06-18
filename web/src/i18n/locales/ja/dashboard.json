@@ -1,0 +1,100 @@
+{
+  "dashboard": {
+    "cards": {
+      "avg_cost": "リクエスト当たり平均コスト",
+      "avg_daily": "1日平均: {{value}}",
+      "quota_used": "使用済みクォータ",
+      "tokens_consumed": "消費トークン",
+      "tokens_per_request": "1リクエストあたり {{value}} トークン",
+      "total_requests": "総リクエスト数"
+    },
+    "description": "API の利用状況とアカウント統計を確認",
+    "errors": {
+      "fetch_failed": "ダッシュボードの取得に失敗しました",
+      "future": "終了日は未来の日付にできません",
+      "label": "エラー",
+      "range_limit_admin": "期間は1年を超えられません",
+      "range_limit_user": "期間は7日を超えられません",
+      "range_order": "開始日は終了日より後にはできません",
+      "too_old_admin": "開始日は1年以上前にはできません",
+      "too_old_user": "開始日は7日以上前にはできません"
+    },
+    "fallbacks": {
+      "model": "不明なモデル",
+      "owner": "不明",
+      "token": "名称未設定トークン",
+      "user": "不明なユーザー"
+    },
+    "filters": {
+      "all_users": "すべてのユーザー",
+      "apply": "適用",
+      "from": "開始日",
+      "from_aria": "開始日",
+      "loading": "読み込み中...",
+      "seven_days": "7日",
+      "thirty_days": "30日",
+      "to": "終了日",
+      "to_aria": "終了日",
+      "today": "今日",
+      "user": "ユーザー",
+      "user_aria": "ユーザーを選択"
+    },
+    "insights": {
+      "busiest_day": "最も混雑した日",
+      "models_in_use": "利用中のモデル数",
+      "peak_token_day": "トークンピーク日",
+      "requests_per_model": "モデルあたり {{value}} 件"
+    },
+    "labels": {
+      "no_data": "データなし",
+      "no_value": "—",
+      "quota": "クォータ",
+      "quota_consumed": "{{value}} 使用",
+      "requests": "リクエスト",
+      "requests_value": "{{value}} 件",
+      "tokens": "トークン",
+      "tokens_value": "{{value}} トークン"
+    },
+    "loading": "ダッシュボードを更新中...",
+    "login_required": "ダッシュボードにアクセスするにはログインしてください。",
+    "metrics": {
+      "expenses": "コスト",
+      "requests": "リクエスト",
+      "tokens": "トークン"
+    },
+    "overview": {
+      "subtitle": "選択した期間の合計とトップ指標",
+      "title": "利用概要",
+      "updated": "更新:"
+    },
+    "sections": {
+      "metric_label": "指標: {{metric}}",
+      "metric_placeholder": "指標を選択",
+      "model_usage": "モデル別利用状況",
+      "token_usage": "トークン利用状況",
+      "user_usage": "ユーザー別利用状況"
+    },
+    "title": "ダッシュボード",
+    "empty": {
+      "title": "データがありません",
+      "description": "APIリクエストを開始すると、ここに使用統計とグラフが表示されます。"
+    },
+    "top_models": {
+      "highest_cost": "コスト最大",
+      "most_requests": "リクエスト最多",
+      "most_tokens": "トークン最多",
+      "title": "期間内トップモデル"
+    },
+    "pool_summary": {
+      "title": "予算プール概要",
+      "subtitle": "アクティブな予算プールの割り当てと使用状況",
+      "no_pools": "アクティブな予算プールはありません",
+      "go_to_pools": "予算プール管理へ",
+      "total_budget": "合計予算",
+      "total_allocated": "割り当て済み",
+      "total_available": "利用可能",
+      "pool_count": "アクティブプール",
+      "view_all": "すべて表示"
+    }
+  }
+}

@@ -1,0 +1,356 @@
+{
+  "operation_settings": {
+    "general": {
+      "approximate_token": "Activer le comptage approximatif des tokens",
+      "approximate_token_desc": "Utilisez une estimation plus rapide du comptage des tokens pour améliorer les performances (au prix d'une légère perte de précision).",
+      "chat_link": "Lien de chat",
+      "chat_link_desc": "Lien externe de chat/assistance affiché dans l'interface.",
+      "description": "Configurer les paramètres opérationnels généraux",
+      "display_in_currency": "Afficher en devise",
+      "display_in_currency_desc": "Afficher l'utilisation et les quotas en devise dans l'interface, selon la conversion configurée.",
+      "display_unit": "Unité d'affichage",
+      "display_unit_desc": "Choisissez comment afficher les quotas : nombre de tokens, USD ou CNY. Les changements s'appliquent globalement.",
+      "unit_token": "Tokens",
+      "unit_token_desc": "Afficher le quota en nombre de tokens.",
+      "unit_usd": "USD ($)",
+      "unit_usd_desc": "Afficher le quota en dollars américains.",
+      "unit_cny": "CNY (¥)",
+      "unit_cny_desc": "Afficher le quota en yuans chinois (RMB).",
+      "display_token_stat": "Afficher les statistiques de tokens",
+      "display_token_stat_desc": "Afficher les statistiques de tokens dans les journaux et tableaux de bord lorsque disponibles.",
+      "log_consume_enabled": "Activer les journaux de consommation",
+      "log_consume_enabled_desc": "Enregistrer les journaux d'utilisation/consommation. Désactivez pour réduire le stockage nécessaire.",
+      "quota_per_unit": "Quota par unité",
+      "quota_per_unit_desc": "Ratio de conversion pour l'affichage en devise. Plus la valeur est élevée, plus 1 $ représente de quota.",
+      "retry_times": "Nombre de tentatives",
+      "retry_times_desc": "Nombre de tentatives automatiques pour les requêtes amont en cas d'erreurs transitoires.",
+      "save": "Enregistrer les paramètres généraux",
+      "title": "Paramètres généraux",
+      "top_up_link": "Lien de recharge",
+      "top_up_link_desc": "Lien externe permettant aux utilisateurs d'acheter ou de recharger du quota."
+    },
+    "loading": "Chargement des paramètres opérationnels...",
+    "logs": {
+      "clear_button": "Effacer les journaux avant cette date",
+      "clear_failed": "Impossible d'effacer les journaux : {{message}}",
+      "clear_warning": "Cela supprimera définitivement tous les journaux antérieurs à la date sélectionnée.",
+      "cleared_success": "{{count}} journaux effacés !",
+      "description": "Nettoyez les journaux historiques pour libérer de l'espace de stockage",
+      "title": "Gestion des journaux"
+    },
+    "monitoring": {
+      "automatic_disable_channel": "Désactivation automatique des canaux",
+      "automatic_disable_channel_desc": "Désactive automatiquement les canaux présentant des échecs répétés.",
+      "automatic_enable_channel": "Réactivation automatique",
+      "automatic_enable_channel_desc": "Réactive automatiquement les canaux précédemment désactivés lorsqu'ils redeviennent stables.",
+      "channel_disable_threshold": "Seuil de désactivation",
+      "channel_disable_threshold_desc": "Taux d'échec (en %) à partir duquel un canal est désactivé automatiquement. Valeur par défaut : 5 %.",
+      "description": "Configurer les seuils de surveillance et la gestion des canaux",
+      "quota_remind_threshold": "Seuil d'alerte de quota",
+      "quota_remind_threshold_desc": "Lorsque le quota restant passe sous cette valeur, les utilisateurs sont avertis.",
+      "save": "Enregistrer les paramètres de surveillance",
+      "title": "Surveillance et canaux"
+    },
+    "quota": {
+      "description": "Configurer le quota utilisateur et les récompenses d'invitation",
+      "pre_consumed_quota": "Quota préconsommé",
+      "pre_consumed_quota_desc": "Quota réservé au début d'une requête pour éviter les abus. La partie non utilisée est restituée après facturation.",
+      "quota_for_invitee": "Quota pour l'invité",
+      "quota_for_invitee_desc": "Récompense de quota accordée à l'invité après inscription réussie.",
+      "quota_for_inviter": "Quota pour l'invitant",
+      "quota_for_inviter_desc": "Récompense de quota accordée à l'invitant après une invitation réussie.",
+      "quota_for_new_user": "Quota pour un nouvel utilisateur",
+      "quota_for_new_user_desc": "Quota initial accordé à chaque nouvel utilisateur inscrit.",
+      "save": "Enregistrer les paramètres de quota",
+      "title": "Paramètres de quota"
+    }
+  },
+  "other_settings": {
+    "branding": {
+      "description": "Configurer le nom du système, le logo et l'apparence visuelle",
+      "logo_url": "URL du logo",
+      "logo_url_desc": "URL de l'image de logo affichée dans l'en-tête/l'écran de connexion.",
+      "save": "Enregistrer",
+      "system_name": "Nom du système",
+      "system_name_desc": "Nom d'affichage du système utilisé dans l'interface et les e-mails.",
+      "theme": "Thème",
+      "theme_desc": "Nom du thème UI (modern).",
+      "title": "Image de marque du système"
+    },
+    "content": {
+      "about": "Contenu de la page À propos (Markdown pris en charge)",
+      "about_desc": "Contenu de la page À propos. Markdown pris en charge.",
+      "about_placeholder": "Saisissez le contenu de la page À propos...",
+      "description": "Configurer les annonces, la page À propos et le contenu d'accueil",
+      "footer": "Contenu du pied de page (HTML pris en charge)",
+      "footer_desc": "Contenu du pied de page affiché sur tout le site. HTML autorisé ; à utiliser avec précaution.",
+      "footer_placeholder": "Saisissez le contenu du pied de page...",
+      "home_page": "Contenu de la page d'accueil (Markdown)",
+      "home_page_desc": "Contenu affiché sur la page d'accueil. Markdown pris en charge.",
+      "home_page_placeholder": "Saisissez le contenu de la page d'accueil...",
+      "notice": "Annonce (Markdown pris en charge)",
+      "notice_desc": "Annonce globale affichée à tous les utilisateurs. Markdown pris en charge.",
+      "notice_placeholder": "Saisissez le contenu de l'annonce...",
+      "save_about": "Enregistrer la page À propos",
+      "save_footer": "Enregistrer le pied de page",
+      "save_home_page": "Enregistrer la page d'accueil",
+      "save_notice": "Enregistrer l'annonce",
+      "title": "Gestion du contenu"
+    },
+    "loading": "Chargement des autres paramètres...",
+    "updates": {
+      "check_update": "Rechercher des mises à jour",
+      "description": "Vérifier les mises à jour et gérer la version du système",
+      "title": "Mises à jour du système",
+      "update_available": "Mise à jour disponible : {{version}}",
+      "view_versions": "Voir les tags GitHub"
+    }
+  },
+  "personal_settings": {
+    "access_token": {
+      "description": "Générez des tokens d'accès et des liens d'invitation.",
+      "generate_token": "Générer un token d'accès",
+      "get_invite_link": "Obtenir un lien d'invitation",
+      "title": "Token d'accès et invitation"
+    },
+    "passkey": {
+      "delete_button": "Supprimer",
+      "delete_confirm": "Êtes-vous sûr de vouloir supprimer ce passkey ?",
+      "description": "Utilisez la biométrie, les clés de sécurité ou votre appareil pour vous connecter sans mot de passe.",
+      "errors": {
+        "delete_failed": "Échec de la suppression du passkey",
+        "load_failed": "Échec du chargement des passkeys",
+        "not_supported": "Les passkeys ne sont pas pris en charge dans ce navigateur",
+        "register_failed": "Échec de l'enregistrement du passkey",
+        "rename_failed": "Échec du renommage du passkey",
+        "webauthn_unavailable": "WebAuthn n'est pas disponible"
+      },
+      "list_title": "Vos Passkeys",
+      "name_label": "Nom du Passkey",
+      "name_placeholder": "p. ex. MacBook Touch ID",
+      "no_passkeys": "Aucun passkey enregistré.",
+      "no_passkeys_desc": "Ajoutez un passkey pour activer la connexion sans mot de passe avec la biométrie ou une clé de sécurité.",
+      "not_supported_desc": "Votre navigateur ne prend pas en charge les passkeys. Essayez un navigateur moderne comme Chrome, Safari ou Edge.",
+      "processing": "Traitement...",
+      "recommended": "Recommandé",
+      "register_button": "Ajouter un Passkey",
+      "registered": "Enregistré",
+      "rename_button": "Renommer",
+      "rename_placeholder": "Entrez le nouveau nom",
+      "sign_count": "Nombre de connexions",
+      "title": "Passkeys (WebAuthn)"
+    },
+    "profile_info": {
+      "bind_email": "Bind Email",
+      "bind_success": "Email updated successfully",
+      "binding_email": "Binding email...",
+      "description": "Mettez à jour vos informations personnelles et paramètres de compte.",
+      "display_name": "Nom d'affichage",
+      "display_name_placeholder": "Saisissez un nom d'affichage",
+      "email": "E-mail",
+      "email_help": "Changing email requires verification. Send a code to the new address and confirm it below.",
+      "email_placeholder": "Saisissez un e-mail",
+      "email_verification_code_placeholder": "Enter email verification code",
+      "failed": "Échec de la mise à jour",
+      "load_failed": "Failed to load profile information",
+      "send_code": "Send Verification Code",
+      "send_code_success": "Verification code sent. Check your inbox.",
+      "sending_code": "Sending code...",
+      "success": "Profil mis à jour avec succès",
+      "title": "Informations du profil",
+      "update_button": "Mettre à jour le profil",
+      "updating": "Mise à jour...",
+      "username": "Nom d'utilisateur"
+    },
+    "security": {
+      "description": "Gérez vos méthodes de connexion et la protection de votre compte.",
+      "password": {
+        "confirm_password": "Confirmer le mot de passe",
+        "confirm_password_placeholder": "Saisissez à nouveau le nouveau mot de passe",
+        "description": "Utilisez un mot de passe fort et unique comme méthode de connexion de secours.",
+        "failed": "Échec de la mise à jour du mot de passe",
+        "mismatch": "Les mots de passe ne correspondent pas",
+        "new_password": "Nouveau mot de passe",
+        "new_password_placeholder": "Saisissez un nouveau mot de passe",
+        "success": "Mot de passe mis à jour avec succès",
+        "title": "Mot de passe",
+        "update_button": "Mettre à jour le mot de passe",
+        "updating": "Mise à jour..."
+      },
+      "status": {
+        "passkey_off": "Pas de passkey",
+        "passkey_on": "Passkey activé",
+        "password_off": "Pas de mot de passe",
+        "password_on": "Mot de passe défini",
+        "title": "Aperçu de la sécurité",
+        "totp_off": "Pas de TOTP",
+        "totp_on": "TOTP activé"
+      },
+      "title": "Sécurité du compte"
+    },
+    "totp": {
+      "cancel": "Annuler",
+      "confirm": "Confirmer",
+      "description": "Renforcez la sécurité de votre compte grâce à l'authentification à deux facteurs.",
+      "disable_button": "Désactiver TOTP",
+      "disable_placeholder": "Saisissez le code TOTP pour désactiver",
+      "disabled_desc": "Activez l'authentification à deux facteurs pour sécuriser votre compte.",
+      "disabled_title": "TOTP n'est pas activé",
+      "enable_button": "Activer TOTP",
+      "enabled_desc": "Votre compte est protégé par l'authentification à deux facteurs.",
+      "enabled_title": "TOTP est activé",
+      "errors": {
+        "confirm_failed": "Impossible de confirmer le TOTP",
+        "disable_failed": "Impossible de désactiver le TOTP",
+        "invalid_code": "Saisissez un code valide à 6 chiffres",
+        "load_status": "Impossible de charger l'état TOTP",
+        "missing_code": "Veuillez saisir le code TOTP pour désactiver",
+        "setup_failed": "Échec de la configuration TOTP"
+      },
+      "processing": "Traitement...",
+      "secret_key": "Clé secrète (saisie manuelle)",
+      "setup_desc": "Suivez ces étapes pour protéger votre compte avec TOTP.",
+      "setup_instructions_title": "Instructions de configuration",
+      "setup_step1": "Installez une application d'authentification (Google Authenticator, Authy, etc.)",
+      "setup_step2": "Scannez le QR code ci-dessous ou saisissez la clé secrète manuellement",
+      "setup_step3": "Entrez le code à 6 chiffres fourni par l'application",
+      "setup_step4": "Cliquez sur \"Confirmer\" pour activer TOTP",
+      "setup_title": "Configurer l'authentification à deux facteurs",
+      "title": "Authentification à deux facteurs (TOTP)",
+      "verify_code": "Code de vérification",
+      "verify_placeholder": "Entrez le code à 6 chiffres de votre application",
+      "verify_placeholder_mobile": "Entrez un code à 6 chiffres"
+    }
+  },
+  "settings": {
+    "description": "Configurez votre compte et les paramètres du système",
+    "tabs": {
+      "operation": "Opération",
+      "other": "Autres",
+      "personal": "Personnel",
+      "system": "Système"
+    },
+    "title": "Paramètres"
+  },
+  "system_settings": {
+    "description": "Configurer les paramètres et options globaux du système.",
+    "descriptions": {
+      "About": "Contenu de la page À propos (Markdown/HTML pris en charge côté frontend).",
+      "ApproximateTokenEnabled": "Utiliser une estimation plus rapide du comptage des tokens pour de meilleures performances (légèrement moins précise).",
+      "AutomaticDisableChannelEnabled": "Désactiver automatiquement les canaux présentant des échecs répétés.",
+      "AutomaticEnableChannelEnabled": "Réactiver automatiquement les canaux désactivés lorsqu'ils redeviennent stables.",
+      "ChannelDisableThreshold": "Taux d'échec (en %) entraînant la désactivation automatique d'un canal. Par défaut : 5 %.",
+      "ChatLink": "Lien externe de chat/assistance affiché dans l'interface.",
+      "DisplayInCurrencyEnabled": "Afficher l'utilisation et les quotas en devise dans l'interface, selon la conversion configurée.",
+      "DisplayTokenStatEnabled": "Afficher les statistiques de tokens dans les journaux et tableaux de bord lorsque disponibles.",
+      "EmailDomainRestrictionEnabled": "N'autoriser l'inscription qu'aux domaines listés ci-dessous.",
+      "EmailDomainWhitelist": "Domaines e-mail autorisés séparés par des virgules (ex. gmail.com, example.com).",
+      "EmailVerificationEnabled": "Exiger la vérification par e-mail pour l'inscription ou la réinitialisation du mot de passe.",
+      "Footer": "Texte ou HTML du pied de page affiché sur tout le site.",
+      "GitHubClientId": "ID client OAuth GitHub utilisé pour la connexion.",
+      "GitHubClientSecret": "Secret client OAuth GitHub pour échanger les codes d'autorisation (stocké de façon sécurisée).",
+      "GitHubOAuthEnabled": "Activer la connexion OAuth GitHub. Nécessite l'ID client et le secret.",
+      "GroupRatio": "Mapping JSON des ratios de facturation par groupe. Gère remises et majorations.",
+      "HomePageContent": "Contenu affiché sur la page d'accueil.",
+      "LarkClientId": "ID d'application Lark pour la connexion OAuth.",
+      "LarkClientSecret": "Secret d'application Lark utilisé pendant le flux OAuth (stocké de façon sécurisée).",
+      "LogConsumeEnabled": "Enregistrer les journaux d'utilisation/consommation. Désactivez pour réduire le stockage.",
+      "Logo": "URL du logo affiché dans l'en-tête/l'écran de connexion.",
+      "MessagePusherAddress": "Adresse de l'outil de notifications/alertes pour les journaux.",
+      "MessagePusherToken": "Jeton d'authentification du service d'alertes (stocké de façon sécurisée).",
+      "Notice": "Annonce globale affichée à tous les utilisateurs.",
+      "OidcAuthorizationEndpoint": "URL de l'endpoint d'autorisation OIDC.",
+      "OidcClientId": "ID client OIDC utilisé lors du lancement du flux OIDC.",
+      "OidcClientSecret": "Secret client OIDC utilisé pendant l'échange de jetons (stocké de façon sécurisée).",
+      "OidcEnabled": "Activer la connexion OpenID Connect (OIDC). Nécessite endpoints et identifiants.",
+      "OidcTokenEndpoint": "URL de l'endpoint de jeton OIDC.",
+      "OidcUserinfoEndpoint": "URL de l'endpoint userinfo OIDC.",
+      "OidcWellKnown": "URL well-known OIDC (ex. https://issuer/.well-known/openid-configuration).",
+      "PasswordLoginEnabled": "Autoriser la connexion par e-mail et mot de passe. Désactivez pour imposer OAuth ou d'autres fournisseurs.",
+      "PasswordRegisterEnabled": "Autoriser les nouvelles inscriptions par e-mail/mot de passe.",
+      "PreConsumedQuota": "Quota réservé au lancement de la requête pour éviter les abus. La partie non utilisée est restituée après facturation.",
+      "QuotaForInvitee": "Récompense de quota accordée à l'invité une fois inscrit.",
+      "QuotaForInviter": "Récompense de quota accordée à l'invitant après une invitation réussie.",
+      "QuotaForNewUser": "Quota initial accordé à chaque nouvel utilisateur.",
+      "QuotaPerUnit": "Ratio de conversion pour l'affichage en devise. Valeur plus élevée = plus de quota par dollar.",
+      "QuotaRemindThreshold": "Seuil de rappel lorsque le quota restant est inférieur à la valeur indiquée.",
+      "RegisterEnabled": "Interrupteur principal des inscriptions utilisateur. Désactivez pour bloquer les nouveaux comptes.",
+      "RetryTimes": "Nombre de tentatives automatiques pour les erreurs amont transitoires.",
+      "SMTPAccount": "Nom d'utilisateur ou adresse e-mail SMTP utilisé pour l'authentification.",
+      "SMTPFrom": "Adresse d'expéditeur utilisée pour les e-mails sortants.",
+      "SMTPPort": "Port du serveur SMTP (ex. 587 pour STARTTLS, 465 pour SMTPS).",
+      "SMTPServer": "Nom d'hôte du serveur SMTP pour l'envoi d'e-mails.",
+      "SMTPToken": "Mot de passe ou jeton SMTP utilisé pour s'authentifier (stocké de façon sécurisée).",
+      "ServerAddress": "URL publique de ce serveur (utilisée dans les liens/rappels).",
+      "SystemName": "Nom d'affichage du système dans l'interface et les e-mails.",
+      "Theme": "Thème UI (modern).",
+      "TopUpLink": "Lien externe permettant d'acheter ou recharger du quota.",
+      "TurnstileCheckEnabled": "Activer Cloudflare Turnstile sur les actions critiques (inscription/réinitialisation).",
+      "TurnstileSecretKey": "Clé secrète Turnstile utilisée côté serveur (à conserver confidentielle).",
+      "TurnstileSiteKey": "Clé site Turnstile utilisée côté frontend.",
+      "WeChatAccountQRCodeImageURL": "URL de l'image du QR code du compte WeChat affiché aux utilisateurs.",
+      "WeChatAuthEnabled": "Activer la connexion WeChat. Nécessite la configuration du serveur WeChat.",
+      "WeChatServerAddress": "URL de base du relais/serveur WeChat.",
+      "WeChatServerToken": "Jeton de vérification pour l'intégration WeChat (stocké de façon sécurisée)."
+    },
+    "disabled": "Désactivé",
+    "enabled": "Activé",
+    "groups": {
+      "authentication": {
+        "description": "Contrôlez la façon dont les utilisateurs s'inscrivent et se connectent à votre espace de travail.",
+        "title": "Authentification et inscription"
+      },
+      "branding": {
+        "description": "Personnalisez l'apparence et l'expérience produit.",
+        "title": "Image de marque et contenu"
+      },
+      "channels": {
+        "description": "Réagissez automatiquement à l'état des canaux amont et à leur stratégie de reprise.",
+        "title": "Canaux et fiabilité"
+      },
+      "email": {
+        "description": "Configurer l'envoi d'e-mails sortants.",
+        "title": "E-mail (SMTP)"
+      },
+      "links": {
+        "description": "Contrôlez les liens externes exposés aux utilisateurs finaux.",
+        "title": "Liens"
+      },
+      "logging": {
+        "description": "Ajustez l'observabilité et les intégrations aval.",
+        "title": "Journalisation, métriques et intégrations"
+      },
+      "oauth": {
+        "description": "Connectez des fournisseurs d'identité tiers pour une connexion transparente.",
+        "title": "Fournisseurs OAuth / SSO"
+      },
+      "other": {
+        "description": "Clés de configuration non encore catégorisées.",
+        "title": "Autres paramètres"
+      },
+      "quota": {
+        "description": "Gérer les quotas, ratios de facturation et affichage en devise.",
+        "title": "Quota et facturation"
+      },
+      "security": {
+        "description": "Configurer la protection anti-robots et les contrôles de sécurité.",
+        "title": "Anti-bot et sécurité"
+      }
+    },
+    "info_about": "Infos sur {{key}}",
+    "loading": "Chargement des options...",
+    "no_description": "Aucune description disponible pour ce paramètre pour l’instant.",
+    "no_options": "Aucune option disponible ou permissions insuffisantes.",
+    "option_value_aria": "Valeur de {{key}}",
+    "refresh": "Actualiser",
+    "save": "Enregistrer",
+    "save_failed": "Échec de l'enregistrement",
+    "saved_message": "{{key}} mis à jour avec succès.",
+    "saved_success": "Paramètre enregistré",
+    "saving": "Enregistrement...",
+    "select_value": "Sélectionner une valeur",
+    "sensitive_hint": "La valeur stockée est masquée. Saisissez une nouvelle valeur pour remplacer le secret existant.",
+    "sensitive_placeholder": "Valeur masquée ; saisir pour mettre à jour",
+    "title": "Paramètres système"
+  }
+}

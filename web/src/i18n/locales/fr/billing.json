@@ -1,0 +1,56 @@
+{
+  "topup": {
+    "balance": {
+      "available": "Quota disponible pour l'utilisation de l'API",
+      "description": "Votre solde de quota actuel",
+      "refresh": "Actualiser le solde",
+      "title": "Solde actuel"
+    },
+    "description": "Gérez le solde de votre compte et utilisez des codes",
+    "online": {
+      "button": "Ouvrir le portail de paiement",
+      "description": "Achetez du quota via notre système de paiement externe",
+      "note": "Vous serez redirigé vers un système de paiement externe. Vos informations de compte seront automatiquement incluses.",
+      "text": "Cliquez sur le bouton ci-dessous pour ouvrir notre portail de paiement sécurisé où vous pouvez acheter du quota supplémentaire pour votre compte.",
+      "title": "Paiement en ligne"
+    },
+    "redeem": {
+      "button": "Utiliser le code",
+      "description": "Entrez un code de remboursement pour ajouter du quota",
+      "failed": "L'utilisation a échoué",
+      "label": "Code de remboursement",
+      "placeholder": "Entrez votre code de remboursement",
+      "processing": "Utilisation...",
+      "required": "Le code de remboursement est requis",
+      "success": "Utilisé avec succès ! Ajout de {{value}} jetons.",
+      "title": "Utiliser un code"
+    },
+    "request": {
+      "amount_currency_label": "Montant *",
+      "amount_label": "Montant (en unités de quota) *",
+      "amount_placeholder": "Entrez le montant...",
+      "amount_required": "Le montant doit être supérieur à 0",
+      "amount_token_label": "Montant (Tokens) *",
+      "amount_token_placeholder": "Entrez le nombre de tokens...",
+      "description": "Entrez le montant que vous souhaitez recharger. Un administrateur examinera et approuvra votre demande.",
+      "failed": "Échec de l'envoi de la demande",
+      "remark_label": "Remarque (optionnel)",
+      "remark_placeholder": "Notes pour l'administrateur...",
+      "submit": "Soumettre la demande",
+      "submitting": "Envoi en cours...",
+      "success": "Demande de recharge soumise avec succès ! En attente d'approbation.",
+      "title": "Soumettre une demande de recharge"
+    },
+    "tips": {
+      "content": [
+        "Le quota est consommé en fonction de votre utilisation de l'API et des coûts des modèles",
+        "Différents modèles ont des tarifs différents",
+        "Consultez la page Modèles pour voir les tarifs de chaque modèle",
+        "Les codes de remboursement sont sensibles à la casse",
+        "Votre solde sera automatiquement mis à jour après une utilisation réussie"
+      ],
+      "title": "Conseils"
+    },
+    "title": "Recharger"
+  }
+}

@@ -1,0 +1,173 @@
+{
+  "a11y": {
+    "close": "閉じる",
+    "close_drawer": "ドロワーを閉じる",
+    "select_language": "言語を選択"
+  },
+  "about": {
+    "cta_models": "対応モデルを見る",
+    "cta_repo": "GitHub リポジトリ",
+    "default": {
+      "description": "UniAPI は単一で一貫した API を通じて複数の AI モデルやサービスへアクセスできる統合インターフェイスを提供します。",
+      "features": [
+        "複数の AI プロバイダーに対応した統一 API",
+        "トークンベースの利用量追跡と課金",
+        "ユーザー管理とロールベースのアクセス制御",
+        "異なるプロバイダー向けのチャネル管理",
+        "充実したログとモニタリング",
+        "クォータ管理とチャージシステム"
+      ],
+      "features_title": "特長",
+      "heading": "UniAPI へようこそ"
+    },
+    "fallback_error": "概要ページの読み込みに失敗しました。",
+    "iframe_title": "概要",
+    "title": "概要"
+  },
+  "common": {
+    "app_name": "UniAPI",
+    "about": "概要",
+    "back": "戻る",
+    "cancel": "キャンセル",
+    "channels": "チャンネル",
+    "confirm": "確認",
+    "dashboard": "ダッシュボード",
+    "cache_analytics": "キャッシュ分析",
+    "email": "メール",
+    "language": "言語",
+    "login": "ログイン",
+    "logout": "ログアウト",
+    "logs": "ログ",
+    "mcps": "MCPs",
+    "models": "モデル",
+    "no_items": "項目がありません",
+    "or": "または",
+    "pagination": {
+      "first_page": "最初のページ",
+      "last_page": "最後のページ",
+      "next_page": "次のページ",
+      "page_num": "{{page}} ページ",
+      "per_page": "1ページあたり:",
+      "previous_page": "前のページ",
+      "rows_per_page": "ページあたりの行数:",
+      "showing": "{{total}} 件中 {{start}}-{{end}} 件を表示"
+    },
+    "password": "パスワード",
+    "playground": "プレイグラウンド",
+    "realtime": "リアルタイム",
+    "redemptions": "引き換え",
+    "register": "登録",
+    "remove": "削除",
+    "remove_item": "{{item}} を削除",
+    "selected_count": "{{count}} 個選択",
+    "settings": "設定",
+    "status": "ステータス",
+    "submit": "送信",
+    "to": "へ",
+    "tokens": "トークン",
+    "tools": "ツール",
+    "topup": "チャージ",
+    "pools": "予算プール",
+    "username": "ユーザー名",
+    "users": "ユーザー",
+    "version": "バージョン",
+    "welcome": "UniAPIへようこそ"
+  },
+  "footer": {
+    "copyright": "© {{year}} UniAPI. All rights reserved."
+  },
+  "header": {
+    "confirm_logout": "ログアウトの確認",
+    "log_out": "ログアウト",
+    "logging_out": "ログアウト中...",
+    "logout_description": "ログアウトしてもよろしいですか？ダッシュボードにアクセスするには再度ログインする必要があります。",
+    "navigation": "ナビゲーション",
+    "profile": "プロフィール",
+    "signed_in_as": "ログイン中:"
+  },
+  "home": {
+    "iframe_title": "ホーム"
+  },
+  "notFound": {
+    "go_home": "今すぐホームへ",
+    "message": "ページが見つかりません",
+    "redirecting": "{{seconds}} 秒後にホームへリダイレクトします...",
+    "stay_here": "このページに留まる"
+  },
+  "passkey_prompt": {
+    "dismiss": "閉じる",
+    "message": "アカウントのセキュリティを強化 — パスキーを設定して、パスワードなしで素早くログインできます。",
+    "setup_button": "パスキーを設定"
+  },
+  "status": {
+    "badges": {
+      "auto_disabled": "自動で無効化",
+      "enabled": "有効",
+      "manually_disabled": "手動で無効化",
+      "unknown": "不明"
+    },
+    "controls": {
+      "items_per_page": "1 ページあたり"
+    },
+    "details": {
+      "created": "作成日時",
+      "last_test": "最新テスト",
+      "response_time": "応答時間"
+    },
+    "empty": {
+      "none": "システムに設定されたチャネルがありません",
+      "search": "検索 \"{{term}}\" に一致するチャネルはありません",
+      "title": "チャネルが見つかりません"
+    },
+    "labels": {
+      "never": "なし",
+      "not_available": "N/A"
+    },
+    "loading": "チャネル状態を読み込み中...",
+    "notifications": {
+      "fetch_error": "チャネル状態の取得中にエラー: {{reason}}",
+      "fetch_failed": "チャネル状態の取得に失敗しました: {{reason}}",
+      "unknown_error": "不明なエラー"
+    },
+    "pagination": {
+      "next": "次へ",
+      "page_info": "（{{pages}} ページ中 {{page}} ページ目）",
+      "previous": "前へ",
+      "showing": "{{total}} 件中 {{displayed}} 件を表示",
+      "showing_filtered": "{{total}} 件中 {{displayed}} 件を表示（フィルター適用）"
+    },
+    "refresh": "更新",
+    "refreshing": "更新中...",
+    "search": {
+      "clear": "検索をクリア",
+      "placeholder": "名前または状態でチャネルを検索..."
+    },
+    "speed": {
+      "fast": "高速",
+      "normal": "通常",
+      "slow": "低速"
+    },
+    "stats": {
+      "disabled": "無効",
+      "enabled": "有効",
+      "found": "検索結果",
+      "total": "チャネル総数"
+    },
+    "subtitle": "すべてのチャネルの状態とパフォーマンスを監視",
+    "title": "チャネル状態"
+  },
+  "theme": {
+    "dark": "ダーク",
+    "light": "ライト",
+    "system": "システム",
+    "toggle": "テーマを切り替え"
+  },
+  "sidebar": {
+    "collapse": "折りたたむ"
+  },
+  "nav": {
+    "core": "基本機能",
+    "admin": "管理機能",
+    "system": "システム"
+  }
+}

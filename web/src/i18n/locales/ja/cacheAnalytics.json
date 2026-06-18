@@ -1,0 +1,49 @@
+{
+  "cacheAnalytics": {
+    "title": "キャッシュ分析",
+    "description": "DeepSeek 課金アップグレード後のキャッシュ効果を観測します。",
+    "unauthorized": "このページは管理者のみ閲覧できます。",
+    "errors": {
+      "fetch_failed": "キャッシュ分析データの取得に失敗しました。"
+    },
+    "filters": {
+      "from": "開始日",
+      "to": "終了日",
+      "model": "モデル",
+      "channel_id": "チャネル ID",
+      "request_format": "API 形式",
+      "compare_date": "比較日",
+      "all_models": "すべてのモデル",
+      "all_channels": "すべてのチャネル",
+      "all_formats": "すべての形式",
+      "last_7d": "直近 7 日",
+      "apply": "適用"
+    },
+    "cards": {
+      "cache_hit_rate": "キャッシュヒット率",
+      "estimated_savings_rate": "推定節約率",
+      "cached_prompt_tokens": "キャッシュ済み Prompt Tokens",
+      "total_quota": "合計クォータ"
+    },
+    "sections": {
+      "trend": "トレンド",
+      "breakdown": "内訳"
+    },
+    "table": {
+      "model": "モデル",
+      "channel": "チャネル",
+      "request_format": "API 形式",
+      "requests": "リクエスト",
+      "prompt_tokens": "Prompt Tokens",
+      "cached_prompt_tokens": "キャッシュ済み Prompt Tokens",
+      "cache_hit_rate": "キャッシュヒット率",
+      "quota": "クォータ"
+    },
+    "compare": {
+      "before": "アップグレード前",
+      "after": "アップグレード後",
+      "delta": "ヒット率差分"
+    },
+    "empty": "この期間にキャッシュ分析データはありません。"
+  }
+}

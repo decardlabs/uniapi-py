@@ -1,0 +1,173 @@
+{
+  "a11y": {
+    "close": "Cerrar",
+    "close_drawer": "Cerrar cajón",
+    "select_language": "Seleccionar idioma"
+  },
+  "about": {
+    "cta_models": "Ver modelos compatibles",
+    "cta_repo": "Repositorio de GitHub",
+    "default": {
+      "description": "UniAPI ofrece una interfaz unificada para acceder a varios modelos y servicios de IA a través de una única API coherente.",
+      "features": [
+        "API unificada para múltiples proveedores de IA",
+        "Seguimiento y facturación basados en tokens",
+        "Gestión de usuarios y acceso basado en roles",
+        "Gestión de canales para diferentes proveedores",
+        "Registro y monitoreo integrales",
+        "Gestión de cuotas y sistema de recargas"
+      ],
+      "features_title": "Características",
+      "heading": "Bienvenido a UniAPI"
+    },
+    "fallback_error": "No se pudo cargar el contenido de la página Acerca de.",
+    "iframe_title": "Acerca de",
+    "title": "Acerca de"
+  },
+  "common": {
+    "app_name": "UniAPI",
+    "about": "Acerca de",
+    "back": "Atrás",
+    "cancel": "Cancelar",
+    "channels": "Canales",
+    "confirm": "Confirmar",
+    "dashboard": "Panel de control",
+    "cache_analytics": "Analítica de caché",
+    "email": "Correo electrónico",
+    "language": "Idioma",
+    "login": "Iniciar sesión",
+    "logout": "Cerrar sesión",
+    "logs": "Registros",
+    "mcps": "MCPs",
+    "models": "Modelos",
+    "no_items": "Sin elementos",
+    "or": "O",
+    "pagination": {
+      "first_page": "Primera página",
+      "last_page": "Última página",
+      "next_page": "Siguiente página",
+      "page_num": "Página {{page}}",
+      "per_page": "Por página:",
+      "previous_page": "Página anterior",
+      "rows_per_page": "Filas por página:",
+      "showing": "Mostrando {{start}}-{{end}} de {{total}} elementos"
+    },
+    "password": "Contraseña",
+    "playground": "Playground",
+    "realtime": "Tiempo Real",
+    "redemptions": "Canjes",
+    "register": "Registrarse",
+    "remove": "Eliminar",
+    "remove_item": "Eliminar {{item}}",
+    "selected_count": "Seleccionados ({{count}})",
+    "settings": "Configuración",
+    "status": "Estado",
+    "submit": "Enviar",
+    "to": "a",
+    "tokens": "Tokens",
+    "tools": "Tools",
+    "topup": "Recargar",
+    "pools": "Pools de presupuesto",
+    "username": "Nombre de usuario",
+    "users": "Usuarios",
+    "version": "Versión",
+    "welcome": "Bienvenido a UniAPI"
+  },
+  "footer": {
+    "copyright": "© {{year}} UniAPI. Todos los derechos reservados."
+  },
+  "header": {
+    "confirm_logout": "Confirmar cierre de sesión",
+    "log_out": "Cerrar sesión",
+    "logging_out": "Cerrando sesión...",
+    "logout_description": "¿Estás seguro de que quieres cerrar sesión? Tendrás que volver a iniciar sesión para acceder a tu panel de control.",
+    "navigation": "Navegación",
+    "profile": "Perfil",
+    "signed_in_as": "Iniciado sesión como"
+  },
+  "home": {
+    "iframe_title": "Inicio"
+  },
+  "notFound": {
+    "go_home": "Ir al inicio ahora",
+    "message": "Página no encontrada",
+    "redirecting": "Redirigiendo al inicio en {{seconds}} s...",
+    "stay_here": "Quedarse en esta página"
+  },
+  "passkey_prompt": {
+    "dismiss": "Cerrar",
+    "message": "Mejora la seguridad de tu cuenta — configura una passkey para iniciar sesión rápidamente sin contraseña.",
+    "setup_button": "Configurar Passkey"
+  },
+  "status": {
+    "badges": {
+      "auto_disabled": "Deshabilitado automáticamente",
+      "enabled": "Habilitado",
+      "manually_disabled": "Deshabilitado manualmente",
+      "unknown": "Desconocido"
+    },
+    "controls": {
+      "items_per_page": "Elementos por página"
+    },
+    "details": {
+      "created": "Creado",
+      "last_test": "Última prueba",
+      "response_time": "Tiempo de respuesta"
+    },
+    "empty": {
+      "none": "No hay canales configurados en el sistema",
+      "search": "Ningún canal coincide con la búsqueda \"{{term}}\"",
+      "title": "No se encontraron canales"
+    },
+    "labels": {
+      "never": "Nunca",
+      "not_available": "N/D"
+    },
+    "loading": "Cargando el estado de los canales...",
+    "notifications": {
+      "fetch_error": "Error al obtener el estado de los canales: {{reason}}",
+      "fetch_failed": "No se pudo obtener el estado de los canales: {{reason}}",
+      "unknown_error": "error desconocido"
+    },
+    "pagination": {
+      "next": "Siguiente",
+      "page_info": " (Página {{page}} de {{pages}})",
+      "previous": "Anterior",
+      "showing": "Mostrando {{displayed}} de {{total}} canales",
+      "showing_filtered": "Mostrando {{displayed}} de {{total}} canales (filtrados)"
+    },
+    "refresh": "Actualizar",
+    "refreshing": "Actualizando...",
+    "search": {
+      "clear": "Borrar búsqueda",
+      "placeholder": "Busca canales por nombre o estado..."
+    },
+    "speed": {
+      "fast": "Rápido",
+      "normal": "Normal",
+      "slow": "Lento"
+    },
+    "stats": {
+      "disabled": "Deshabilitados",
+      "enabled": "Habilitados",
+      "found": "Coincidencias",
+      "total": "Canales totales"
+    },
+    "subtitle": "Supervisa el estado y el rendimiento de todos los canales",
+    "title": "Estado de los canales"
+  },
+  "theme": {
+    "dark": "Oscuro",
+    "light": "Claro",
+    "system": "Sistema",
+    "toggle": "Cambiar tema"
+  },
+  "sidebar": {
+    "collapse": "Contraer"
+  },
+  "nav": {
+    "core": "Principal",
+    "admin": "Administración",
+    "system": "Sistema"
+  }
+}

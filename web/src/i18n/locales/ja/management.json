@@ -1,0 +1,889 @@
+{
+  "channels": {
+    "actions": {
+      "add": "チャンネルを追加",
+      "add_mobile": "新規チャンネル",
+      "delete": "削除",
+      "disable": "無効化",
+      "edit": "編集",
+      "enable": "有効化",
+      "test": "テスト"
+    },
+    "columns": {
+      "actions": "操作",
+      "created": "作成日",
+      "group": "グループ",
+      "id": "ID",
+      "name": "名前",
+      "priority": "優先度",
+      "response": "レスポンス",
+      "status": "状態",
+      "testing_model": "テスト用モデル",
+      "type": "タイプ",
+      "weight": "重み"
+    },
+    "confirm": {
+      "delete": "このチャンネルを削除してよろしいですか？",
+      "delete_disabled": "無効なチャンネルをすべて削除しますか？この操作は元に戻せません。"
+    },
+    "description": "API ルーティング チャンネルを設定・管理します",
+    "edit": {
+      "actions": {
+        "cancel": "キャンセル",
+        "create": "チャンネルを作成",
+        "creating": "作成中...",
+        "test_channel": "チャンネルをテスト",
+        "update": "チャンネルを更新",
+        "updating": "更新中..."
+      },
+      "ai_proxy": {
+        "knowledge": {
+          "help": "AI Proxy ナレッジ検索用のナレッジベース識別子。",
+          "label": "ナレッジ ID",
+          "placeholder": "ナレッジベース ID"
+        }
+      },
+      "aws": {
+        "ak": {
+          "help": "Bedrock を呼び出す権限を持つ AWS アクセスキー ID。",
+          "label": "アクセスキー *",
+          "placeholder": "AKIA..."
+        },
+        "heading": "AWS Bedrock 設定",
+        "note": "最終的な API キーは次のように構築されます: AK|SK|Region",
+        "region": {
+          "help": "Bedrock の AWS リージョン (例: us-east-1)。モデル/プロファイルが存在する場所と一致する必要があります。",
+          "label": "リージョン *",
+          "placeholder": "us-east-1"
+        },
+        "sk": {
+          "help": "上記のアクセスキー ID に対する AWS シークレットアクセスキー。",
+          "label": "シークレットキー *",
+          "placeholder": "シークレットキー"
+        }
+      },
+      "azure": {
+        "endpoint": {
+          "help": "リソースのエンドポイント (例: https://your-resource.openai.azure.com)",
+          "label": "Azure OpenAI エンドポイント *",
+          "placeholder": "https://your-resource.openai.azure.com"
+        },
+        "heading": "Azure OpenAI 設定",
+        "version": {
+          "help": "リクエストで指定されていない場合に使用されるデフォルトの API バージョン (例: 2024-03-01-preview)。",
+          "label": "API バージョン",
+          "note": "デフォルト: 2024-03-01-preview。これはリクエストのクエリパラメータで上書きできます。",
+          "placeholder": "2024-03-01-preview",
+          "warning_label": "重要:",
+          "warning_text": "モデル名は元のモデル名ではなく、デプロイメント名にする必要があります。"
+        }
+      },
+      "buttons": {
+        "fill_template": "テンプレートを入力",
+        "format_json": "JSON を整形",
+        "load_defaults": "デフォルトを読み込む"
+      },
+      "channel_type": {
+        "15": {
+          "tip": "Baidu コンソールから AK (API Key) と SK (Secret Key) を取得"
+        },
+        "18": {
+          "tip": "WebSocket バージョン API"
+        },
+        "29": {
+          "description": "Groq-hosted LLaMA-style models via OpenAI schema."
+        },
+        "40": {
+          "description": "旧 ByteDance Doubao"
+        },
+        "47": {
+          "tip": "V2 推論サービスの場合、Baidu IAM から API Key を取得"
+        },
+        "48": {
+          "tip": "HTTP バージョン API"
+        },
+        "50": {
+          "description": "OpenAI 互換チャンネル、カスタム Base URL をサポート"
+        },
+        "51": {
+          "description": "Gemini OpenAI 互換フォーマット"
+        },
+        "53": {
+          "description": "GitHub Copilot の OpenAI 互換サーフェス（GitHub 経由でトークン交換）",
+          "tip": "チャネルキーには GitHub アクセストークンを指定してください。ベース URL のデフォルトは https://api.githubcopilot.com です"
+        }
+      },
+      "cloudflare": {
+        "account": {
+          "help": "AI ゲートウェイ用の Cloudflare アカウント ID。",
+          "label": "アカウント ID",
+          "placeholder": "d8d7c61dbc334c32d3ced580e4bf42b4"
+        }
+      },
+      "common": {
+        "add": "Add",
+        "base_url": {
+          "fixed_note": "Using default: {{url}}",
+          "help_editable": "Custom API base URL. Leave empty to use the default URL.",
+          "help_readonly": "The API base URL for this channel type is fixed and cannot be modified.",
+          "label": "API Base URL",
+          "placeholder": "https://api.example.com"
+        },
+        "format_json": "Format JSON"
+      },
+      "coze": {
+        "auth_type": {
+          "help": "Coze への認証方法を選択: パーソナルアクセストークンまたは OAuth JWT。",
+          "label": "認証タイプ",
+          "placeholder": "認証タイプを選択"
+        },
+        "heading": "Coze 設定",
+        "jwt": {
+          "help": "Coze OAuth JWT の JSON 設定: client_type, client_id, coze_www_base, coze_api_base, private_key, public_key_id。",
+          "label": "OAuth JWT 設定 *",
+          "placeholder": "JSON 形式の OAuth JWT 設定:\n{{example}}",
+          "required": "必須フィールド: client_type, client_id, coze_www_base, coze_api_base, private_key, public_key_id"
+        },
+        "pat": {
+          "help": "Coze パーソナルアクセストークン (pat_...)。",
+          "label": "パーソナルアクセストークン *",
+          "placeholder": "pat_..."
+        },
+        "user": {
+          "help": "ボット操作に使用されるオプションの Coze ユーザー ID (設定で必要な場合)。",
+          "label": "ユーザー ID",
+          "placeholder": "ボット操作用ユーザー ID"
+        }
+      },
+      "description": {
+        "create": "新しい API チャンネルを作成",
+        "edit": "チャンネル設定を更新"
+      },
+      "errors": {
+        "operation_failed": "操作に失敗しました",
+        "request_failed_title": "リクエストに失敗しました",
+        "unexpected_title": "予期しないエラー"
+      },
+      "fields": {
+        "api_key": {
+          "help": "選択したプロバイダーの認証情報。暗号化して保存されます。編集時に空のままにすると既存のものを保持します。",
+          "label": "API キー",
+          "note": "現在の API キーはセキュリティのため非表示になっています。更新する場合のみ新しいキーを入力してください。",
+          "placeholder_create": "API キーを入力",
+          "placeholder_edit": "既存のキーを保持するには空のままにしてください"
+        },
+        "base_url": {
+          "help": "プロバイダーの API エンドポイント (例: https://api.openai.com)。選択したプロバイダーのデフォルトを使用する場合は空のままにしてください。",
+          "label": "Base URL (任意)",
+          "placeholder": "例: https://api.openai.com"
+        },
+        "name": {
+          "help": "人間が読める識別子。名前にプロバイダー/環境を含めてください (例: \"OpenAI GPT-4 Production\")。",
+          "label": "チャンネル名 *",
+          "placeholder": "チャンネル名を入力"
+        },
+        "priority": {
+          "help": "複数のチャンネルがモデルをサポートしている場合、数字が小さい方が先に試行されます。",
+          "label": "優先度"
+        },
+        "type": {
+          "help": "アップストリームプロバイダーを選択します。これにより、モデル、認証方法、デフォルトの Base URL が決定されます。",
+          "label": "チャンネルタイプ *",
+          "placeholder": "チャンネルタイプを選択"
+        },
+        "weight": {
+          "help": "同じ優先度のチャンネル間での負荷分散の重み。重みが大きいほど多くのリクエストを受け取ります。",
+          "label": "重み"
+        }
+      },
+      "groups": {
+        "add_placeholder": "Add custom group...",
+        "help": "特定のユーザーグループへのアクセスを制限します。空の場合はすべてのユーザーがアクセスできます。デフォルトグループは常に保持されます。",
+        "label": "グループ *"
+      },
+      "inference_profile": {
+        "help": "モデル名から AWS Bedrock 推論プロファイル ARN への JSON マップ。特定の Bedrock 推論プロファイルを介して特定のモデルをルーティングするために使用します。",
+        "label": "推論プロファイル ARN マップ (AWS Bedrock)",
+        "note": "モデル名を AWS Bedrock 推論プロファイル ARN にマッピング (任意)",
+        "placeholder": "AWS Bedrock 推論プロファイル ARN マッピング:\n{{example}}"
+      },
+      "key": {
+        "help": "The API key for authentication with the provider.",
+        "label": "API Key"
+      },
+      "loading": "チャンネルを読み込み中...",
+      "mcp": {
+        "blacklist_add": "追加",
+        "blacklist_description": "このチャンネルの MCP ツールをブロックします。server.tool またはツール名を使用します。",
+        "blacklist_label": "MCP ツールブラックリスト",
+        "blacklist_placeholder": "server.tool_name"
+      },
+      "model_configs": {
+        "format_error": "model_configs を整形できません: {{error}}",
+        "help": "モデルごとの統一設定。フィールド: ratio (入力価格乗数), completion_ratio (出力乗数), max_tokens (制限)。",
+        "invalid": "無効なモデル設定フォーマット",
+        "invalid_short": "✗ 無効な設定",
+        "label": "モデル設定 (JSON)",
+        "load_default": "Load Default",
+        "note": "モデルごとの価格と制限を設定 (任意)",
+        "placeholder": "JSON 形式のモデル設定:\n{{example}}",
+        "select_type_notice": "モデル設定を構成するにはチャンネルタイプを選択してください。",
+        "valid": "✓ 有効な設定"
+      },
+      "model_mapping": {
+        "help": "外部/レガシーモデル名をこのプロバイダーの実際のモデル名にマッピングします。JSON オブジェクト: { \"from\": \"to\" }。",
+        "label": "モデルマッピング (JSON)",
+        "note": "このチャンネルのモデル名をマッピング (任意)",
+        "placeholder": "JSON 形式のモデル名マッピング:\n{{example}}"
+      },
+      "models": {
+        "add_custom": "追加",
+        "clear": "Clear",
+        "clear_all": "すべてクリア",
+        "copy_title": "クリックしてモデル名をコピー",
+        "custom_placeholder": "カスタムモデルを追加...",
+        "fill_all": "サポートされているすべてのモデルを入力 ({{count}})",
+        "fill_related": "関連モデルを入力 ({{count}})",
+        "help": "このチャンネルで利用可能なモデル。すべてのプロバイダーモデルを許可するには空のままにしてください。ボタンを使用して関連/すべてのモデルを入力します。重複は削除されます。",
+        "label": "サポートされているモデル *",
+        "no_match": "No models found",
+        "no_selection": "No models selected",
+        "search_placeholder": "モデルを検索...",
+        "select_type_notice": "サポートされているモデルを構成するにはチャンネルタイプを選択してください。",
+        "selected_count": "Selected Models ({{count}})"
+      },
+      "name": {
+        "help": "A descriptive name for this channel to identify it in logs and lists.",
+        "label": "Channel Name *",
+        "placeholder": "My Channel"
+      },
+      "openai_compatible": {
+        "api_format": {
+          "help": "リクエストを処理するアップストリーム API サーフェスを選択します。ChatCompletion が歴史的なデフォルトです。アップストリームが OpenAI Response API ペイロードを期待する場合は Response を選択してください。",
+          "label": "アップストリーム API フォーマット *",
+          "option": {
+            "chat_completion": "ChatCompletion (デフォルト)",
+            "response": "Response"
+          },
+          "placeholder": "アップストリーム API フォーマットを選択"
+        },
+        "base_url": {
+          "help": "OpenAI 互換エンドポイントの Base URL (例: https://api.your-provider.com)。必要な場合、/v1 は自動的に追加されます。",
+          "label": "Base URL *",
+          "placeholder": "https://api.your-provider.com"
+        },
+        "heading": "OpenAI 互換設定"
+      },
+      "plugin": {
+        "params": {
+          "help": "必要な場合、プロバイダー/プラグイン固有のパラメータ。",
+          "label": "プラグインパラメータ",
+          "placeholder": "プラグイン固有のパラメータ"
+        }
+      },
+      "priority": {
+        "help": "Higher priority channels are tried first. Default is 0.",
+        "label": "Priority"
+      },
+      "ratelimit": {
+        "help": "Maximum requests per minute. 0 means unlimited.",
+        "label": "Rate Limit"
+      },
+      "spark": {
+        "version": {
+          "help": "iFlytek Spark の API バージョンを選択します (例: v3.5)。",
+          "label": "Spark バージョン",
+          "placeholder": "Spark バージョンを選択"
+        }
+      },
+      "system_prompt": {
+        "help": "このチャンネルを通じて送信されるすべてのリクエストにシステムメッセージとして追加されるオプションのテキスト。ガードレールやスタイルに使用します。クライアントは独自のシステムメッセージで上書きできます。",
+        "label": "システムプロンプト",
+        "placeholder": "すべてのリクエストに追加するオプションのシステムプロンプト"
+      },
+      "title": {
+        "create": "チャンネルを作成",
+        "edit": "チャンネルを編集"
+      },
+      "tooling": {
+        "add_custom": "Add custom tool...",
+        "available_tools": "Available Tools",
+        "editor_disabled": "Fix JSON error to enable editor",
+        "errors": {
+          "invalid_json_message": "ホワイトリストを編集する前にツール JSON を修正してください。",
+          "invalid_json_title": "無効な JSON"
+        },
+        "fix_json_notice": "組み込みツールホワイトリストを管理するには、上記のツール JSON を修正してください。",
+        "format_error": "ツール設定を整形できません: {{error}}",
+        "help": "チャンネル全体の組み込みツールポリシーを定義します。プロバイダーの組み込みツールのホワイトリストと呼び出しごとの価格を設定します。",
+        "invalid": "無効なツール設定フォーマット",
+        "label": "ツール設定 (JSON)",
+        "no_whitelist": "No tools whitelisted",
+        "note": "組み込みツール許可リストと呼び出しごとの価格を設定 (任意)",
+        "placeholder": "JSON 形式のツール設定:\n{{example}}",
+        "whitelist": {
+          "add_tool": "ツールを追加",
+          "custom_placeholder": "カスタムツール名",
+          "empty": "固定されたツールはありません。すべての組み込みツールは利用可能なままです。",
+          "known": "既知のツール:",
+          "pricing_required": "\"{{tool}}\" のブロックを解除するには価格を設定してください。価格が設定されるまでリクエストはブロックされます。",
+          "subtitle": "空のホワイトリストはすべてのプロバイダーツールを利用可能にします。",
+          "title": "組み込みツールホワイトリスト"
+        },
+        "whitelist_editor": "Whitelist Editor",
+        "whitelisted_tools": "Whitelisted Tools ({{count}})"
+      },
+      "type": {
+        "help": "The provider type for this channel. Changing this may reset some fields.",
+        "label": "Channel Type *",
+        "not_found": "No channel type found.",
+        "placeholder": "Select a channel type",
+        "search": "Search channel type..."
+      },
+      "type_change": {
+        "cancel": "Cancel",
+        "confirm": "Change Type",
+        "description": "You are about to change the channel type from \"{{fromType}}\" to \"{{toType}}\".",
+        "title": "Change Channel Type?",
+        "warning": "Warning: This may reset some configuration fields specific to the previous channel type. Any unsaved changes may be lost."
+      },
+      "validation": {
+        "api_key_required": "API キーは必須です。",
+        "base_url_required": "このチャンネルタイプには Base URL が必要です。",
+        "error_title": "検証エラー",
+        "inference_profile_invalid": "推論プロファイル ARN マップに無効な JSON が含まれています。",
+        "invalid_json": "無効な JSON フォーマット",
+        "invalid_json_short": "✗ 無効な JSON",
+        "invalid_json_title": "無効な JSON",
+        "model_configs_message": "モデル設定が無効です。",
+        "model_configs_title": "無効な設定",
+        "model_mapping_invalid": "モデルマッピングに無効な JSON が含まれています。",
+        "oauth_invalid_json": "OAuth JWT 設定 JSON が無効です。",
+        "oauth_missing_field_message": "OAuth JWT 設定が不足しています: {{field}}",
+        "oauth_missing_field_title": "不足しているフィールド",
+        "oauth_parse_message": "OAuth JWT 解析エラー: {{error}}",
+        "oauth_parse_title": "解析エラー",
+        "valid_json": "✓ 有効な JSON"
+      },
+      "vertex": {
+        "credentials": {
+          "help": "Vertex AI 権限を持つサービスアカウントの JSON を貼り付けます。",
+          "label": "サービスアカウント認証情報 *",
+          "placeholder": "Google サービスアカウント JSON 認証情報"
+        },
+        "heading": "Vertex AI 設定",
+        "project": {
+          "help": "Vertex AI リソースをホストしている GCP プロジェクト ID。",
+          "label": "プロジェクト ID *",
+          "placeholder": "my-project-id"
+        },
+        "region": {
+          "help": "Vertex AI の Google Cloud リージョン (例: us-central1)。",
+          "label": "リージョン *",
+          "placeholder": "us-central1"
+        }
+      },
+      "weight": {
+        "help": "Used for load balancing between channels of the same priority. Default is 0.",
+        "label": "Weight"
+      }
+    },
+    "empty": "チャンネルが見つかりません。まずはチャンネルを作成してください。",
+    "group_default": "default",
+    "notifications": {
+      "bulk_test_failed_title": "一括テストに失敗しました",
+      "bulk_test_started": "チャンネル一括テストを開始しました。",
+      "delete_disabled_success": "無効なチャンネルを削除しました。",
+      "delete_failed_message": "不明なエラー",
+      "delete_failed_title": "削除に失敗しました",
+      "test_failed_message": "不明なエラー",
+      "test_failed_title": "チャンネルのテストに失敗しました",
+      "test_success": "チャンネルのテストに成功しました。",
+      "testing_model_failed_message": "テスト用モデルの更新に失敗しました",
+      "testing_model_failed_title": "保存に失敗しました",
+      "testing_model_saved": "テスト用モデルを保存しました。"
+    },
+    "response": {
+      "not_tested": "未テスト",
+      "prefix": "レスポンス時間:",
+      "tested_at": "テスト時刻: {{local}} / {{utc}}Z"
+    },
+    "search": {
+      "id_label": "ID",
+      "placeholder": "名前・タイプ・グループでチャンネルを検索..."
+    },
+    "status": {
+      "active": "有効",
+      "disabled": "無効",
+      "paused": "一時停止"
+    },
+    "testing": {
+      "auto": "最安"
+    },
+    "title": "チャンネル",
+    "toolbar": {
+      "delete_disabled": "無効を削除",
+      "delete_disabled_mobile": "無効をすべて削除",
+      "test_all": "すべてテスト",
+      "test_all_mobile": "全チャンネルをテスト"
+    },
+    "type_unknown": "タイプ {{type}}"
+  },
+  "redemptions": {
+    "actions": {
+      "add": "引き換えを追加",
+      "cancel": "キャンセル",
+      "close": "閉じる",
+      "create": "引き換えを作成",
+      "creating": "作成中...",
+      "delete": "削除",
+      "disable": "無効化",
+      "edit": "編集",
+      "enable": "有効化",
+      "generate": "生成",
+      "refresh": "更新",
+      "search": "検索",
+      "update": "引き換えを更新",
+      "updating": "更新中..."
+    },
+    "columns": {
+      "actions": "操作",
+      "code": "コード",
+      "created": "作成日",
+      "id": "ID",
+      "name": "名前",
+      "quota": "クォータ",
+      "status": "ステータス"
+    },
+    "description": "チャージコードの管理",
+    "dialog": {
+      "generated_codes": "生成されたコード:",
+      "title": "引き換えコードを生成"
+    },
+    "edit": {
+      "description": {
+        "create": "新しい引き換えコードを作成",
+        "edit": "引き換えコード設定を更新"
+      },
+      "loading": "引き換えを読み込み中...",
+      "notifications": {
+        "create_success": "引き換えを作成しました",
+        "failed": "操作に失敗しました",
+        "update_success": "引き換えを更新しました"
+      },
+      "title": {
+        "create": "引き換えを作成",
+        "edit": "引き換えを編集"
+      },
+      "validation": {
+        "count_max": "数は100を超えることはできません",
+        "count_min": "数は正である必要があります",
+        "name_max": "最大20文字",
+        "name_required": "名前は必須です",
+        "quota_min": "クォータは負にできません"
+      }
+    },
+    "fields": {
+      "count": {
+        "label": "数 (1-100)"
+      },
+      "name": {
+        "label": "名前",
+        "placeholder": "引き換え名を入力"
+      },
+      "quota": {
+        "label": "クォータ"
+      }
+    },
+    "search": {
+      "dropdown_placeholder": "引き換え名を入力...",
+      "placeholder": "名前で引き換えを検索..."
+    },
+    "status": {
+      "disabled": "無効",
+      "unknown": "不明",
+      "unused": "未使用",
+      "used": "使用済み"
+    },
+    "title": "引き換え",
+    "toolbar": {
+      "created_time": "作成日時",
+      "default": "デフォルト",
+      "id": "ID",
+      "name": "名前",
+      "quota": "クォータ",
+      "redeemed_time": "引き換え日時",
+      "status": "ステータス"
+    }
+  },
+  "tokens": {
+    "edit": {
+      "actions": {
+        "cancel": "キャンセル",
+        "create": "トークンを作成",
+        "creating": "作成中...",
+        "update": "トークンを更新",
+        "updating": "更新中..."
+      },
+      "aria": {
+        "help_label": "ヘルプ: {{label}}"
+      },
+      "description": {
+        "create": "新しい API トークンを作成",
+        "edit": "トークン設定を更新"
+      },
+      "errors": {
+        "operation_failed": "操作に失敗しました",
+        "request_failed_title": "リクエストに失敗しました",
+        "unexpected_title": "予期しないエラー"
+      },
+      "fields": {
+        "expired_time": {
+          "day": "1日",
+          "help": "このトークンの有効期限を設定します。空の場合は無期限です。一般的な期間にはクイックボタンを使用してください。",
+          "hour": "1時間",
+          "label": "有効期限",
+          "minute": "1分",
+          "month": "1ヶ月",
+          "never": "無期限"
+        },
+        "name": {
+          "help": "このトークンの人間が読める識別子。",
+          "label": "トークン名",
+          "placeholder": "トークン名を入力"
+        },
+        "remain_quota": {
+          "help": "クォータはトークン単位で測定されます。USD は管理者が設定した単価に基づく推定値です。",
+          "label": "残りクォータ",
+          "usd_hint": "残り約 {{usd}} USD"
+        },
+        "subnet": {
+          "help": "これらの IP または CIDR 範囲 (例: 192.168.1.0/24) からのリクエストのみを許可します。複数のエントリはカンマ区切りです。",
+          "label": "IP 制限 (任意)",
+          "placeholder": "例: 192.168.1.0/24 または 10.0.0.1"
+        },
+        "unlimited": {
+          "help": "有効にすると、このトークンは残りクォータチェックを無視します。",
+          "label": "無制限クォータ"
+        }
+      },
+      "loading": "トークンを読み込み中...",
+      "models": {
+        "help": "このトークンを特定のモデルに制限します。ユーザー/グループが利用可能なすべてのモデルを許可するには空のままにしてください。",
+        "label": "許可されたモデル",
+        "search_placeholder": "モデルを検索..."
+      },
+      "notifications": {
+        "create_success": "トークンを作成しました",
+        "update_success": "トークンを更新しました"
+      },
+      "title": {
+        "create": "トークンを作成",
+        "edit": "トークンを編集"
+      },
+      "validation": {
+        "error_title": "検証エラー",
+        "fix_fields": "ハイライトされたフィールドを修正してください。",
+        "invalid_expiration": "無効な有効期限"
+      }
+    },
+    "page": {
+      "actions": {
+        "add": "トークンを追加",
+        "add_mobile": "新規トークン",
+        "delete": "削除",
+        "disable": "無効化",
+        "edit": "編集",
+        "enable": "有効化"
+      },
+      "columns": {
+        "actions": "操作",
+        "created": "作成日",
+        "expires": "有効期限",
+        "id": "ID",
+        "key": "キー",
+        "last_access": "最終アクセス",
+        "name": "名前",
+        "never": "無期限",
+        "no_value": "—",
+        "remaining_quota": "残りクォータ",
+        "remaining_title": "残り: {{label}}",
+        "remaining_tooltip": "このトークンはアカウントの割り当てよりも多くのクォータを保持しています。",
+        "status": "ステータス",
+        "used_quota": "使用済みクォータ",
+        "used_title": "使用済み: {{label}}"
+      },
+      "confirm": {
+        "delete": "トークン \"{{label}}\" を削除してよろしいですか？"
+      },
+      "description": "API アクセストークンを管理",
+      "dialog": {
+        "close": "閉じる",
+        "manual_copy_description": "クリップボードへのアクセスが利用できません。使用を続けるには、以下の API キーを手動でコピーしてください。",
+        "manual_copy_title": "手動コピーが必要です"
+      },
+      "empty": "トークンが見つかりません。最初のトークンを作成して開始してください。",
+      "key": {
+        "copied": "コピーしました！",
+        "copy": "トークンをコピー"
+      },
+      "quota": {
+        "unlimited": "無制限"
+      },
+      "search": {
+        "id_label": "ID: {{id}}",
+        "placeholder": "名前でトークンを検索...",
+        "quota_label": "クォータ: {{quota}}"
+      },
+      "status": {
+        "disabled": "無効",
+        "enabled": "有効",
+        "exhausted": "枯渇",
+        "expired": "期限切れ",
+        "unknown": "不明"
+      },
+      "table": {
+        "id_placeholder": "(ID {{id}})"
+      },
+      "title": "トークン"
+    }
+  },
+  "users": {
+    "dialogs": {
+      "create": {
+        "actions": {
+          "close": "閉じる",
+          "create": "作成"
+        },
+        "fields": {
+          "display_name": {
+            "label": "表示名",
+            "placeholder": "表示名を入力"
+          },
+          "password": {
+            "label": "パスワード",
+            "placeholder": "パスワードを入力"
+          },
+          "username": {
+            "label": "ユーザー名",
+            "placeholder": "ユーザー名を入力"
+          }
+        },
+        "title": "ユーザーを作成"
+      },
+      "topup": {
+        "actions": {
+          "close": "閉じる",
+          "submit": "送信"
+        },
+        "fields": {
+          "pool_id": {
+            "label": "ソース（任意）",
+            "placeholder": "直接チャージ",
+            "direct": "直接チャージ",
+            "hint": "選択した予算プールからクォータを差し引きます"
+          },
+          "quota": {
+            "label": "クォータ",
+            "placeholder": "クォータ変更を入力"
+          },
+          "remark": {
+            "label": "備考",
+            "placeholder": "任意"
+          }
+        },
+        "notifications": {
+          "error_title": "チャージ失敗",
+          "error_message": "操作に失敗しました。後でもう一度お試しください。"
+        },
+        "title": "{{username}} にチャージ"
+      }
+    },
+    "edit": {
+      "actions": {
+        "add": "Add",
+        "cancel": "キャンセル",
+        "create": "ユーザーを作成",
+        "creating": "作成中...",
+        "update": "ユーザーを更新",
+        "updating": "更新中..."
+      },
+      "aria": {
+        "help_display_name": "ヘルプ: 表示名",
+        "help_email": "ヘルプ: メール",
+        "help_group": "ヘルプ: グループ",
+        "help_password": "ヘルプ: パスワード",
+        "help_quota": "ヘルプ: クォータ",
+        "help_username": "ヘルプ: ユーザー名"
+      },
+      "description": {
+        "create": "新しいユーザーアカウントを作成",
+        "edit": "ユーザー情報を更新"
+      },
+      "errors": {
+        "operation_failed": "操作に失敗しました",
+        "request_failed_title": "リクエストに失敗しました",
+        "unexpected_title": "予期しないエラー"
+      },
+      "fields": {
+        "display_name": {
+          "help": "UI に表示される任意の読みやすい名前。",
+          "label": "表示名",
+          "placeholder": "表示名を入力"
+        },
+        "email": {
+          "help": "パスワードリセットや通知に使用される任意の連絡先アドレス。",
+          "label": "メール",
+          "placeholder": "メールを入力"
+        },
+        "group": {
+          "help": "ユーザーグループはアクセスとモデル/チャンネルの可視性を制御します。",
+          "label": "グループ *",
+          "placeholder": "グループを選択"
+        },
+        "mcp_tool_blacklist": {
+          "help": "このユーザーの MCP ツールをブロックします。server.tool またはツール名を使用します。",
+          "label": "MCP ツールブラックリスト",
+          "placeholder": "server.tool_name"
+        },
+        "password": {
+          "help": "最小長はポリシーに依存します。変更しない場合は空のままにしてください。",
+          "label_create": "パスワード *",
+          "label_edit": "新しいパスワード (現在のままにする場合は空)",
+          "placeholder": "パスワードを入力"
+        },
+        "quota": {
+          "help": "クォータの単位はトークンです。USD 推定値は管理者が設定した単位比率を使用します。",
+          "label": "クォータ ({{usd}})"
+        },
+        "username": {
+          "help": "一意のログイン名。3文字以上。",
+          "label": "ユーザー名 *",
+          "placeholder": "ユーザー名を入力"
+        }
+      },
+      "loading": "ユーザーを読み込み中...",
+      "notifications": {
+        "create_success": "ユーザーを作成しました",
+        "update_success": "ユーザーを更新しました"
+      },
+      "title": {
+        "create": "ユーザーを作成",
+        "edit": "ユーザーを編集"
+      },
+      "validation": {
+        "display_name_max": "表示名は最大20文字です",
+        "email_invalid": "有効なメールアドレスが必要です",
+        "email_max": "メールは最大50文字です",
+        "error_title": "検証エラー",
+        "fix_fields": "ハイライトされたフィールドを修正してください。",
+        "group_required": "グループは必須です",
+        "quota_min": "クォータは負にできません",
+        "username_max": "ユーザー名は最大30文字です",
+        "username_min": "ユーザー名は3文字以上である必要があります"
+      }
+    },
+    "page": {
+      "actions": {
+        "delete": "削除",
+        "disable": "無効化",
+        "edit": "編集",
+        "enable": "有効化",
+        "topup": "チャージ"
+      },
+      "columns": {
+        "actions": "操作",
+        "display_name": "表示名",
+        "group": "グループ",
+        "id": "ID",
+        "remaining_quota": "残りクォータ",
+        "role": "ロール",
+        "status": "ステータス",
+        "used_quota": "使用済みクォータ",
+        "username": "ユーザー名"
+      },
+      "description": "ユーザーを管理",
+      "empty": "ユーザーが見つかりません。最初のユーザーを追加して開始してください。",
+      "notifications": {
+        "action_failed_message": "変更を適用できません。",
+        "action_failed_title": "操作に失敗しました",
+        "load_failed_message": "ユーザーの読み込みに失敗しました。",
+        "load_failed_title": "アクセス拒否",
+        "search_failed_message": "検索に失敗しました。",
+        "search_failed_title": "検索失敗"
+      },
+      "search": {
+        "id_label": "ID: {{id}}",
+        "placeholder": "ユーザー名でユーザーを検索...",
+        "role_label": "ロール: {{role}}",
+        "status_label": "ステータス: {{status}}"
+      },
+      "table": {
+        "quota": {
+          "unlimited": "無制限"
+        },
+        "remaining_quota_title": "残り: {{quota}}",
+        "role": {
+          "admin": "管理者",
+          "guest": "ゲスト",
+          "super_admin": "スーパー管理者",
+          "user": "ユーザー"
+        },
+        "status": {
+          "disabled": "無効",
+          "enabled": "有効"
+        },
+        "used_quota_title": "使用済み: {{quota}}"
+      },
+      "title": "ユーザー",
+      "toolbar": {
+        "add_user": "ユーザーを追加",
+        "sort": {
+          "created_time": "作成日時",
+          "default": "デフォルト",
+          "id": "ID",
+          "quota": "残りクォータ",
+          "used_quota": "使用済みクォータ",
+          "username": "ユーザー名"
+        },
+        "sort_order": {
+          "asc": "昇順",
+          "desc": "降順"
+        }
+      }
+    }
+  },
+  "recharges": {
+    "title": "チャージ承認",
+    "description": "ユーザーのチャージ申請を審査・処理します",
+    "empty": "チャージ申請はありません",
+    "columns": {
+      "id": "ID",
+      "user": "ユーザー",
+      "amount": "金額",
+      "status": "ステータス",
+      "remark": "備考",
+      "admin_note": "管理者メモ",
+      "created": "作成日時",
+      "actions": "操作"
+    },
+    "status": {
+      "pending": "審査中",
+      "approved": "承認済み",
+      "rejected": "拒否済み"
+    },
+    "actions": {
+      "review": "審査",
+      "approve_btn": "承認",
+      "reject_submit": "拒否",
+      "reject_reason_placeholder": "拒否理由を入力してください（必須）...",
+      "cancel": "キャンセル"
+    },
+    "notifications": {
+      "approved": "✅ 申請が承認されました！ユーザー残高を更新しました。",
+      "rejected": "❌ 申請が拒否されました。",
+      "failed": "操作に失敗しました。もう一度お試しください。",
+      "reason_required": "⚠️ 拒否理由を入力してください。"
+    }
+  }
+}

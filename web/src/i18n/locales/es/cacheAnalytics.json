@@ -1,0 +1,49 @@
+{
+  "cacheAnalytics": {
+    "title": "Analítica de caché",
+    "description": "Observe la efectividad del caché tras la mejora de facturación de DeepSeek.",
+    "unauthorized": "Se requiere acceso de administrador.",
+    "errors": {
+      "fetch_failed": "No se pudieron obtener los datos de analítica de caché."
+    },
+    "filters": {
+      "from": "Desde",
+      "to": "Hasta",
+      "model": "Modelo",
+      "channel_id": "ID del canal",
+      "request_format": "Formato de API",
+      "compare_date": "Fecha de comparación",
+      "all_models": "Todos los modelos",
+      "all_channels": "Todos los canales",
+      "all_formats": "Todos los formatos",
+      "last_7d": "Últimos 7 días",
+      "apply": "Aplicar"
+    },
+    "cards": {
+      "cache_hit_rate": "Tasa de acierto de caché",
+      "estimated_savings_rate": "Tasa de ahorro estimada",
+      "cached_prompt_tokens": "Tokens prompt en caché",
+      "total_quota": "Cuota total"
+    },
+    "sections": {
+      "trend": "Tendencia",
+      "breakdown": "Desglose"
+    },
+    "table": {
+      "model": "Modelo",
+      "channel": "Canal",
+      "request_format": "Formato de API",
+      "requests": "Solicitudes",
+      "prompt_tokens": "Tokens prompt",
+      "cached_prompt_tokens": "Tokens prompt en caché",
+      "cache_hit_rate": "Tasa de caché",
+      "quota": "Cuota"
+    },
+    "compare": {
+      "before": "Antes de la mejora",
+      "after": "Después de la mejora",
+      "delta": "Delta de tasa de acierto"
+    },
+    "empty": "No hay datos de analítica de caché en este rango."
+  }
+}

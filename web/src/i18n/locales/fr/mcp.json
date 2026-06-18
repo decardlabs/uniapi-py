@@ -1,0 +1,108 @@
+{
+  "mcp": {
+    "edit": {
+      "actions": {
+        "add": "Ajouter",
+        "cancel": "Annuler",
+        "create": "Créer le serveur",
+        "update": "Mettre à jour le serveur"
+      },
+      "fields": {
+        "api_key": "Clé API",
+        "auth_type": "Type d'authentification",
+        "auth_type_api_key": "Clé API",
+        "auth_type_bearer": "Bearer",
+        "auth_type_custom_headers": "En-têtes personnalisés",
+        "auth_type_none": "Aucun",
+        "auto_sync": "Synchronisation auto",
+        "auto_sync_help": "Synchroniser les outils selon un calendrier.",
+        "auto_sync_interval": "Intervalle de synchronisation (minutes)",
+        "base_url": "URL de base",
+        "description": "Description",
+        "headers": "En-têtes personnalisés (JSON)",
+        "name": "Nom",
+        "priority": "Priorité",
+        "protocol": "Protocole",
+        "protocol_streamable": "HTTP Streamable",
+        "protocol_streamable_http": "HTTP Streamable",
+        "status": "Statut",
+        "tool_blacklist": "Liste noire d'outils",
+        "tool_blacklist_empty": "Aucun outil bloqué",
+        "tool_blacklist_help": "Les outils bloqués ne seront jamais exposés.",
+        "tool_blacklist_none": "Aucun outil synchronisé",
+        "tool_blacklist_placeholder": "nom_outil",
+        "tool_blacklist_selected": "Outils bloqués ({{count}})",
+        "tool_custom": "Ajouter un outil personnalisé...",
+        "tool_pricing": "Tarification d'outil (JSON)",
+        "tool_pricing_placeholder": "{\n  \"web_search\": { \"usd_per_call\": 0.002 },\n  \"code_interpreter\": { \"quota_per_call\": 1000 }\n}",
+        "tool_search": "Rechercher des outils...",
+        "tool_whitelist": "Liste blanche d'outils",
+        "tool_whitelist_empty": "Aucun outil sélectionné",
+        "tool_whitelist_help": "Seuls les outils listés ici seront activés.",
+        "tool_whitelist_none": "Aucun outil synchronisé",
+        "tool_whitelist_placeholder": "nom_outil",
+        "tool_whitelist_selected": "Outils sélectionnés ({{count}})"
+      },
+      "notifications": {
+        "load_failed": "Échec du chargement du serveur MCP",
+        "save_failed": "Échec de l'enregistrement",
+        "save_success": "Enregistré"
+      },
+      "pricing": {
+        "invalid": "Le JSON de tarification des outils est invalide",
+        "missing": "Tarification manquante pour : {{tools}}"
+      },
+      "title_add": "Ajouter un serveur MCP",
+      "title_edit": "Modifier le serveur MCP",
+      "tools": {
+        "title": "Outils synchronisés"
+      }
+    },
+    "list": {
+      "actions": {
+        "add": "Ajouter un serveur MCP",
+        "delete": "Supprimer",
+        "disable": "Désactiver",
+        "edit": "Modifier",
+        "enable": "Activer",
+        "refresh": "Actualiser",
+        "sync": "Sync",
+        "test": "Tester"
+      },
+      "columns": {
+        "actions": "Actions",
+        "auth_type": "Auth",
+        "base_url": "URL de base",
+        "last_sync": "Dernière synchro",
+        "name": "Nom",
+        "priority": "Priorité",
+        "protocol": "Protocole",
+        "protocol_streamable": "HTTP Streamable",
+        "status": "Statut",
+        "tool_count": "Outils"
+      },
+      "labels": {
+        "never": "Jamais"
+      },
+      "search_placeholder": "Rechercher des serveurs MCP...",
+      "subtitle": "Gérer le registre des serveurs MCP et la synchronisation des outils",
+      "title": "Serveurs MCP"
+    },
+    "notifications": {
+      "delete_failed": "Échec de la suppression",
+      "delete_success": "Serveur supprimé",
+      "fetch_failed": "Échec du chargement des serveurs MCP",
+      "status_failed": "Échec de la mise à jour du statut",
+      "status_success": "Statut mis à jour",
+      "sync_failed": "Échec de la synchronisation",
+      "sync_success": "Synchronisation terminée",
+      "test_failed": "Test échoué",
+      "test_success": "Connexion OK",
+      "test_tools": "Outils : {{count}}"
+    },
+    "status": {
+      "disabled": "Désactivé",
+      "enabled": "Activé"
+    }
+  }
+}

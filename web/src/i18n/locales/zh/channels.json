@@ -1,0 +1,207 @@
+{
+  "confirm": {
+    "delete_title": "删除渠道",
+    "delete_disabled_title": "删除禁用渠道"
+  },
+  "edit": {
+    "common": {
+      "add": "添加",
+      "format_json": "格式化 JSON",
+      "base_url": {
+        "label": "API Base URL",
+        "help_editable": "可自定义 API 基础地址。留空时使用默认地址。",
+        "help_readonly": "该渠道类型的 API 基础地址是固定的，不能修改。",
+        "placeholder": "https://api.example.com",
+        "fixed_note": "当前使用默认地址：{{url}}"
+      }
+    },
+    "models": {
+      "label": "支持的模型名 *",
+      "help_curated": "这里展示的是该渠道类型的推荐模型名。你仍然可以通过下面的按钮补入完整供应商目录，或手动添加自定义模型名。",
+      "help_catalog": "这里展示的是该渠道类型已知的模型名。如果你的上游还支持额外模型，也可以手动补充自定义模型名。",
+      "explainer_curated": "该渠道类型当前有 {{recommendedCount}} 个推荐模型名。如果你需要更完整的上游列表，可以使用“加入供应商目录”一次导入全部 {{catalogCount}} 个已知模型名。",
+      "explainer_catalog": "该渠道类型直接使用供应商目录。你可以一次导入全部 {{catalogCount}} 个已知模型名，或手动补充自定义模型名。",
+      "recommended_title": "推荐模型名",
+      "recommended_description": "这是更精简的推荐集合，适合快速开始或只想保留常用模型名的场景。",
+      "catalog_title": "供应商目录",
+      "catalog_description": "这是该提供商类型当前已知的完整模型名目录。需要更全的模型集合时使用这一组。",
+      "search_placeholder": "搜索模型名...",
+      "custom_placeholder": "添加自定义模型名...",
+      "selected_count": "已启用模型 ({{count}})",
+      "no_selection": "尚未选择模型名",
+      "no_match": "未找到匹配的模型名",
+      "add_recommended": "加入推荐模型 ({{count}})",
+      "add_catalog": "加入供应商目录 ({{count}})",
+      "clear": "清空模型"
+    },
+    "model_mapping": {
+      "label": "请求模型映射 (JSON)",
+      "help": "可选。仅在客户端传入的模型名需要转换成另一个上游模型名时使用。",
+      "placeholder": "将请求模型名映射到上游模型名的 JSON 对象：\n{{example}}"
+    },
+    "model_configs": {
+      "label": "按模型覆盖定价与限制 (JSON)",
+      "help": "可选。用于覆盖 ratio、completion_ratio 和 max_tokens。它不会控制上面启用了哪些模型名。",
+      "load_default": "加载供应商默认配置",
+      "no_defaults_title": "没有匹配的默认配置",
+      "no_defaults_message": "当前已选模型在供应商默认费率中没有匹配项。",
+      "placeholder": "按模型配置定价和 token 限制的 JSON 对象：\n{{example}}"
+    },
+    "loading": "正在加载渠道...",
+    "title": {
+      "edit": "编辑渠道",
+      "create": "新增渠道"
+    },
+    "description": {
+      "edit": "更新渠道配置",
+      "create": "创建新的 API 渠道"
+    },
+    "actions": {
+      "cancel": "取消",
+      "test_channel": "测试渠道",
+      "updating": "更新中...",
+      "creating": "创建中...",
+      "update": "更新渠道",
+      "create": "创建渠道"
+    },
+    "name": {
+      "label": "渠道名称 *",
+      "help": "用于在日志和列表中识别该渠道的描述性名称。",
+      "placeholder": "我的渠道"
+    },
+    "type": {
+      "label": "渠道类型 *",
+      "help": "该渠道对应的提供商类型。修改后可能会重置部分字段。",
+      "loading": "加载中...",
+      "placeholder": "选择渠道类型",
+      "search": "搜索渠道类型...",
+      "not_found": "未找到匹配的渠道类型。"
+    },
+    "groups": {
+      "label": "分组 *",
+      "help": "哪些用户分组可以访问该渠道。普通用户通常使用 \"default\"。",
+      "add_placeholder": "添加自定义分组..."
+    },
+    "key": {
+      "label": "API 密钥",
+      "help": "用于与服务商认证的 API 密钥。"
+    },
+    "openai_compatible": {
+      "heading": "OpenAI Compatible 配置",
+      "base_url": {
+        "label": "Base URL *",
+        "help": "OpenAI Compatible 接口的基础地址，例如 https://api.your-provider.com。需要时系统会自动补上 /v1。",
+        "placeholder": "https://api.your-provider.com"
+      },
+      "api_format": {
+        "label": "上游 API 格式 *",
+        "help": "选择上游使用哪种 API 形态处理请求。ChatCompletion 是历史默认值；当上游要求 OpenAI Response API 时选择 Response。",
+        "placeholder": "选择上游 API 格式",
+        "option": {
+          "chat_completion": "ChatCompletion（默认）",
+          "response": "Response"
+        }
+      }
+    },
+    "priority": {
+      "label": "优先级",
+      "help": "优先级更高的渠道会优先被尝试。默认值为 0。"
+    },
+    "weight": {
+      "label": "权重",
+      "help": "用于同一优先级渠道之间的负载均衡。默认值为 0。"
+    },
+    "ratelimit": {
+      "label": "速率限制",
+      "help": "每分钟最大请求数。0 表示不限。"
+    },
+    "system_prompt": {
+      "label": "系统提示词",
+      "help": "为该渠道上的所有请求强制附加系统提示词。",
+      "placeholder": "你是一个乐于助人的助手..."
+    },
+    "tooling": {
+      "label": "工具配置",
+      "help": "配置允许使用的工具及其价格（JSON）。",
+      "placeholder": "JSON 格式的工具配置：\n{{example}}",
+      "whitelist_editor": "白名单编辑器",
+      "editor_disabled": "请先修复 JSON 错误后再编辑白名单",
+      "add_custom": "添加自定义工具...",
+      "available_tools": "可用工具",
+      "whitelisted_tools": "已加入白名单的工具 ({{count}})",
+      "no_whitelist": "尚未加入任何工具",
+      "format_error": "无法格式化工具配置：{{error}}",
+      "errors": {
+        "invalid_json_title": "无效的 JSON",
+        "invalid_json_message": "请先修复工具配置 JSON，再编辑白名单。"
+      }
+    },
+    "endpoints": {
+      "label": "支持的端点",
+      "help": "选择该渠道支持哪些 API 端点。点击端点右侧的信息图标可查看说明和调用示例。",
+      "reset_defaults": "恢复默认",
+      "select_all": "全选",
+      "select_none": "最小集",
+      "default_badge": "默认",
+      "modal": {
+        "description": "说明",
+        "example": "cURL 示例"
+      }
+    },
+    "mcp": {
+      "blacklist_label": "MCP 工具黑名单",
+      "blacklist_description": "为该渠道屏蔽 MCP 工具。可使用 server.tool 或工具名。",
+      "blacklist_placeholder": "server.tool_name",
+      "blacklist_add": "添加"
+    },
+    "type_change": {
+      "title": "确认修改渠道类型？",
+      "description": "你即将把渠道类型从“{{fromType}}”修改为“{{toType}}”。",
+      "cancel": "取消",
+      "confirm": "确认修改"
+    },
+    "validation": {
+      "error_title": "校验错误",
+      "invalid_json_title": "无效的 JSON",
+      "api_key_required": "API 密钥不能为空。",
+      "model_mapping_invalid": "模型映射 JSON 无效。",
+      "model_configs_title": "配置无效",
+      "model_configs_message": "模型配置无效。",
+      "inference_profile_invalid": "Inference Profile ARN Map 的 JSON 无效。",
+      "oauth_invalid_json": "OAuth JWT 配置 JSON 无效。",
+      "oauth_missing_field_title": "缺少字段",
+      "oauth_missing_field_message": "OAuth JWT 配置缺少字段：{{field}}",
+      "endpoints_required": "保存前至少启用一个端点。",
+      "oauth_parse_title": "解析错误",
+      "oauth_parse_message": "OAuth JWT 解析错误：{{error}}",
+      "base_url_required": "该渠道类型必须填写 Base URL。"
+    },
+    "errors": {
+      "request_failed_title": "请求失败",
+      "operation_failed": "操作失败",
+      "unexpected_title": "发生意外错误"
+    },
+    "test": {
+      "success_title": "成功",
+      "success_message": "渠道测试成功！",
+      "failed_title": "失败",
+      "failed_message": "渠道测试失败：{{message}}",
+      "error_title": "错误",
+      "error_message": "渠道测试失败：{{error}}"
+    },
+    "template": {
+      "api_key": {
+        "label": "API密钥",
+        "help": "用于与服务商认证的API密钥。"
+      },
+      "region": {
+        "label": "区域",
+        "help": "云服务商的区域设置。"
+      },
+      "custom_field": {
+        "label": "自定义字段",
+        "help": "演示用的自定义字段。"
+      }
+    }
+  }
+}

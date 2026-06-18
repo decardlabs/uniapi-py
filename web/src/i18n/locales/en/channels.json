@@ -1,0 +1,203 @@
+{
+  "edit": {
+    "common": {
+      "add": "Add",
+      "format_json": "Format JSON",
+      "base_url": {
+        "label": "API Base URL",
+        "help_editable": "Custom API base URL. Leave empty to use the default URL.",
+        "help_readonly": "The API base URL for this channel type is fixed and cannot be modified.",
+        "placeholder": "https://api.example.com",
+        "fixed_note": "Using default: {{url}}"
+      }
+    },
+    "models": {
+      "label": "Supported Model Names *",
+      "help_curated": "These are recommended model names for this channel type. You can add the full provider catalog or custom model names below.",
+      "help_catalog": "These are known model names for this channel type. You can also add custom model names if your upstream supports them.",
+      "explainer_curated": "This channel type has {{recommendedCount}} recommended model names. If you need the broader upstream list, use \"Add Provider Catalog\" to import all {{catalogCount}} known model names.",
+      "explainer_catalog": "This channel type uses the provider catalog directly. You can import all {{catalogCount}} known model names or add custom names manually.",
+      "recommended_title": "Recommended Model Names",
+      "recommended_description": "A smaller curated list for common setups. Use this when you want a cleaner starting point.",
+      "catalog_title": "Provider Catalog",
+      "catalog_description": "All model names currently known for this provider type. Import this when you need the full catalog instead of the curated subset.",
+      "search_placeholder": "Search model names...",
+      "custom_placeholder": "Add custom model name...",
+      "selected_count": "Enabled Models ({{count}})",
+      "no_selection": "No model names selected",
+      "no_match": "No model names found",
+      "add_recommended": "Add Recommended Models ({{count}})",
+      "add_catalog": "Add Provider Catalog ({{count}})",
+      "clear": "Clear Models"
+    },
+    "model_mapping": {
+      "label": "Request Model Mapping (JSON)",
+      "help": "Optional. Only use this when the client-facing model name should be translated to a different upstream model name.",
+      "placeholder": "JSON object mapping request model names to upstream model names:\n{{example}}"
+    },
+    "model_configs": {
+      "label": "Per-Model Pricing & Limits (JSON)",
+      "help": "Optional overrides for ratio, completion_ratio, and max_tokens. This does not control which model names are enabled above.",
+      "load_default": "Load Provider Defaults",
+      "no_defaults_title": "No matching defaults",
+      "no_defaults_message": "No provider default pricing was found for the currently selected models.",
+      "placeholder": "JSON object for per-model pricing and token limits:\n{{example}}"
+    },
+    "loading": "Loading channel...",
+    "title": {
+      "edit": "Edit Channel",
+      "create": "Create Channel"
+    },
+    "description": {
+      "edit": "Update channel configuration",
+      "create": "Create a new API channel"
+    },
+    "actions": {
+      "cancel": "Cancel",
+      "test_channel": "Test Channel",
+      "updating": "Updating...",
+      "creating": "Creating...",
+      "update": "Update Channel",
+      "create": "Create Channel"
+    },
+    "name": {
+      "label": "Channel Name *",
+      "help": "A descriptive name for this channel to identify it in logs and lists.",
+      "placeholder": "My Channel"
+    },
+    "type": {
+      "label": "Channel Type *",
+      "help": "The provider type for this channel. Changing this may reset some fields.",
+      "loading": "Loading...",
+      "placeholder": "Select a channel type",
+      "search": "Search channel type...",
+      "not_found": "No channel type found."
+    },
+    "groups": {
+      "label": "Groups *",
+      "help": "User groups that can access this channel. \"default\" is standard for normal users.",
+      "add_placeholder": "Add custom group..."
+    },
+    "key": {
+      "label": "API Key",
+      "help": "The API key for authentication with the provider."
+    },
+    "openai_compatible": {
+      "heading": "OpenAI Compatible Configuration",
+      "base_url": {
+        "label": "Base URL *",
+        "help": "Base URL of the OpenAI-compatible endpoint, e.g., https://api.your-provider.com. /v1 is appended automatically when required.",
+        "placeholder": "https://api.your-provider.com"
+      },
+      "api_format": {
+        "label": "Upstream API Format *",
+        "help": "Select which upstream API surface should handle requests. ChatCompletion is the historical default; choose Response when the upstream expects OpenAI Response API payloads.",
+        "placeholder": "Select upstream API format",
+        "option": {
+          "chat_completion": "ChatCompletion (default)",
+          "response": "Response"
+        }
+      }
+    },
+    "priority": {
+      "label": "Priority",
+      "help": "Higher priority channels are tried first. Default is 0."
+    },
+    "weight": {
+      "label": "Weight",
+      "help": "Used for load balancing between channels of the same priority. Default is 0."
+    },
+    "ratelimit": {
+      "label": "Rate Limit",
+      "help": "Maximum requests per minute. 0 means unlimited."
+    },
+    "system_prompt": {
+      "label": "System Prompt",
+      "help": "Force a system prompt for all requests to this channel.",
+      "placeholder": "You are a helpful assistant..."
+    },
+    "tooling": {
+      "label": "Tooling Config",
+      "help": "Configure allowed tools and their pricing (JSON).",
+      "placeholder": "Tooling configuration in JSON format:\n{{example}}",
+      "whitelist_editor": "Whitelist Editor",
+      "editor_disabled": "Fix JSON error to enable editor",
+      "add_custom": "Add custom tool...",
+      "available_tools": "Available Tools",
+      "whitelisted_tools": "Whitelisted Tools ({{count}})",
+      "no_whitelist": "No tools whitelisted",
+      "format_error": "Unable to format tooling config: {{error}}",
+      "errors": {
+        "invalid_json_title": "Invalid JSON",
+        "invalid_json_message": "Fix tooling JSON before editing the whitelist."
+      }
+    },
+    "endpoints": {
+      "label": "Supported Endpoints",
+      "help": "Select which API endpoints this channel supports. Click on an endpoint's info icon for details and usage examples.",
+      "reset_defaults": "Reset to Defaults",
+      "select_all": "Select All",
+      "select_none": "Minimal",
+      "default_badge": "default",
+      "modal": {
+        "description": "Description",
+        "example": "cURL Example"
+      }
+    },
+    "mcp": {
+      "blacklist_label": "MCP tool blacklist",
+      "blacklist_description": "Block MCP tools for this channel. Use server.tool or tool name.",
+      "blacklist_placeholder": "server.tool_name",
+      "blacklist_add": "Add"
+    },
+    "type_change": {
+      "title": "Change Channel Type?",
+      "description": "You are about to change the channel type from \"{{fromType}}\" to \"{{toType}}\".",
+      "cancel": "Cancel",
+      "confirm": "Change Type"
+    },
+    "validation": {
+      "error_title": "Validation error",
+      "invalid_json_title": "Invalid JSON",
+      "api_key_required": "API key is required.",
+      "model_mapping_invalid": "Model mapping has invalid JSON.",
+      "model_configs_title": "Invalid configs",
+      "model_configs_message": "Model configs are invalid.",
+      "inference_profile_invalid": "Inference profile ARN map has invalid JSON.",
+      "oauth_invalid_json": "OAuth JWT configuration JSON is invalid.",
+      "oauth_missing_field_title": "Missing field",
+      "oauth_missing_field_message": "OAuth JWT configuration missing: {{field}}",
+      "endpoints_required": "Enable at least one endpoint before saving.",
+      "oauth_parse_title": "Parse error",
+      "oauth_parse_message": "OAuth JWT parse error: {{error}}",
+      "base_url_required": "Base URL is required for this channel type."
+    },
+    "errors": {
+      "request_failed_title": "Request failed",
+      "operation_failed": "Operation failed",
+      "unexpected_title": "Unexpected error"
+    },
+    "test": {
+      "success_title": "Success",
+      "success_message": "Channel test successful!",
+      "failed_title": "Failed",
+      "failed_message": "Channel test failed: {{message}}",
+      "error_title": "Error",
+      "error_message": "Channel test failed: {{error}}"
+    },
+    "template": {
+      "api_key": {
+        "label": "API Key",
+        "help": "The API key for authentication with the provider."
+      },
+      "region": {
+        "label": "Region",
+        "help": "The region for the cloud provider."
+      },
+      "custom_field": {
+        "label": "Custom Field",
+        "help": "A custom field for demonstration."
+      }
+    }
+  }
+}

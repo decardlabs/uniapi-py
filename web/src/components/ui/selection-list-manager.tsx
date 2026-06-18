@@ -1,0 +1,193 @@
+import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
+import { cn } from '@/lib/utils';
+import { Info, X } from 'lucide-react';
+import type { ReactNode } from 'react';
+import { useMemo, useState } from 'react';
+import { useTranslation } from 'react-i18next';
+
+// SelectionListOption describes a selectable option displayed in the manager.
+export interface SelectionListOption {
+  value: string;
+  label?: string;
+}
+
+// SelectionListManagerProps configures labels, data, and behavior for the manager.
+export interface SelectionListManagerProps {
+  label: string;
+  help?: string;
+  options: SelectionListOption[];
+  selected: string[];
+  onChange: (next: string[]) => void;
+  searchPlaceholder?: string;
+  customPlaceholder?: string;
+  addLabel?: string;
+  actions?: ReactNode;
+  selectedSummaryLabel?: (count: number) => string;
+  emptySelectedLabel?: string;
+  noOptionsLabel?: string;
+  disabled?: boolean;
+}
+
+/**
+ * SelectionListManager renders a searchable multi-select list with optional custom additions.
+ * It supports toggling from a catalog, adding ad-hoc values, and showing selected items.
+ */
+export function SelectionListManager({
+  label,
+  help,
+  options,
+  selected,
+  onChange,
+  searchPlaceholder,
+  customPlaceholder,
+  addLabel,
+  actions,
+  selectedSummaryLabel,
+  emptySelectedLabel,
+  noOptionsLabel,
+  disabled,
+}: SelectionListManagerProps) {
+  const [searchTerm, setSearchTerm] = useState('');
+  const [customValue, setCustomValue] = useState('');
+
+  const normalizedSelected = useMemo(() => selected.map((item) => item.trim()).filter((item) => item.length > 0), [selected]);
+
+  const filteredOptions = useMemo(() => {
+    if (!searchTerm.trim()) return options;
+    const keyword = searchTerm.trim().toLowerCase();
+    return options.filter((option) => {
+      const labelText = option.label ?? option.value;
+      return labelText.toLowerCase().includes(keyword) || option.value.toLowerCase().includes(keyword);
+    });
+  }, [options, searchTerm]);
+
+  const toggleOption = (value: string) => {
+    if (disabled) return;
+    if (normalizedSelected.includes(value)) {
+      onChange(normalizedSelected.filter((item) => item !== value));
+      return;
+    }
+    onChange([...normalizedSelected, value]);
+  };
+
+  const addCustomValue = () => {
+    if (disabled) return;
+    const next = customValue.trim();
+    if (!next) return;
+    if (!normalizedSelected.includes(next)) {
+      onChange([...normalizedSelected, next]);
+    }
+    setCustomValue('');
+  };
+
+  const removeSelected = (value: string) => {
+    if (disabled) return;
+    onChange(normalizedSelected.filter((item) => item !== value));
+  };
+
+  const { t } = useTranslation();
+
+  const selectedSummary = selectedSummaryLabel
+    ? selectedSummaryLabel(normalizedSelected.length)
+    : t('common.selected_count', 'Selected ({{count}})', { count: normalizedSelected.length });
+
+  return (
+    <TooltipProvider>
+      <div className="space-y-4">
+        <div className="flex items-center gap-1">
+          <Label className="text-sm font-medium">{label}</Label>
+          {help && (
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Info className="h-4 w-4 text-muted-foreground cursor-help" aria-label={`Help: ${label}`} />
+              </TooltipTrigger>
+              <TooltipContent className="max-w-xs whitespace-pre-line">{help}</TooltipContent>
+            </Tooltip>
+          )}
+        </div>
+
+        {actions && <div className="flex flex-col gap-2 sm:flex-row sm:flex-wrap [&>*]:w-full sm:[&>*]:w-auto">{actions}</div>}
+
+        <div className="flex flex-col gap-2 sm:flex-row sm:flex-wrap">
+          <Input
+            value={searchTerm}
+            onChange={(event) => setSearchTerm(event.target.value)}
+            placeholder={searchPlaceholder}
+            disabled={disabled}
+            className="w-full sm:flex-1 sm:min-w-[220px]"
+          />
+          {customPlaceholder && (
+            <div className="flex w-full flex-col gap-2 sm:flex-1 sm:min-w-[260px] sm:flex-row">
+              <Input
+                value={customValue}
+                onChange={(event) => setCustomValue(event.target.value)}
+                placeholder={customPlaceholder}
+                disabled={disabled}
+                onKeyDown={(event) => {
+                  if (event.nativeEvent.isComposing || event.keyCode === 229) return;
+                  if (event.key === 'Enter') {
+                    event.preventDefault();
+                    addCustomValue();
+                  }
+                }}
+              />
+              <Button type="button" variant="secondary" onClick={addCustomValue} disabled={disabled} className="w-full sm:w-auto">
+                {addLabel || 'Add'}
+              </Button>
+            </div>
+          )}
+        </div>
+
+        <div className="max-h-[220px] overflow-y-auto rounded-lg border bg-muted/10 p-3">
+          <div className="flex flex-wrap gap-2">
+            {filteredOptions.length === 0 && <span className="text-xs text-muted-foreground">{noOptionsLabel || 'No options'}</span>}
+            {filteredOptions.map((option) => {
+              const isSelected = normalizedSelected.includes(option.value);
+              return (
+                <Badge
+                  key={option.value}
+                  variant={isSelected ? 'default' : 'outline'}
+                  className={cn('cursor-pointer hover:bg-primary/90 max-w-full', disabled && 'opacity-60')}
+                  onClick={() => toggleOption(option.value)}
+                >
+                  <span className="truncate min-w-0" title={option.label ?? option.value}>
+                    {option.label ?? option.value}
+                  </span>
+                </Badge>
+              );
+            })}
+          </div>
+        </div>
+
+        <div className="space-y-2">
+          <div className="text-sm font-medium text-muted-foreground">{selectedSummary}</div>
+          <div className="flex min-h-[52px] flex-wrap gap-2 rounded-lg border bg-background p-3">
+            {normalizedSelected.length === 0 && (
+              <span className="text-sm text-muted-foreground italic p-1">{emptySelectedLabel || 'No selections'}</span>
+            )}
+            {normalizedSelected.map((item) => (
+              <Badge key={item} variant="secondary" className="max-w-full gap-1 overflow-hidden px-2 py-1.5">
+                <span className="min-w-0 truncate" title={item}>
+                  {item}
+                </span>
+                <button
+                  type="button"
+                  onClick={() => removeSelected(item)}
+                  className="ml-1 inline-flex shrink-0"
+                  aria-label={t('common.remove_item', 'Remove {{item}}', { item })}
+                  disabled={disabled}
+                >
+                  <X className="h-3 w-3" />
+                </button>
+              </Badge>
+            ))}
+          </div>
+        </div>
+      </div>
+    </TooltipProvider>
+  );
+}

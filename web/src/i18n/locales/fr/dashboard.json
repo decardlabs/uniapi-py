@@ -1,0 +1,100 @@
+{
+  "dashboard": {
+    "cards": {
+      "avg_cost": "Coût moyen par requête",
+      "avg_daily": "Moyenne quotidienne : {{value}}",
+      "quota_used": "Quota utilisé",
+      "tokens_consumed": "Tokens consommés",
+      "tokens_per_request": "{{value}} tokens par requête",
+      "total_requests": "Nombre total de requêtes"
+    },
+    "description": "Surveillez l’utilisation de l’API et les statistiques de votre compte",
+    "errors": {
+      "fetch_failed": "Échec de récupération des données du tableau de bord",
+      "future": "La date de fin ne peut pas être dans le futur",
+      "label": "Erreur",
+      "range_limit_admin": "La plage ne peut pas dépasser 1 an",
+      "range_limit_user": "La plage ne peut pas dépasser 7 jours",
+      "range_order": "La date de début doit être antérieure ou égale à la date de fin",
+      "too_old_admin": "La date de début ne peut pas être antérieure à 1 an",
+      "too_old_user": "La date de début ne peut pas être antérieure à 7 jours"
+    },
+    "fallbacks": {
+      "model": "Modèle inconnu",
+      "owner": "inconnu",
+      "token": "jeton sans nom",
+      "user": "Utilisateur inconnu"
+    },
+    "filters": {
+      "all_users": "Tous les utilisateurs",
+      "apply": "Appliquer",
+      "from": "Du",
+      "from_aria": "Date de début",
+      "loading": "Chargement...",
+      "seven_days": "7 j",
+      "thirty_days": "30 j",
+      "to": "Au",
+      "to_aria": "Date de fin",
+      "today": "Aujourd’hui",
+      "user": "Utilisateur",
+      "user_aria": "Sélectionner un utilisateur"
+    },
+    "insights": {
+      "busiest_day": "Jour le plus chargé",
+      "models_in_use": "Modèles utilisés",
+      "peak_token_day": "Pic de tokens",
+      "requests_per_model": "{{value}} requêtes par modèle"
+    },
+    "labels": {
+      "no_data": "Aucune donnée",
+      "no_value": "—",
+      "quota": "Quota",
+      "quota_consumed": "{{value}} consommés",
+      "requests": "Requêtes",
+      "requests_value": "{{value}} requêtes",
+      "tokens": "Tokens",
+      "tokens_value": "{{value}} tokens"
+    },
+    "loading": "Actualisation du tableau de bord…",
+    "login_required": "Veuillez vous connecter pour accéder au tableau de bord.",
+    "metrics": {
+      "expenses": "Dépenses",
+      "requests": "Requêtes",
+      "tokens": "Tokens"
+    },
+    "overview": {
+      "subtitle": "Totaux et leaders pour la période sélectionnée",
+      "title": "Vue d’ensemble de l’usage",
+      "updated": "Mis à jour :"
+    },
+    "sections": {
+      "metric_label": "Indicateur : {{metric}}",
+      "metric_placeholder": "Choisir un indicateur",
+      "model_usage": "Utilisation des modèles",
+      "token_usage": "Utilisation des jetons",
+      "user_usage": "Utilisation par utilisateur"
+    },
+    "title": "Tableau de bord",
+    "empty": {
+      "title": "Aucune donnée",
+      "description": "Commencez à effectuer des requêtes API pour voir les statistiques d'utilisation et les graphiques ici."
+    },
+    "top_models": {
+      "highest_cost": "Coût le plus élevé",
+      "most_requests": "Plus de requêtes",
+      "most_tokens": "Plus de tokens",
+      "title": "Meilleurs modèles de la période"
+    },
+    "pool_summary": {
+      "title": "Aperçu des Pools Budgétaires",
+      "subtitle": "Allocation et utilisation des pools budgétaires actifs",
+      "no_pools": "Aucun pool budgétaire actif",
+      "go_to_pools": "Aller aux Pools Budgétaires",
+      "total_budget": "Budget Total",
+      "total_allocated": "Alloué",
+      "total_available": "Disponible",
+      "pool_count": "Pools Actifs",
+      "view_all": "Voir Tout"
+    }
+  }
+}

@@ -1,0 +1,108 @@
+{
+  "mcp": {
+    "edit": {
+      "actions": {
+        "add": "Agregar",
+        "cancel": "Cancelar",
+        "create": "Crear servidor",
+        "update": "Actualizar servidor"
+      },
+      "fields": {
+        "api_key": "Clave API",
+        "auth_type": "Tipo de autenticación",
+        "auth_type_api_key": "Clave API",
+        "auth_type_bearer": "Bearer",
+        "auth_type_custom_headers": "Encabezados personalizados",
+        "auth_type_none": "Ninguno",
+        "auto_sync": "Sincronización automática",
+        "auto_sync_help": "Sincronizar herramientas según un horario.",
+        "auto_sync_interval": "Intervalo de sincronización (minutos)",
+        "base_url": "URL base",
+        "description": "Descripción",
+        "headers": "Encabezados personalizados (JSON)",
+        "name": "Nombre",
+        "priority": "Prioridad",
+        "protocol": "Protocolo",
+        "protocol_streamable": "HTTP con flujo (Streamable)",
+        "protocol_streamable_http": "HTTP con flujo (Streamable)",
+        "status": "Estado",
+        "tool_blacklist": "Lista negra de herramientas",
+        "tool_blacklist_empty": "No hay herramientas bloqueadas",
+        "tool_blacklist_help": "Las herramientas bloqueadas nunca se expondrán.",
+        "tool_blacklist_none": "No hay herramientas sincronizadas",
+        "tool_blacklist_placeholder": "nombre_herramienta",
+        "tool_blacklist_selected": "Herramientas bloqueadas ({{count}})",
+        "tool_custom": "Agregar herramienta personalizada...",
+        "tool_pricing": "Precios de herramientas (JSON)",
+        "tool_pricing_placeholder": "{\n  \"web_search\": { \"usd_per_call\": 0.002 },\n  \"code_interpreter\": { \"quota_per_call\": 1000 }\n}",
+        "tool_search": "Buscar herramientas...",
+        "tool_whitelist": "Lista blanca de herramientas",
+        "tool_whitelist_empty": "No se seleccionaron herramientas",
+        "tool_whitelist_help": "Solo se habilitarán las herramientas enumeradas aquí.",
+        "tool_whitelist_none": "No hay herramientas sincronizadas",
+        "tool_whitelist_placeholder": "nombre_herramienta",
+        "tool_whitelist_selected": "Herramientas seleccionadas ({{count}})"
+      },
+      "notifications": {
+        "load_failed": "Error al cargar el servidor MCP",
+        "save_failed": "Error al guardar",
+        "save_success": "Guardado"
+      },
+      "pricing": {
+        "invalid": "El JSON de precios de herramientas no es válido",
+        "missing": "Falta el precio para: {{tools}}"
+      },
+      "title_add": "Agregar servidor MCP",
+      "title_edit": "Editar servidor MCP",
+      "tools": {
+        "title": "Herramientas sincronizadas"
+      }
+    },
+    "list": {
+      "actions": {
+        "add": "Agregar servidor MCP",
+        "delete": "Eliminar",
+        "disable": "Deshabilitar",
+        "edit": "Editar",
+        "enable": "Habilitar",
+        "refresh": "Actualizar",
+        "sync": "Sincronizar",
+        "test": "Probar"
+      },
+      "columns": {
+        "actions": "Acciones",
+        "auth_type": "Autenticación",
+        "base_url": "URL base",
+        "last_sync": "Última sincronización",
+        "name": "Nombre",
+        "priority": "Prioridad",
+        "protocol": "Protocolo",
+        "protocol_streamable": "HTTP con flujo",
+        "status": "Estado",
+        "tool_count": "Herramientas"
+      },
+      "labels": {
+        "never": "Nunca"
+      },
+      "search_placeholder": "Buscar servidores MCP...",
+      "subtitle": "Administrar el registro de servidores MCP y la sincronización de herramientas",
+      "title": "Servidores MCP"
+    },
+    "notifications": {
+      "delete_failed": "Error al eliminar",
+      "delete_success": "Servidor eliminado",
+      "fetch_failed": "Error al cargar los servidores MCP",
+      "status_failed": "Error al actualizar el estado",
+      "status_success": "Estado actualizado",
+      "sync_failed": "Sincronización fallida",
+      "sync_success": "Sincronización completa",
+      "test_failed": "Prueba fallida",
+      "test_success": "Conexión OK",
+      "test_tools": "Herramientas: {{count}}"
+    },
+    "status": {
+      "disabled": "Deshabilitado",
+      "enabled": "Habilitado"
+    }
+  }
+}

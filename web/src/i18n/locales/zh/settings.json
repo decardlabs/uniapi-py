@@ -1,0 +1,357 @@
+{
+  "operation_settings": {
+    "general": {
+      "approximate_token": "启用近似 Token 计数",
+      "approximate_token_desc": "使用更快的近似方法进行 Token 计数以提高性能（可能会稍微降低准确性）。",
+      "chat_link": "聊天链接",
+      "chat_link_desc": "在 UI 中显示的外部聊天/支持链接。",
+      "description": "配置通用操作参数",
+      "display_in_currency": "以货币形式显示",
+      "display_in_currency_desc": "根据配置的汇率，在 UI 中以货币形式显示用量和配额。",
+      "display_unit": "显示单位",
+      "display_unit_desc": "选择配额的显示方式：Token 数量、美元（USD）或人民币（CNY）。切换后全局生效。",
+      "unit_token": "Token 数量",
+      "unit_token_desc": "以 Token 数量显示配额，直观展示可用 Token 量。",
+      "unit_usd": "美元 (USD)",
+      "unit_usd_desc": "以美元显示配额金额。",
+      "unit_cny": "人民币 (CNY)",
+      "unit_cny_desc": "以人民币显示配额金额。",
+      "display_token_stat": "显示 Token 统计",
+      "display_token_stat_desc": "在日志和仪表盘中显示 Token 统计信息（如果可用）。",
+      "log_consume_enabled": "启用消费日志",
+      "log_consume_enabled_desc": "记录使用/消费日志。关闭以减少存储开销。",
+      "quota_per_unit": "单位配额",
+      "quota_per_unit_desc": "货币显示的转换比率。值越高，每 1 美元代表的配额越多。",
+      "retry_times": "重试次数",
+      "retry_times_desc": "上游请求出现瞬时错误时的自动重试次数。",
+      "save": "保存通用设置",
+      "title": "通用设置",
+      "top_up_link": "充值链接",
+      "top_up_link_desc": "用户购买或充值配额的外部链接。"
+    },
+    "loading": "正在加载操作设置...",
+    "logs": {
+      "clear_button": "清除此日期之前的日志",
+      "clear_failed": "清除日志失败: {{message}}",
+      "clear_warning": "这将永久删除所选日期之前的所有日志。",
+      "cleared_success": "已清除 {{count}} 条日志！",
+      "description": "清除历史日志以释放存储空间",
+      "title": "日志管理"
+    },
+    "monitoring": {
+      "automatic_disable_channel": "自动禁用渠道",
+      "automatic_disable_channel_desc": "自动禁用持续失败的渠道。",
+      "automatic_enable_channel": "自动启用渠道",
+      "automatic_enable_channel_desc": "当渠道恢复健康时自动重新启用先前禁用的渠道。",
+      "channel_disable_threshold": "渠道禁用阈值",
+      "channel_disable_threshold_desc": "自动禁用渠道的失败率阈值（百分比）。默认为 5%。",
+      "description": "配置监控阈值和渠道管理",
+      "quota_remind_threshold": "配额提醒阈值",
+      "quota_remind_threshold_desc": "当剩余配额低于此值时，将提醒用户。",
+      "save": "保存监控设置",
+      "title": "监控与渠道设置"
+    },
+    "quota": {
+      "description": "配置用户配额和邀请奖励",
+      "pre_consumed_quota": "预消耗配额",
+      "pre_consumed_quota_desc": "请求开始时预留的配额以避免滥用。未使用的部分将在计费后返还。",
+      "quota_for_invitee": "受邀者配额",
+      "quota_for_invitee_desc": "受邀者注册成功后获得的配额奖励。",
+      "quota_for_inviter": "邀请者配额",
+      "quota_for_inviter_desc": "邀请成功后邀请者获得的配额奖励。",
+      "quota_for_new_user": "新用户配额",
+      "quota_for_new_user_desc": "每个新注册用户获得的初始配额。",
+      "save": "保存配额设置",
+      "title": "配额设置"
+    }
+  },
+  "other_settings": {
+    "branding": {
+      "description": "配置系统名称、Logo 和视觉外观",
+      "logo_url": "Logo URL",
+      "logo_url_desc": "在页眉/登录屏幕中显示的 Logo 图片 URL。",
+      "save": "保存",
+      "system_name": "系统名称",
+      "system_name_desc": "在 UI 和邮件中显示的系统显示名称。",
+      "theme": "主题",
+      "theme_desc": "UI 主题名称。支持：modern。",
+      "theme_fixed_desc": "当前仅支持 Modern 主题，主题不可更改。",
+      "title": "系统品牌"
+    },
+    "content": {
+      "about": "关于页面内容（支持 Markdown）",
+      "about_desc": "关于页面的内容。支持 Markdown。",
+      "about_placeholder": "输入关于页面内容...",
+      "description": "配置公告、关于页面和主页内容",
+      "footer": "页脚内容（支持 HTML）",
+      "footer_desc": "全站渲染的页脚内容。允许 HTML；请谨慎使用。",
+      "footer_placeholder": "输入页脚内容...",
+      "home_page": "主页内容（支持 Markdown）",
+      "home_page_desc": "主页上显示的内容。支持 Markdown。",
+      "home_page_placeholder": "输入主页内容...",
+      "notice": "公告（支持 Markdown）",
+      "notice_desc": "向所有用户显示的全站公告内容。支持 Markdown。",
+      "notice_placeholder": "输入公告内容...",
+      "save_about": "保存关于",
+      "save_footer": "保存页脚",
+      "save_home_page": "保存主页内容",
+      "save_notice": "保存公告",
+      "title": "内容管理"
+    },
+    "loading": "正在加载其他设置...",
+    "updates": {
+      "check_update": "检查更新",
+      "description": "检查更新并管理系统版本",
+      "title": "系统更新",
+      "update_available": "可用更新: {{version}}",
+      "view_versions": "查看 GitHub 标签"
+    }
+  },
+  "personal_settings": {
+    "access_token": {
+      "description": "生成访问令牌和邀请链接。",
+      "generate_token": "生成访问令牌",
+      "get_invite_link": "获取邀请链接",
+      "title": "访问令牌与邀请"
+    },
+    "passkey": {
+      "delete_button": "删除",
+      "delete_confirm": "确定要删除此通行密钥吗？",
+      "description": "使用生物识别、安全密钥或您的设备进行无密码登录。",
+      "errors": {
+        "delete_failed": "删除通行密钥失败",
+        "load_failed": "加载通行密钥失败",
+        "not_supported": "此浏览器不支持通行密钥",
+        "register_failed": "注册通行密钥失败",
+        "rename_failed": "重命名通行密钥失败",
+        "webauthn_unavailable": "WebAuthn 不可用"
+      },
+      "list_title": "您的通行密钥",
+      "name_label": "通行密钥名称",
+      "name_placeholder": "例如 MacBook Touch ID",
+      "no_passkeys": "尚未注册通行密钥",
+      "no_passkeys_desc": "通行密钥是最安全的登录方式。添加一个通行密钥，即可使用生物识别或安全密钥进行快速无密码认证。",
+      "not_supported_desc": "您的浏览器不支持通行密钥。请尝试使用 Chrome、Safari 或 Edge 等现代浏览器。",
+      "processing": "处理中...",
+      "recommended": "推荐",
+      "register_button": "添加通行密钥",
+      "registered": "注册时间",
+      "rename_button": "重命名",
+      "rename_placeholder": "输入新名称",
+      "sign_count": "使用次数",
+      "title": "通行密钥"
+    },
+    "profile_info": {
+      "bind_email": "绑定邮箱",
+      "bind_success": "邮箱更新成功",
+      "binding_email": "正在绑定邮箱...",
+      "description": "更新您的个人信息和帐户设置。",
+      "display_name": "显示名称",
+      "display_name_placeholder": "输入显示名称",
+      "email": "邮箱",
+      "email_help": "更换邮箱需要验证。发送验证码到新邮箱地址，然后在下方确认。",
+      "email_placeholder": "输入邮箱",
+      "email_verification_code_placeholder": "输入邮箱验证码",
+      "failed": "更新失败",
+      "load_failed": "加载个人信息失败",
+      "send_code": "发送验证码",
+      "send_code_success": "验证码已发送，请查收邮箱。",
+      "sending_code": "正在发送...",
+      "success": "个人资料更新成功",
+      "title": "个人信息",
+      "update_button": "更新个人资料",
+      "updating": "正在更新...",
+      "username": "用户名"
+    },
+    "security": {
+      "description": "管理您的登录方式和帐户保护。",
+      "password": {
+        "confirm_password": "确认密码",
+        "confirm_password_placeholder": "再次输入新密码",
+        "description": "使用强且唯一的密码作为备用登录方式。",
+        "failed": "密码更新失败",
+        "mismatch": "两次输入的密码不一致",
+        "new_password": "新密码",
+        "new_password_placeholder": "输入新密码",
+        "success": "密码更新成功",
+        "title": "密码",
+        "update_button": "更新密码",
+        "updating": "正在更新..."
+      },
+      "status": {
+        "passkey_off": "未设置通行密钥",
+        "passkey_on": "通行密钥已启用",
+        "password_off": "未设置密码",
+        "password_on": "已设置密码",
+        "title": "安全概览",
+        "totp_off": "未启用 TOTP",
+        "totp_on": "TOTP 已启用"
+      },
+      "title": "帐户安全"
+    },
+    "totp": {
+      "cancel": "取消",
+      "confirm": "确认",
+      "description": "使用身份验证器应用的一次性密码为帐户添加第二层保护。",
+      "disable_button": "禁用 TOTP",
+      "disable_placeholder": "输入 TOTP 代码以禁用",
+      "disabled_desc": "启用双因素认证以保护您的帐户。",
+      "disabled_title": "TOTP 未启用",
+      "enable_button": "启用 TOTP",
+      "enabled_desc": "您的帐户受双因素认证保护。",
+      "enabled_title": "TOTP 已启用",
+      "errors": {
+        "confirm_failed": "确认 TOTP 失败",
+        "disable_failed": "禁用 TOTP 失败",
+        "invalid_code": "输入有效的 6 位代码",
+        "load_status": "加载 TOTP 状态失败",
+        "missing_code": "请输入 TOTP 代码以禁用",
+        "setup_failed": "设置 TOTP 失败"
+      },
+      "processing": "正在处理...",
+      "secret_key": "密钥（手动输入）",
+      "setup_desc": "按照以下步骤使用 TOTP 保护您的帐户。",
+      "setup_instructions_title": "设置说明",
+      "setup_step1": "安装身份验证器应用（Google Authenticator, Authy 等）",
+      "setup_step2": "扫描下方二维码或手动输入密钥",
+      "setup_step3": "输入身份验证器应用中的 6 位代码",
+      "setup_step4": "点击「确认」以启用 TOTP",
+      "setup_title": "设置双因素认证",
+      "title": "双因素认证 (TOTP)",
+      "verify_code": "验证码",
+      "verify_placeholder": "输入身份验证器应用中的 6 位代码",
+      "verify_placeholder_mobile": "输入 6 位代码"
+    }
+  },
+  "settings": {
+    "description": "配置您的帐户和系统设置",
+    "tabs": {
+      "operation": "运营",
+      "other": "其他",
+      "personal": "个人",
+      "system": "系统"
+    },
+    "title": "设置"
+  },
+  "system_settings": {
+    "description": "配置系统级设置和选项。",
+    "descriptions": {
+      "About": "关于页面内容（前端渲染支持 Markdown/HTML）。",
+      "ApproximateTokenEnabled": "使用更快的近似方法进行 Token 计数以提高性能（可能会稍微降低准确性）。",
+      "AutomaticDisableChannelEnabled": "自动禁用持续失败的渠道。",
+      "AutomaticEnableChannelEnabled": "当渠道恢复健康时自动重新启用先前禁用的渠道。",
+      "ChannelDisableThreshold": "自动禁用渠道的失败率阈值（百分比）。默认为 5%。",
+      "ChatLink": "在 UI 中显示的外部聊天/支持链接。",
+      "DisplayInCurrencyEnabled": "根据配置的汇率，在 UI 中以货币形式显示用量和配额。",
+      "DisplayTokenStatEnabled": "在日志和仪表盘中显示 Token 统计信息（如果可用）。",
+      "EmailDomainRestrictionEnabled": "仅允许下列域名的邮箱注册。",
+      "EmailDomainWhitelist": "允许的邮箱域名列表，用逗号分隔（例如 gmail.com, example.com）。",
+      "EmailVerificationEnabled": "要求邮箱验证才能进行注册或重置密码等操作。",
+      "Footer": "全站显示的页脚文本或 HTML。",
+      "GitHubClientId": "用于登录的 GitHub OAuth 客户端 ID。",
+      "GitHubClientSecret": "用于交换授权码的 GitHub OAuth 客户端密钥。安全存储，从不显示。",
+      "GitHubOAuthEnabled": "启用 GitHub OAuth 登录。需要 GitHub 客户端 ID 和密钥。",
+      "GroupRatio": "特定用户组计费比率的 JSON 映射。控制用户组的折扣/溢价。",
+      "HomePageContent": "主页上显示的内容。",
+      "LarkClientId": "用于 Lark OAuth 登录的 Lark 应用 ID。",
+      "LarkClientSecret": "用于完成 OAuth 流程的 Lark 应用密钥。安全存储，从不显示。",
+      "LogConsumeEnabled": "记录使用/消费日志。关闭以减少存储开销。",
+      "Logo": "在页眉/登录屏幕中显示的 Logo URL。",
+      "MessagePusherAddress": "日志事件的警报/通知推送服务端点。",
+      "MessagePusherToken": "警报/通知推送服务的认证令牌。安全存储，从不显示。",
+      "Notice": "向所有用户显示的全站公告内容。",
+      "OidcAuthorizationEndpoint": "OIDC 授权端点 URL。",
+      "OidcClientId": "发起 OIDC 登录流程时使用的 OIDC 客户端 ID。",
+      "OidcClientSecret": "令牌交换期间使用的 OIDC 客户端密钥。安全存储，从不显示。",
+      "OidcEnabled": "启用 OpenID Connect (OIDC) 登录。需要 OIDC 端点和凭据。",
+      "OidcTokenEndpoint": "OIDC 令牌端点 URL。",
+      "OidcUserinfoEndpoint": "OIDC 用户信息端点 URL。",
+      "OidcWellKnown": "OIDC well-known 发现 URL (例如 https://issuer/.well-known/openid-configuration)。",
+      "PasswordLoginEnabled": "允许用户使用邮箱和密码登录。禁用以强制使用 OAuth 或其他提供商。",
+      "PasswordRegisterEnabled": "允许新用户使用邮箱和密码注册。",
+      "PreConsumedQuota": "请求开始时预留的配额以避免滥用。未使用的部分将在计费后返还。",
+      "QuotaForInvitee": "受邀者注册成功后获得的配额奖励。",
+      "QuotaForInviter": "邀请成功后邀请者获得的配额奖励。",
+      "QuotaForNewUser": "每个新注册用户获得的初始配额。",
+      "QuotaPerUnit": "货币显示的转换比率。值越高，每 1 美元代表的配额越多。",
+      "QuotaRemindThreshold": "当剩余配额低于此值时，将提醒用户。",
+      "RegisterEnabled": "用户注册总开关。关闭以停止所有新注册。",
+      "RetryTimes": "上游请求出现瞬时错误时的自动重试次数。",
+      "SMTPAccount": "用于认证的 SMTP 用户名或帐户邮箱。",
+      "SMTPFrom": "外发邮件中使用的发件人地址（例如 no-reply@yourdomain）。",
+      "SMTPPort": "SMTP 服务器端口（例如 STARTTLS 为 587，SMTPS 为 465）。",
+      "SMTPServer": "用于发送邮件的 SMTP 服务器主机名。",
+      "SMTPToken": "用于认证的 SMTP 密码或应用令牌。安全存储，从不显示。",
+      "ServerAddress": "此服务器的公共 Base URL（用于链接/回调）。",
+      "SystemName": "在 UI 和邮件中显示的系统显示名称。",
+      "Theme": "UI 主题（modern）。",
+      "TopUpLink": "用户购买或充值配额的外部链接。",
+      "TurnstileCheckEnabled": "在关键操作（注册/重置）上启用 Cloudflare Turnstile。",
+      "TurnstileSecretKey": "服务器使用的 Cloudflare Turnstile 密钥。请保密。",
+      "TurnstileSiteKey": "前端使用的 Cloudflare Turnstile 站点密钥。",
+      "WeChatAccountQRCodeImageURL": "向用户显示的微信公众号二维码图片 URL。",
+      "WeChatAuthEnabled": "启用微信登录。需要微信服务器设置。",
+      "WeChatServerAddress": "微信登录转发器/服务器 Base URL。",
+      "WeChatServerToken": "微信服务器集成的验证令牌。安全存储，从不显示。"
+    },
+    "disabled": "已禁用",
+    "enabled": "已启用",
+    "groups": {
+      "authentication": {
+        "description": "控制用户如何注册和登录您的工作区。",
+        "title": "认证与注册"
+      },
+      "branding": {
+        "description": "自定义产品体验的外观和感觉。",
+        "title": "品牌与内容"
+      },
+      "channels": {
+        "description": "自动响应上游渠道健康状况和重试行为。",
+        "title": "渠道与可靠性"
+      },
+      "email": {
+        "description": "设置出站邮件投递。",
+        "title": "邮件 (SMTP)"
+      },
+      "links": {
+        "description": "控制向最终用户暴露的外部链接。",
+        "title": "链接"
+      },
+      "logging": {
+        "description": "调整可观测性和下游集成。",
+        "title": "日志、指标与集成"
+      },
+      "oauth": {
+        "description": "连接第三方身份提供商以实现无缝登录。",
+        "title": "OAuth / SSO 提供商"
+      },
+      "other": {
+        "description": "尚未分类的配置项。",
+        "title": "其他设置"
+      },
+      "quota": {
+        "description": "管理配额、计费比率和货币显示。",
+        "title": "配额与计费"
+      },
+      "security": {
+        "description": "配置机器人防护和安全检查。",
+        "title": "反机器人与安全"
+      }
+    },
+    "info_about": "{{key}} 的说明",
+    "loading": "正在加载选项...",
+    "no_description": "此设置暂无说明。",
+    "no_options": "没有可用选项或权限不足。",
+    "option_value_aria": "{{key}} 的值",
+    "refresh": "刷新",
+    "save": "保存",
+    "save_failed": "保存失败",
+    "saved_message": "{{key}} 更新成功。",
+    "saved_success": "设置已保存",
+    "saving": "正在保存...",
+    "select_value": "选择值",
+    "sensitive_hint": "存储的值已隐藏。输入新值以覆盖现有密钥。",
+    "sensitive_placeholder": "值已隐藏；输入以更新",
+    "title": "系统设置"
+  }
+}

@@ -1,0 +1,173 @@
+{
+  "a11y": {
+    "close": "Fermer",
+    "close_drawer": "Fermer le tiroir",
+    "select_language": "Choisir la langue"
+  },
+  "about": {
+    "cta_models": "Voir les modèles pris en charge",
+    "cta_repo": "Dépôt GitHub",
+    "default": {
+      "description": "UniAPI fournit une interface unifiée pour accéder à plusieurs modèles et services d'IA via une API unique et cohérente.",
+      "features": [
+        "API unifiée pour de multiples fournisseurs d'IA",
+        "Suivi d'utilisation et facturation basés sur les jetons",
+        "Gestion des utilisateurs et contrôles d'accès par rôle",
+        "Gestion centralisée des canaux pour différents fournisseurs",
+        "Journalisation et supervision complètes",
+        "Gestion des quotas et système de recharge"
+      ],
+      "features_title": "Fonctionnalités",
+      "heading": "Bienvenue sur UniAPI"
+    },
+    "fallback_error": "Le contenu de la page À propos n'a pas pu être chargé.",
+    "iframe_title": "À propos",
+    "title": "À propos"
+  },
+  "common": {
+    "app_name": "UniAPI",
+    "about": "À propos",
+    "back": "Retour",
+    "cancel": "Annuler",
+    "channels": "Canaux",
+    "confirm": "Confirmer",
+    "dashboard": "Tableau de bord",
+    "cache_analytics": "Analytique du cache",
+    "email": "E-mail",
+    "language": "Langue",
+    "login": "Connexion",
+    "logout": "Déconnexion",
+    "logs": "Journaux",
+    "mcps": "MCPs",
+    "models": "Modèles",
+    "no_items": "Aucun élément",
+    "or": "Ou",
+    "pagination": {
+      "first_page": "Première page",
+      "last_page": "Dernière page",
+      "next_page": "Page suivante",
+      "page_num": "Page {{page}}",
+      "per_page": "Par page :",
+      "previous_page": "Page précédente",
+      "rows_per_page": "Lignes par page :",
+      "showing": "Affichage de {{start}}-{{end}} sur {{total}} éléments"
+    },
+    "password": "Mot de passe",
+    "playground": "Playground",
+    "realtime": "Temps Réel",
+    "redemptions": "Remboursements",
+    "register": "S'inscrire",
+    "remove": "Retirer",
+    "remove_item": "Retirer {{item}}",
+    "selected_count": "Sélectionné ({{count}})",
+    "settings": "Paramètres",
+    "status": "Statut",
+    "submit": "Soumettre",
+    "to": "vers",
+    "tokens": "Jetons",
+    "tools": "Outils",
+    "topup": "Recharger",
+    "pools": "Pools budgétaires",
+    "username": "Nom d'utilisateur",
+    "users": "Utilisateurs",
+    "version": "Version",
+    "welcome": "Bienvenue sur UniAPI"
+  },
+  "footer": {
+    "copyright": "© {{year}} UniAPI. Tous droits réservés."
+  },
+  "header": {
+    "confirm_logout": "Confirmer la déconnexion",
+    "log_out": "Se déconnecter",
+    "logging_out": "Déconnexion...",
+    "logout_description": "Êtes-vous sûr de vouloir vous déconnecter ? Vous devrez vous reconnecter pour accéder à votre tableau de bord.",
+    "navigation": "Navigation",
+    "profile": "Profil",
+    "signed_in_as": "Connecté en tant que"
+  },
+  "home": {
+    "iframe_title": "Accueil"
+  },
+  "notFound": {
+    "go_home": "Retourner à l'accueil",
+    "message": "Page introuvable",
+    "redirecting": "Redirection vers l'accueil dans {{seconds}} s...",
+    "stay_here": "Rester sur cette page"
+  },
+  "passkey_prompt": {
+    "dismiss": "Fermer",
+    "message": "Renforcez la sécurité de votre compte — configurez un passkey pour une connexion rapide sans mot de passe.",
+    "setup_button": "Configurer un Passkey"
+  },
+  "status": {
+    "badges": {
+      "auto_disabled": "Désactivé automatiquement",
+      "enabled": "Activé",
+      "manually_disabled": "Désactivé manuellement",
+      "unknown": "Inconnu"
+    },
+    "controls": {
+      "items_per_page": "Éléments par page"
+    },
+    "details": {
+      "created": "Créé le",
+      "last_test": "Dernier test",
+      "response_time": "Temps de réponse"
+    },
+    "empty": {
+      "none": "Aucun canal n'est configuré dans le système",
+      "search": "Aucun canal ne correspond à votre recherche \"{{term}}\"",
+      "title": "Aucun canal trouvé"
+    },
+    "labels": {
+      "never": "Jamais",
+      "not_available": "N/D"
+    },
+    "loading": "Chargement du statut des canaux...",
+    "notifications": {
+      "fetch_error": "Erreur lors du chargement du statut des canaux : {{reason}}",
+      "fetch_failed": "Échec du chargement du statut des canaux : {{reason}}",
+      "unknown_error": "erreur inconnue"
+    },
+    "pagination": {
+      "next": "Suivant",
+      "page_info": " (Page {{page}} sur {{pages}})",
+      "previous": "Précédent",
+      "showing": "Affichage de {{displayed}} sur {{total}} canaux",
+      "showing_filtered": "Affichage de {{displayed}} sur {{total}} canaux (filtrés)"
+    },
+    "refresh": "Actualiser",
+    "refreshing": "Actualisation...",
+    "search": {
+      "clear": "Effacer la recherche",
+      "placeholder": "Rechercher un canal par nom ou statut..."
+    },
+    "speed": {
+      "fast": "Rapide",
+      "normal": "Normal",
+      "slow": "Lent"
+    },
+    "stats": {
+      "disabled": "Désactivés",
+      "enabled": "Activés",
+      "found": "Résultats",
+      "total": "Canaux au total"
+    },
+    "subtitle": "Surveillez l'état et les performances de tous les canaux",
+    "title": "Statut des canaux"
+  },
+  "theme": {
+    "dark": "Sombre",
+    "light": "Clair",
+    "system": "Système",
+    "toggle": "Changer le thème"
+  },
+  "sidebar": {
+    "collapse": "Réduire"
+  },
+  "nav": {
+    "core": "Principal",
+    "admin": "Administration",
+    "system": "Système"
+  }
+}

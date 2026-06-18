@@ -1,0 +1,202 @@
+{
+  "chat": {
+    "iframe_title": "チャットインターフェース",
+    "not_available": "チャットは利用できません",
+    "not_configured": "管理者がチャットサービスを設定していません。"
+  },
+  "playground": {
+    "actions": {
+      "copy": "コピー",
+      "delete": "削除",
+      "edit": "編集",
+      "message_options": "メッセージオプション",
+      "retry": "再試行"
+    },
+    "chat": {
+      "clear": "クリア",
+      "disable_focus": "フォーカスモードを無効化",
+      "empty_state": {
+        "description": "モデルを選択し、下にメッセージを入力してください",
+        "title": "AI と会話を始めましょう"
+      },
+      "enable_focus": "フォーカスモードを有効化",
+      "export": "エクスポート",
+      "focus": "フォーカス",
+      "generating": "生成中...",
+      "generating_mobile": "生成...",
+      "input": {
+        "hint_no_model": "開始するにはサイドバーからモデルを選択してください",
+        "hint_no_token": "開始するにはサイドバーから API トークンを選択してください",
+        "placeholder_default": "メッセージを入力...(Shift+Enter で改行)",
+        "placeholder_generating": "応答を生成しています...",
+        "placeholder_no_model": "チャットを始めるモデルを選択してください...",
+        "placeholder_no_token": "チャットを始める API トークンを選択してください...",
+        "send": "送信",
+        "stop": "停止"
+      },
+      "model_label": "モデル:",
+      "preview": "プレビュー",
+      "preview_desc": "メッセージはこのように表示されます",
+      "processing": "処理中です..."
+    },
+    "delete": {
+      "cancel": "キャンセル",
+      "confirm": "メッセージを削除",
+      "description": "このメッセージを削除してもよろしいですか？ この操作は元に戻せません。",
+      "preview_label": "{{role}} のメッセージ:",
+      "title": "{{role}} のメッセージを削除"
+    },
+    "edit": {
+      "attachments_hint": "添付ファイル上にマウスを重ねると表示される × ボタンから個別に削除できます。",
+      "attachments_label": "添付ファイル ({{count}})",
+      "cancel": "キャンセル",
+      "content_label": "{{role}} のメッセージ内容",
+      "description": "メッセージ内容を編集します。\u003c1\u003eCtrl+Enter\u003c/1\u003e で保存、\u003c3\u003eEsc\u003c/3\u003e でキャンセルできます。",
+      "save": "変更を保存",
+      "shortcuts": {
+        "cancel": "でキャンセル",
+        "save": "で保存"
+      },
+      "stats": {
+        "chars": "文字",
+        "modified": "更新日時",
+        "words": "単語"
+      },
+      "title": "{{role}} のメッセージを編集"
+    },
+    "export": {
+      "button_label": "JSON としてエクスポート",
+      "button_sublabel": "構造化データ形式",
+      "cancel": "キャンセル",
+      "description": "会話を JSON 形式でエクスポートします。検証用のハッシュ値が含まれます。",
+      "filename_hint": "日付とハッシュが自動で付与されます。拡張子は .json になります",
+      "filename_label": "カスタムファイル名 (任意)",
+      "from_model": " (モデル {{model}})",
+      "generating": "エクスポートファイルを生成中...",
+      "ready_to_export": "{{count}} 件のメッセージをエクスポートできます",
+      "title": "会話をエクスポート"
+    },
+    "notifications": {
+      "channel_metadata_error": "モデル絞り込み用のチャネルメタデータを読み込めませんでした",
+      "copied_message": "メッセージをクリップボードにコピーしました",
+      "copied_title": "コピー完了",
+      "copy_failed_message": "メッセージをコピーできませんでした",
+      "copy_failed_title": "コピー失敗",
+      "error_title": "エラー",
+      "load_models_error": "選択したトークンからモデルを読み込めませんでした",
+      "load_tokens_error": "API トークンを読み込めませんでした",
+      "message_deleted_message": "メッセージを会話から削除しました",
+      "message_deleted_title": "メッセージを削除",
+      "message_edited_message": "メッセージを更新しました",
+      "message_edited_title": "メッセージを編集",
+      "no_models_channel_error": "選択したチャネル ({{channel}}) に一致するモデルがありません。フィルターを調整するか別チャネルを選択してください。",
+      "no_models_title": "利用可能なモデルがありません",
+      "no_models_token_error": "選択したトークンにはモデルが設定されていないため読み込めません。",
+      "no_tokens_error": "選択したトークンからモデルを読み込めませんでした。Playground を使うには有効な API トークンを追加してください。",
+      "no_tokens_title": "API トークンがありません"
+    },
+    "parameters": {
+      "channel": {
+        "browse_all": "空欄のままにすると、すべてのチャネルのモデルを閲覧できます。",
+        "label": "チャネルフィルター",
+        "loading": "読み込み中...",
+        "no_match": "検索条件に一致するチャネルがありません。",
+        "placeholder": "チャネルで絞り込む",
+        "showing_associated": "{{channel}} に紐づくモデルを表示しています。"
+      },
+      "extended_thinking": {
+        "description": "Claude に思考過程を表示させます",
+        "label": "拡張思考を有効化"
+      },
+      "frequency_penalty": {
+        "description": "頻出トークンをペナルティ (-2.0 ～ 2.0)",
+        "label": "頻度ペナルティ"
+      },
+      "max_completion_tokens": {
+        "description": "応答部分の最大トークン数 (max_tokens より優先)",
+        "label": "最大補完トークン"
+      },
+      "max_tokens": {
+        "description": "応答の最大長",
+        "label": "最大トークン"
+      },
+      "model": {
+        "active": "使用中のモデル: {{model}}",
+        "channels_label": "チャネル: {{channels}}",
+        "label": "モデル",
+        "loading": "モデルを読み込み中...",
+        "more_channels": "ほか {{count}}",
+        "no_available": "現在のトークンとチャネルでは利用可能なモデルがありません。",
+        "no_match": "検索に一致するモデルがありません。",
+        "no_models": "利用できるモデルがありません",
+        "no_models_for_selection": "選択したトークンとチャネルに使えるモデルがありません。",
+        "search_hint": "モデル名で検索し、Enter またはクリックで選択してください。",
+        "search_placeholder": "モデルを検索"
+      },
+      "presence_penalty": {
+        "description": "繰り返しをペナルティ (-2.0 ～ 2.0)",
+        "label": "出現ペナルティ"
+      },
+      "reasoning_effort": {
+        "description": "推論の集中度 (DeepSeek など対応モデル用)",
+        "label": "推論レベル",
+        "options": {
+          "high": "高",
+          "low": "低",
+          "medium": "中",
+          "none": "なし"
+        }
+      },
+      "show_reasoning": {
+        "description": "利用可能な場合は AI の推論内容を表示",
+        "label": "推論を表示"
+      },
+      "stop_sequences": {
+        "description": "これらのシーケンスで生成を停止 (カンマ区切り)",
+        "label": "停止シーケンス",
+        "placeholder": "カンマ区切りで入力"
+      },
+      "system_message": {
+        "description": "システムメッセージは会話全体での文脈と指示を提供します",
+        "label": "システムメッセージ",
+        "placeholder": "AI のふるまいを導くシステム指示を入力..."
+      },
+      "temperature": {
+        "description": "乱数性を制御 (0 = 集中, 2 = 創造的)",
+        "label": "温度"
+      },
+      "thinking_budget": {
+        "description": "思考コンテンツに使える最大トークン数 (最小 1024)",
+        "label": "思考トークン枠"
+      },
+      "title": "モデルとパラメーター",
+      "token": {
+        "create_link": "トークンを作成",
+        "label": "API トークン",
+        "loading": "読み込み中...",
+        "no_enabled": "有効なトークンが見つかりませんでした。",
+        "no_tokens": "利用可能なトークンがありません",
+        "select_placeholder": "トークンを選択",
+        "unlimited": "無制限"
+      },
+      "top_k": {
+        "description": "Top-K サンプリング：確率上位 K 個のトークンに限定",
+        "label": "Top K"
+      },
+      "top_p": {
+        "description": "Nucleus サンプリング：0.1=集中, 1.0=多様",
+        "label": "Top P"
+      }
+    },
+    "roles": {
+      "assistant": "アシスタント",
+      "error": "エラー",
+      "message": "メッセージ",
+      "system": "システム",
+      "system_message": "システムメッセージ",
+      "user": "ユーザー"
+    },
+    "system_prompt": "あなたは複数の技術領域・創造的タスク・分析に長けた有能な AI アシスタントです。\n\n## コンテキストと能力\n\n応答は学習データに基づけ、利用者のニーズに合わせてください。最新情報など不確かな内容は憶測せず、制約を明示しましょう。\n\n**得意なこと**\n- 複雑な課題を明確で扱いやすいステップに分解すること\n- 適切なハイライトと解説付きでコード例を提示すること\n- データを分析し、根拠のある洞察を提供すること\n- トーンや読者に配慮した創造的な文章を書くこと\n- 分かりやすい説明と例で概念を教えること\n\n**できないこと**\n- 外部 URL へのアクセスやリアルタイム情報の取得\n- コード実行・コマンド操作・外部システムとの連携\n- この会話外のファイル・DB・個人データへのアクセス\n\n## 応答ガイドライン\n\n**タスクに応じてスタイルを調整**\n- 技術的な質問 → コード／例付きの正確で構造化された回答\n- クリエイティブ依頼 → 想像力のある魅力的な回答\n- 分析タスク → 根拠に基づく推論と明瞭な結論\n- 単純な質問 → 端的な回答（必要に応じ補足）\n- 複雑な問題 → 手順を踏んだ丁寧な説明\n\n**分かりやすい形式**\n- Markdown で見出し・リスト・コードブロックなどを活用\n- 言語タグ付きコードブロックでシンタックスを明示\n- 長い回答は論理的なセクションに分割\n- 表・箇条書き・番号付きリストで可読性を向上\n\n**誠実な対話**\n- 要件が曖昧なときは確認質問を行う\n- 不確実性や制約は率直に伝える\n- 適宜代替案を提示する\n- 表現を自然に変化させ、繰り返しを避ける\n- 複雑／主観的な話題では推論過程を示す\n\n## センシティブな内容への対応\n\n潜在的に有害・違法・センシティブな話題では：\n- 必要に応じて事実ベースかつ教育的な情報を提供\n- リスク・法的配慮・倫理的影響を説明\n- 危険を招く依頼は建設的な代替案へ誘導\n- 違法行為や害を助長する要求は丁寧に拒否\n\n## 品質基準\n\n- **正確性**：知識に基づき、未知の点は明示\n- **明瞭性**：精確な言葉を使い、専門用語を定義\n- **簡潔性**：質問の複雑さに応じた深さで回答\n- **有用性**：次のアクションや追加情報を提案\n- **敬意**：常にプロフェッショナルで思いやりのある口調を保つ",
+    "title": "AI Playground"
+  }
+}

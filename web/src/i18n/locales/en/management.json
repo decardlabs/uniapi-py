@@ -1,0 +1,889 @@
+{
+  "channels": {
+    "actions": {
+      "add": "Add Channel",
+      "add_mobile": "Add New Channel",
+      "delete": "Delete",
+      "disable": "Disable",
+      "edit": "Edit",
+      "enable": "Enable",
+      "test": "Test"
+    },
+    "columns": {
+      "actions": "Actions",
+      "created": "Created",
+      "group": "Group",
+      "id": "ID",
+      "name": "Name",
+      "priority": "Priority",
+      "response": "Response",
+      "status": "Status",
+      "testing_model": "Testing Model",
+      "type": "Type",
+      "weight": "Weight"
+    },
+    "confirm": {
+      "delete": "Are you sure you want to delete this channel?",
+      "delete_disabled": "Are you sure you want to delete all disabled channels? This action cannot be undone."
+    },
+    "description": "Configure and manage API routing channels",
+    "edit": {
+      "actions": {
+        "cancel": "Cancel",
+        "create": "Create Channel",
+        "creating": "Creating...",
+        "test_channel": "Test Channel",
+        "update": "Update Channel",
+        "updating": "Updating..."
+      },
+      "ai_proxy": {
+        "knowledge": {
+          "help": "Knowledge base identifier for AI Proxy knowledge retrieval.",
+          "label": "Knowledge ID",
+          "placeholder": "Knowledge base ID"
+        }
+      },
+      "aws": {
+        "ak": {
+          "help": "AWS Access Key ID with permissions to call Bedrock.",
+          "label": "Access Key *",
+          "placeholder": "AKIA..."
+        },
+        "heading": "AWS Bedrock Configuration",
+        "note": "The final API key will be constructed as: AK|SK|Region",
+        "region": {
+          "help": "AWS region for Bedrock (e.g., us-east-1). Must match where your models/profiles reside.",
+          "label": "Region *",
+          "placeholder": "us-east-1"
+        },
+        "sk": {
+          "help": "AWS Secret Access Key for the above Access Key ID.",
+          "label": "Secret Key *",
+          "placeholder": "Secret Key"
+        }
+      },
+      "azure": {
+        "endpoint": {
+          "help": "Your resource endpoint, e.g., https://your-resource.openai.azure.com",
+          "label": "Azure OpenAI Endpoint *",
+          "placeholder": "https://your-resource.openai.azure.com"
+        },
+        "heading": "Azure OpenAI Configuration",
+        "version": {
+          "help": "Default API version used when the request does not specify one (e.g., 2024-03-01-preview).",
+          "label": "API Version",
+          "note": "Default: 2024-03-01-preview. This can be overridden by request query parameters.",
+          "placeholder": "2024-03-01-preview",
+          "warning_label": "Important:",
+          "warning_text": "The model name should be your deployment name, not the original model name."
+        }
+      },
+      "buttons": {
+        "fill_template": "Fill Template",
+        "format_json": "Format JSON",
+        "load_defaults": "Load Defaults"
+      },
+      "channel_type": {
+        "15": {
+          "tip": "Get AK (API Key) and SK (Secret Key) from Baidu console"
+        },
+        "18": {
+          "tip": "WebSocket version API"
+        },
+        "29": {
+          "description": "Groq-hosted LLaMA-style models via OpenAI schema."
+        },
+        "40": {
+          "description": "Formerly ByteDance Doubao"
+        },
+        "47": {
+          "tip": "For V2 inference service, get API Key from Baidu IAM"
+        },
+        "48": {
+          "tip": "HTTP version API"
+        },
+        "50": {
+          "description": "OpenAI compatible channel, supports custom Base URL"
+        },
+        "51": {
+          "description": "Gemini OpenAI compatible format"
+        },
+        "53": {
+          "description": "GitHub Copilot OpenAI-compatible surface (token exchanged via GitHub)",
+          "tip": "Channel Key should be a GitHub access token; Base URL defaults to https://api.githubcopilot.com"
+        }
+      },
+      "cloudflare": {
+        "account": {
+          "help": "Your Cloudflare account ID for the AI gateway.",
+          "label": "Account ID",
+          "placeholder": "d8d7c61dbc334c32d3ced580e4bf42b4"
+        }
+      },
+      "common": {
+        "add": "Add",
+        "base_url": {
+          "fixed_note": "Using default: {{url}}",
+          "help_editable": "Custom API base URL. Leave empty to use the default URL.",
+          "help_readonly": "The API base URL for this channel type is fixed and cannot be modified.",
+          "label": "API Base URL",
+          "placeholder": "https://api.example.com"
+        },
+        "format_json": "Format JSON"
+      },
+      "coze": {
+        "auth_type": {
+          "help": "Choose how to authenticate to Coze: Personal Access Token or OAuth JWT.",
+          "label": "Authentication Type",
+          "placeholder": "Select authentication type"
+        },
+        "heading": "Coze Configuration",
+        "jwt": {
+          "help": "JSON configuration for Coze OAuth JWT: client_type, client_id, coze_www_base, coze_api_base, private_key, public_key_id.",
+          "label": "OAuth JWT Configuration *",
+          "placeholder": "OAuth JWT configuration in JSON format:\n{{example}}",
+          "required": "Required fields: client_type, client_id, coze_www_base, coze_api_base, private_key, public_key_id"
+        },
+        "pat": {
+          "help": "Your Coze Personal Access Token (pat_...).",
+          "label": "Personal Access Token *",
+          "placeholder": "pat_..."
+        },
+        "user": {
+          "help": "Optional Coze user ID used for bot operations (if required by your setup).",
+          "label": "User ID",
+          "placeholder": "User ID for bot operations"
+        }
+      },
+      "description": {
+        "create": "Create a new API channel",
+        "edit": "Update channel configuration"
+      },
+      "errors": {
+        "operation_failed": "Operation failed",
+        "request_failed_title": "Request failed",
+        "unexpected_title": "Unexpected error"
+      },
+      "fields": {
+        "api_key": {
+          "help": "Credentials for the selected provider. Stored encrypted. Leave empty on edit to keep existing.",
+          "label": "API Key",
+          "note": "Current API key is hidden for security. Enter a new key only if you want to update it.",
+          "placeholder_create": "Enter API key",
+          "placeholder_edit": "Leave empty to keep existing key"
+        },
+        "base_url": {
+          "help": "Provider API endpoint (e.g., https://api.openai.com). Leave empty to use the default for the chosen provider.",
+          "label": "Base URL (Optional)",
+          "placeholder": "e.g., https://api.openai.com"
+        },
+        "name": {
+          "help": "Human-readable identifier. Use provider/environment in the name, for example \"OpenAI GPT-4 Production\".",
+          "label": "Channel Name *",
+          "placeholder": "Enter channel name"
+        },
+        "priority": {
+          "help": "Lower numbers are tried first when multiple channels support a model.",
+          "label": "Priority"
+        },
+        "type": {
+          "help": "Select the upstream provider. This determines models, auth method, and default Base URL.",
+          "label": "Channel Type *",
+          "placeholder": "Select channel type"
+        },
+        "weight": {
+          "help": "Load balancing weight among channels with the same priority. Higher weight receives more requests.",
+          "label": "Weight"
+        }
+      },
+      "groups": {
+        "add_placeholder": "Add custom group...",
+        "help": "Restrict access to specific user groups. Empty means all users can access. The default group is always kept.",
+        "label": "Groups *"
+      },
+      "inference_profile": {
+        "help": "JSON map of model name to AWS Bedrock Inference Profile ARN. Use to route certain models via specific Bedrock inference profiles.",
+        "label": "Inference Profile ARN Map (AWS Bedrock)",
+        "note": "Map model names to AWS Bedrock inference profile ARNs (optional)",
+        "placeholder": "AWS Bedrock inference profile ARN mapping:\n{{example}}"
+      },
+      "key": {
+        "help": "The API key for authentication with the provider.",
+        "label": "API Key"
+      },
+      "loading": "Loading channel...",
+      "mcp": {
+        "blacklist_add": "Add",
+        "blacklist_description": "Block MCP tools for this channel. Use server.tool or tool name.",
+        "blacklist_label": "MCP tool blacklist",
+        "blacklist_placeholder": "server.tool_name"
+      },
+      "model_configs": {
+        "format_error": "Unable to format model_configs: {{error}}",
+        "help": "Unified per-model settings. Fields: ratio (input pricing multiplier), completion_ratio (output multiplier), max_tokens (limit).",
+        "invalid": "Invalid model configs format",
+        "invalid_short": "✗ Invalid Config",
+        "label": "Model Configs (JSON)",
+        "load_default": "Load Default",
+        "note": "Configure pricing and limits per model (optional)",
+        "placeholder": "Model configurations in JSON format:\n{{example}}",
+        "select_type_notice": "Select a channel type to configure Model Configs.",
+        "valid": "✓ Valid Config"
+      },
+      "model_mapping": {
+        "help": "Map external/legacy model names to this provider's actual model names. JSON object: { \"from\": \"to\" }.",
+        "label": "Model Mapping (JSON)",
+        "note": "Map model names for this channel (optional)",
+        "placeholder": "Model name mapping in JSON format:\n{{example}}"
+      },
+      "models": {
+        "add_custom": "Add",
+        "clear": "Clear",
+        "clear_all": "Clear All",
+        "copy_title": "Click to copy model name",
+        "custom_placeholder": "Add custom model...",
+        "fill_all": "Fill All Supported Models ({{count}})",
+        "fill_related": "Fill Related Models ({{count}})",
+        "help": "Models available through this channel. Leave empty to allow all provider models. Use the buttons to fill related/all models; duplicates are removed.",
+        "label": "Supported Models *",
+        "no_match": "No models found",
+        "no_selection": "No models selected",
+        "search_placeholder": "Search models...",
+        "select_type_notice": "Select a channel type to configure Supported Models.",
+        "selected_count": "Selected Models ({{count}})"
+      },
+      "name": {
+        "help": "A descriptive name for this channel to identify it in logs and lists.",
+        "label": "Channel Name *",
+        "placeholder": "My Channel"
+      },
+      "openai_compatible": {
+        "api_format": {
+          "help": "Select which upstream API surface should handle requests. ChatCompletion is the historical default; choose Response when the upstream expects OpenAI Response API payloads.",
+          "label": "Upstream API Format *",
+          "option": {
+            "chat_completion": "ChatCompletion (default)",
+            "response": "Response"
+          },
+          "placeholder": "Select upstream API format"
+        },
+        "base_url": {
+          "help": "Base URL of the OpenAI-compatible endpoint, e.g., https://api.your-provider.com. /v1 is appended automatically when required.",
+          "label": "Base URL *",
+          "placeholder": "https://api.your-provider.com"
+        },
+        "heading": "OpenAI Compatible Configuration"
+      },
+      "plugin": {
+        "params": {
+          "help": "Provider/plugin-specific parameters if required.",
+          "label": "Plugin Parameters",
+          "placeholder": "Plugin-specific parameters"
+        }
+      },
+      "priority": {
+        "help": "Higher priority channels are tried first. Default is 0.",
+        "label": "Priority"
+      },
+      "ratelimit": {
+        "help": "Maximum requests per minute. 0 means unlimited.",
+        "label": "Rate Limit"
+      },
+      "spark": {
+        "version": {
+          "help": "Select the API version for iFlytek Spark (e.g., v3.5).",
+          "label": "Spark Version",
+          "placeholder": "Select Spark version"
+        }
+      },
+      "system_prompt": {
+        "help": "Optional text prepended as a system message to every request sent through this channel. Use for guardrails or style. Clients can still override with their own system messages.",
+        "label": "System Prompt",
+        "placeholder": "Optional system prompt to prepend to all requests"
+      },
+      "title": {
+        "create": "Create Channel",
+        "edit": "Edit Channel"
+      },
+      "tooling": {
+        "add_custom": "Add custom tool...",
+        "available_tools": "Available Tools",
+        "editor_disabled": "Fix JSON error to enable editor",
+        "errors": {
+          "invalid_json_message": "Fix tooling JSON before editing the whitelist.",
+          "invalid_json_title": "Invalid JSON"
+        },
+        "fix_json_notice": "Fix the tooling JSON above to manage the built-in tool whitelist.",
+        "format_error": "Unable to format tooling config: {{error}}",
+        "help": "Define channel-wide built-in tool policy. Configure the whitelist and per-call pricing for provider built-in tools.",
+        "invalid": "Invalid tooling config format",
+        "label": "Tooling Config (JSON)",
+        "no_whitelist": "No tools whitelisted",
+        "note": "Configure built-in tool allowlists and per-call pricing (optional)",
+        "placeholder": "Tooling configuration in JSON format:\n{{example}}",
+        "whitelist": {
+          "add_tool": "Add tool",
+          "custom_placeholder": "Custom tool name",
+          "empty": "No tools pinned. All built-in tools remain available.",
+          "known": "Known tools:",
+          "pricing_required": "Set pricing to unblock \"{{tool}}\". Requests remain blocked until pricing is configured.",
+          "subtitle": "Empty whitelist keeps all provider tools available.",
+          "title": "Built-in Tool Whitelist"
+        },
+        "whitelist_editor": "Whitelist Editor",
+        "whitelisted_tools": "Whitelisted Tools ({{count}})"
+      },
+      "type": {
+        "help": "The provider type for this channel. Changing this may reset some fields.",
+        "label": "Channel Type *",
+        "not_found": "No channel type found.",
+        "placeholder": "Select a channel type",
+        "search": "Search channel type..."
+      },
+      "type_change": {
+        "cancel": "Cancel",
+        "confirm": "Change Type",
+        "description": "You are about to change the channel type from \"{{fromType}}\" to \"{{toType}}\".",
+        "title": "Change Channel Type?",
+        "warning": "Warning: This may reset some configuration fields specific to the previous channel type. Any unsaved changes may be lost."
+      },
+      "validation": {
+        "api_key_required": "API key is required.",
+        "base_url_required": "Base URL is required for this channel type.",
+        "error_title": "Validation error",
+        "inference_profile_invalid": "Inference Profile ARN Map has invalid JSON.",
+        "invalid_json": "Invalid JSON format",
+        "invalid_json_short": "✗ Invalid JSON",
+        "invalid_json_title": "Invalid JSON",
+        "model_configs_message": "Model Configs are invalid.",
+        "model_configs_title": "Invalid configs",
+        "model_mapping_invalid": "Model Mapping has invalid JSON.",
+        "oauth_invalid_json": "OAuth JWT configuration JSON is invalid.",
+        "oauth_missing_field_message": "OAuth JWT configuration missing: {{field}}",
+        "oauth_missing_field_title": "Missing field",
+        "oauth_parse_message": "OAuth JWT parse error: {{error}}",
+        "oauth_parse_title": "Parse error",
+        "valid_json": "✓ Valid JSON"
+      },
+      "vertex": {
+        "credentials": {
+          "help": "Paste the JSON of a service account with Vertex AI permissions.",
+          "label": "Service Account Credentials *",
+          "placeholder": "Google service account JSON credentials"
+        },
+        "heading": "Vertex AI Configuration",
+        "project": {
+          "help": "Your GCP Project ID hosting Vertex AI resources.",
+          "label": "Project ID *",
+          "placeholder": "my-project-id"
+        },
+        "region": {
+          "help": "Google Cloud region for Vertex AI (e.g., us-central1).",
+          "label": "Region *",
+          "placeholder": "us-central1"
+        }
+      },
+      "weight": {
+        "help": "Used for load balancing between channels of the same priority. Default is 0.",
+        "label": "Weight"
+      }
+    },
+    "empty": "No channels found. Create your first channel to get started.",
+    "group_default": "default",
+    "notifications": {
+      "bulk_test_failed_title": "Bulk test failed",
+      "bulk_test_started": "Bulk channel test started.",
+      "delete_disabled_success": "Disabled channels deleted.",
+      "delete_failed_message": "Unknown error",
+      "delete_failed_title": "Delete failed",
+      "test_failed_message": "Unknown error",
+      "test_failed_title": "Channel test failed",
+      "test_success": "Channel test successful.",
+      "testing_model_failed_message": "Failed to update testing model",
+      "testing_model_failed_title": "Save failed",
+      "testing_model_saved": "Testing model saved."
+    },
+    "response": {
+      "not_tested": "Not tested",
+      "prefix": "Response time:",
+      "tested_at": "Tested: {{local}} / {{utc}}Z"
+    },
+    "search": {
+      "id_label": "ID",
+      "placeholder": "Search channels by name, type, or group..."
+    },
+    "status": {
+      "active": "Active",
+      "disabled": "Disabled",
+      "paused": "Paused"
+    },
+    "testing": {
+      "auto": "CHEAPEST"
+    },
+    "title": "Channels",
+    "toolbar": {
+      "delete_disabled": "Delete Disabled",
+      "delete_disabled_mobile": "Delete All Disabled",
+      "test_all": "Test All",
+      "test_all_mobile": "Test All Channels"
+    },
+    "type_unknown": "Type {{type}}"
+  },
+  "redemptions": {
+    "actions": {
+      "add": "Add Redemption",
+      "cancel": "Cancel",
+      "close": "Close",
+      "create": "Create Redemption",
+      "creating": "Creating...",
+      "delete": "Delete",
+      "disable": "Disable",
+      "edit": "Edit",
+      "enable": "Enable",
+      "generate": "Generate",
+      "refresh": "Refresh",
+      "search": "Search",
+      "update": "Update Redemption",
+      "updating": "Updating..."
+    },
+    "columns": {
+      "actions": "Actions",
+      "code": "Code",
+      "created": "Created",
+      "id": "ID",
+      "name": "Name",
+      "quota": "Quota",
+      "status": "Status"
+    },
+    "description": "Manage recharge codes",
+    "dialog": {
+      "generated_codes": "Generated Codes:",
+      "title": "Generate Redemption Codes"
+    },
+    "edit": {
+      "description": {
+        "create": "Create a new redemption code",
+        "edit": "Update redemption code settings"
+      },
+      "loading": "Loading redemption...",
+      "notifications": {
+        "create_success": "Redemption created successfully",
+        "failed": "Operation failed",
+        "update_success": "Redemption updated successfully"
+      },
+      "title": {
+        "create": "Create Redemption",
+        "edit": "Edit Redemption"
+      },
+      "validation": {
+        "count_max": "Count cannot exceed 100",
+        "count_min": "Count must be positive",
+        "name_max": "Max 20 chars",
+        "name_required": "Name is required",
+        "quota_min": "Quota cannot be negative"
+      }
+    },
+    "fields": {
+      "count": {
+        "label": "Count (1-100)"
+      },
+      "name": {
+        "label": "Name",
+        "placeholder": "Enter redemption name"
+      },
+      "quota": {
+        "label": "Quota"
+      }
+    },
+    "search": {
+      "dropdown_placeholder": "Type redemption name...",
+      "placeholder": "Search redemptions by name..."
+    },
+    "status": {
+      "disabled": "Disabled",
+      "unknown": "Unknown",
+      "unused": "Unused",
+      "used": "Used"
+    },
+    "title": "Redemptions",
+    "toolbar": {
+      "created_time": "Created Time",
+      "default": "Default",
+      "id": "ID",
+      "name": "Name",
+      "quota": "Quota",
+      "redeemed_time": "Redeemed Time",
+      "status": "Status"
+    }
+  },
+  "tokens": {
+    "edit": {
+      "actions": {
+        "cancel": "Cancel",
+        "create": "Create Token",
+        "creating": "Creating...",
+        "update": "Update Token",
+        "updating": "Updating..."
+      },
+      "aria": {
+        "help_label": "Help: {{label}}"
+      },
+      "description": {
+        "create": "Create a new API token",
+        "edit": "Update token settings"
+      },
+      "errors": {
+        "operation_failed": "Operation failed",
+        "request_failed_title": "Request failed",
+        "unexpected_title": "Unexpected error"
+      },
+      "fields": {
+        "expired_time": {
+          "day": "1 Day",
+          "help": "Set when this token expires. Leave empty for never. Use quick buttons for common durations.",
+          "hour": "1 Hour",
+          "label": "Expiration Time",
+          "minute": "1 Minute",
+          "month": "1 Month",
+          "never": "Never Expire"
+        },
+        "name": {
+          "help": "Human-readable identifier for this token.",
+          "label": "Token Name",
+          "placeholder": "Enter token name"
+        },
+        "remain_quota": {
+          "help": "Quota is measured in tokens. USD is an estimate based on admin-configured per-unit pricing.",
+          "label": "Remaining Quota",
+          "usd_hint": "Approx. {{usd}} USD remaining"
+        },
+        "subnet": {
+          "help": "Allow requests only from these IPs or CIDR ranges (e.g., 192.168.1.0/24). Multiple entries are comma-separated.",
+          "label": "IP Restriction (Optional)",
+          "placeholder": "e.g., 192.168.1.0/24 or 10.0.0.1"
+        },
+        "unlimited": {
+          "help": "If enabled, this token ignores remaining quota checks.",
+          "label": "Unlimited Quota"
+        }
+      },
+      "loading": "Loading token...",
+      "models": {
+        "help": "Restrict this token to specific models. Leave empty to allow all models available to the user/group.",
+        "label": "Allowed Models",
+        "search_placeholder": "Search models..."
+      },
+      "notifications": {
+        "create_success": "Token created successfully",
+        "update_success": "Token updated successfully"
+      },
+      "title": {
+        "create": "Create Token",
+        "edit": "Edit Token"
+      },
+      "validation": {
+        "error_title": "Validation error",
+        "fix_fields": "Please correct the highlighted fields.",
+        "invalid_expiration": "Invalid expiration time"
+      }
+    },
+    "page": {
+      "actions": {
+        "add": "Add Token",
+        "add_mobile": "Add New Token",
+        "delete": "Delete",
+        "disable": "Disable",
+        "edit": "Edit",
+        "enable": "Enable"
+      },
+      "columns": {
+        "actions": "Actions",
+        "created": "Created",
+        "expires": "Expires",
+        "id": "ID",
+        "key": "Key",
+        "last_access": "Last Access",
+        "name": "Name",
+        "never": "Never",
+        "no_value": "—",
+        "remaining_quota": "Remaining Quota",
+        "remaining_title": "Remaining: {{label}}",
+        "remaining_tooltip": "This token retains more quota than your account allocation.",
+        "status": "Status",
+        "used_quota": "Used Quota",
+        "used_title": "Used: {{label}}"
+      },
+      "confirm": {
+        "delete": "Are you sure you want to delete token \"{{label}}\"?"
+      },
+      "description": "Manage your API access tokens",
+      "dialog": {
+        "close": "Close",
+        "manual_copy_description": "Clipboard access is unavailable. Copy the API key below manually to continue using it.",
+        "manual_copy_title": "Manual copy required"
+      },
+      "empty": "No tokens found. Create your first token to get started.",
+      "key": {
+        "copied": "Copied!",
+        "copy": "Copy token"
+      },
+      "quota": {
+        "unlimited": "Unlimited"
+      },
+      "search": {
+        "id_label": "ID: {{id}}",
+        "placeholder": "Search tokens by name...",
+        "quota_label": "Quota: {{quota}}"
+      },
+      "status": {
+        "disabled": "Disabled",
+        "enabled": "Enabled",
+        "exhausted": "Exhausted",
+        "expired": "Expired",
+        "unknown": "Unknown"
+      },
+      "table": {
+        "id_placeholder": "(ID {{id}})"
+      },
+      "title": "Tokens"
+    }
+  },
+  "users": {
+    "dialogs": {
+      "create": {
+        "actions": {
+          "close": "Close",
+          "create": "Create"
+        },
+        "fields": {
+          "display_name": {
+            "label": "Display Name",
+            "placeholder": "Enter display name"
+          },
+          "password": {
+            "label": "Password",
+            "placeholder": "Enter password"
+          },
+          "username": {
+            "label": "Username",
+            "placeholder": "Enter username"
+          }
+        },
+        "title": "Create User"
+      },
+      "topup": {
+        "actions": {
+          "close": "Close",
+          "submit": "Submit"
+        },
+        "fields": {
+          "pool_id": {
+            "label": "Source (optional)",
+            "placeholder": "Direct top-up",
+            "direct": "Direct top-up",
+            "hint": "Quota will be deducted from the selected budget pool"
+          },
+          "quota": {
+            "label": "Quota",
+            "placeholder": "Enter quota change"
+          },
+          "remark": {
+            "label": "Remark",
+            "placeholder": "Optional"
+          }
+        },
+        "notifications": {
+          "error_title": "Top Up Failed",
+          "error_message": "Operation failed. Please try again."
+        },
+        "title": "Top Up {{username}}"
+      }
+    },
+    "edit": {
+      "actions": {
+        "add": "Add",
+        "cancel": "Cancel",
+        "create": "Create User",
+        "creating": "Creating...",
+        "update": "Update User",
+        "updating": "Updating..."
+      },
+      "aria": {
+        "help_display_name": "Help: Display Name",
+        "help_email": "Help: Email",
+        "help_group": "Help: Group",
+        "help_password": "Help: Password",
+        "help_quota": "Help: Quota",
+        "help_username": "Help: Username"
+      },
+      "description": {
+        "create": "Create a new user account",
+        "edit": "Update user information"
+      },
+      "errors": {
+        "operation_failed": "Operation failed",
+        "request_failed_title": "Request failed",
+        "unexpected_title": "Unexpected error"
+      },
+      "fields": {
+        "display_name": {
+          "help": "Optional human-readable name shown in the UI.",
+          "label": "Display Name",
+          "placeholder": "Enter display name"
+        },
+        "email": {
+          "help": "Optional contact address for password reset and notifications.",
+          "label": "Email",
+          "placeholder": "Enter email"
+        },
+        "group": {
+          "help": "User group controls access and model/channel visibility.",
+          "label": "Group *",
+          "placeholder": "Select a group"
+        },
+        "mcp_tool_blacklist": {
+          "help": "Block MCP tools for this user. Use server.tool or tool name.",
+          "label": "MCP tool blacklist",
+          "placeholder": "server.tool_name"
+        },
+        "password": {
+          "help": "Minimum length depends on policy. Leave empty when editing to keep unchanged.",
+          "label_create": "Password *",
+          "label_edit": "New Password (leave empty to keep current)",
+          "placeholder": "Enter password"
+        },
+        "quota": {
+          "help": "Quota units are tokens. USD estimate uses the per-unit ratio configured by admin.",
+          "label": "Quota ({{usd}})"
+        },
+        "username": {
+          "help": "Unique login name. Min 3 characters.",
+          "label": "Username *",
+          "placeholder": "Enter username"
+        }
+      },
+      "loading": "Loading user...",
+      "notifications": {
+        "create_success": "User created successfully",
+        "update_success": "User updated successfully"
+      },
+      "title": {
+        "create": "Create User",
+        "edit": "Edit User"
+      },
+      "validation": {
+        "display_name_max": "Display name must be at most 20 characters",
+        "email_invalid": "Valid email is required",
+        "email_max": "Email must be at most 50 characters",
+        "error_title": "Validation error",
+        "fix_fields": "Please correct the highlighted fields.",
+        "group_required": "Group is required",
+        "quota_min": "Quota must be non-negative",
+        "username_max": "Username must be at most 30 characters",
+        "username_min": "Username must be at least 3 characters"
+      }
+    },
+    "page": {
+      "actions": {
+        "delete": "Delete",
+        "disable": "Disable",
+        "edit": "Edit",
+        "enable": "Enable",
+        "topup": "Top Up"
+      },
+      "columns": {
+        "actions": "Actions",
+        "display_name": "Display Name",
+        "group": "Group",
+        "id": "ID",
+        "remaining_quota": "Remaining Quota",
+        "role": "Role",
+        "status": "Status",
+        "used_quota": "Used Quota",
+        "username": "Username"
+      },
+      "description": "Manage users",
+      "empty": "No users found. Add your first user to get started.",
+      "notifications": {
+        "action_failed_message": "Unable to apply change.",
+        "action_failed_title": "Action failed",
+        "load_failed_message": "Failed to load users.",
+        "load_failed_title": "Access denied",
+        "search_failed_message": "Search failed.",
+        "search_failed_title": "Search failed"
+      },
+      "search": {
+        "id_label": "ID: {{id}}",
+        "placeholder": "Search users by username...",
+        "role_label": "Role: {{role}}",
+        "status_label": "Status: {{status}}"
+      },
+      "table": {
+        "quota": {
+          "unlimited": "Unlimited"
+        },
+        "remaining_quota_title": "Remaining: {{quota}}",
+        "role": {
+          "admin": "Admin",
+          "guest": "Guest",
+          "super_admin": "Super Admin",
+          "user": "User"
+        },
+        "status": {
+          "disabled": "Disabled",
+          "enabled": "Enabled"
+        },
+        "used_quota_title": "Used: {{quota}}"
+      },
+      "title": "Users",
+      "toolbar": {
+        "add_user": "Add User",
+        "sort": {
+          "created_time": "Created Time",
+          "default": "Default",
+          "id": "ID",
+          "quota": "Remaining Quota",
+          "used_quota": "Used Quota",
+          "username": "Username"
+        },
+        "sort_order": {
+          "asc": "ASC",
+          "desc": "DESC"
+        }
+      }
+    }
+  },
+  "recharges": {
+    "title": "Recharge Management",
+    "description": "Review and process user recharge requests",
+    "empty": "No recharge requests yet",
+    "columns": {
+      "id": "ID",
+      "user": "User",
+      "amount": "Amount",
+      "status": "Status",
+      "remark": "Remark",
+      "admin_note": "Admin Note",
+      "created": "Created At",
+      "actions": "Actions"
+    },
+    "status": {
+      "pending": "Pending Review",
+      "approved": "Approved",
+      "rejected": "Rejected"
+    },
+    "actions": {
+      "review": "Review",
+      "approve_btn": "Approve",
+      "reject_submit": "Reject",
+      "reject_reason_placeholder": "Enter rejection reason (required)...",
+      "cancel": "Cancel"
+    },
+    "notifications": {
+      "approved": "✅ Request approved! User balance updated.",
+      "rejected": "❌ Request rejected.",
+      "failed": "Operation failed. Please try again.",
+      "reason_required": "⚠️ Please enter a rejection reason."
+    }
+  }
+}

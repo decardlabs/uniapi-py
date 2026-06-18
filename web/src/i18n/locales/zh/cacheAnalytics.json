@@ -1,0 +1,49 @@
+{
+  "cacheAnalytics": {
+    "title": "缓存分析",
+    "description": "观察 DeepSeek 计费升级后的缓存命中效果。",
+    "unauthorized": "该页面仅管理员可见。",
+    "errors": {
+      "fetch_failed": "获取缓存分析数据失败。"
+    },
+    "filters": {
+      "from": "开始日期",
+      "to": "结束日期",
+      "model": "模型",
+      "channel_id": "渠道 ID",
+      "request_format": "API 类型",
+      "compare_date": "对比日期",
+      "all_models": "全部模型",
+      "all_channels": "全部渠道",
+      "all_formats": "全部类型",
+      "last_7d": "最近 7 天",
+      "apply": "应用"
+    },
+    "cards": {
+      "cache_hit_rate": "缓存命中率",
+      "estimated_savings_rate": "预估节省率",
+      "cached_prompt_tokens": "缓存 Prompt Tokens",
+      "total_quota": "总配额"
+    },
+    "sections": {
+      "trend": "趋势",
+      "breakdown": "分解明细"
+    },
+    "table": {
+      "model": "模型",
+      "channel": "渠道",
+      "request_format": "API 类型",
+      "requests": "请求数",
+      "prompt_tokens": "Prompt Tokens",
+      "cached_prompt_tokens": "缓存 Prompt Tokens",
+      "cache_hit_rate": "缓存命中率",
+      "quota": "配额"
+    },
+    "compare": {
+      "before": "升级前",
+      "after": "升级后",
+      "delta": "命中率变化"
+    },
+    "empty": "当前时间范围没有缓存分析数据。"
+  }
+}

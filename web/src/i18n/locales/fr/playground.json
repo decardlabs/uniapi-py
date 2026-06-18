@@ -1,0 +1,202 @@
+{
+  "chat": {
+    "iframe_title": "Interface de chat",
+    "not_available": "Chat indisponible",
+    "not_configured": "Le service de chat n'a pas été configuré par l'administrateur."
+  },
+  "playground": {
+    "actions": {
+      "copy": "Copier",
+      "delete": "Supprimer",
+      "edit": "Modifier",
+      "message_options": "Options du message",
+      "retry": "Réessayer"
+    },
+    "chat": {
+      "clear": "Effacer",
+      "disable_focus": "Désactiver le mode focus",
+      "empty_state": {
+        "description": "Sélectionnez un modèle puis saisissez votre message ci-dessous",
+        "title": "Démarrez une conversation avec l'IA"
+      },
+      "enable_focus": "Activer le mode focus",
+      "export": "Exporter",
+      "focus": "Focus",
+      "generating": "Génération...",
+      "generating_mobile": "Gén...",
+      "input": {
+        "hint_no_model": "Choisissez un modèle dans la barre latérale pour commencer",
+        "hint_no_token": "Choisissez un jeton API dans la barre latérale pour commencer",
+        "placeholder_default": "Saisissez votre message... (Shift+Entrée pour une nouvelle ligne)",
+        "placeholder_generating": "Réponse en cours de génération...",
+        "placeholder_no_model": "Sélectionnez un modèle pour discuter...",
+        "placeholder_no_token": "Sélectionnez un jeton API pour discuter...",
+        "send": "Envoyer",
+        "stop": "Arrêter"
+      },
+      "model_label": "Modèle :",
+      "preview": "Aperçu",
+      "preview_desc": "Voici le rendu de votre message",
+      "processing": "est en cours de traitement..."
+    },
+    "delete": {
+      "cancel": "Annuler",
+      "confirm": "Supprimer le message",
+      "description": "Voulez-vous vraiment supprimer ce message ? Cette action est irréversible.",
+      "preview_label": "Message {{role}} :",
+      "title": "Supprimer le message {{role}}"
+    },
+    "edit": {
+      "attachments_hint": "Vous pouvez supprimer chaque pièce jointe en cliquant sur le bouton × qui apparaît au survol.",
+      "attachments_label": "Pièces jointes ({{count}})",
+      "cancel": "Annuler",
+      "content_label": "Contenu du message {{role}}",
+      "description": "Modifiez le contenu du message. Utilisez \u003c1\u003eCtrl+Entrée\u003c/1\u003e pour enregistrer ou \u003c3\u003eÉchap\u003c/3\u003e pour annuler.",
+      "save": "Enregistrer les modifications",
+      "shortcuts": {
+        "cancel": "pour annuler",
+        "save": "pour enregistrer"
+      },
+      "stats": {
+        "chars": "caractères",
+        "modified": "Modifié",
+        "words": "mots"
+      },
+      "title": "Modifier le message {{role}}"
+    },
+    "export": {
+      "button_label": "Exporter en JSON",
+      "button_sublabel": "Format de données structuré",
+      "cancel": "Annuler",
+      "description": "Exportez votre conversation au format JSON. Le fichier inclura un hachage unique pour vérification.",
+      "filename_hint": "La date et le hachage seront ajoutés automatiquement. L'extension sera .json",
+      "filename_label": "Nom de fichier personnalisé (facultatif)",
+      "from_model": " depuis {{model}}",
+      "generating": "Génération du fichier d'export...",
+      "ready_to_export": "Prêt à exporter {{count}} message{{plural}}",
+      "title": "Exporter la conversation"
+    },
+    "notifications": {
+      "channel_metadata_error": "Impossible de charger les métadonnées du canal pour filtrer les modèles",
+      "copied_message": "Message copié dans le presse-papiers",
+      "copied_title": "Copié !",
+      "copy_failed_message": "Échec de la copie du message",
+      "copy_failed_title": "Copie impossible",
+      "error_title": "Erreur",
+      "load_models_error": "Impossible de charger les modèles depuis le jeton sélectionné",
+      "load_tokens_error": "Impossible de charger les jetons API",
+      "message_deleted_message": "Le message a été retiré de la conversation",
+      "message_deleted_title": "Message supprimé",
+      "message_edited_message": "Le message a été mis à jour",
+      "message_edited_title": "Message modifié",
+      "no_models_channel_error": "Aucun modèle ne correspond au canal sélectionné ({{channel}}). Ajustez le filtre ou choisissez un autre canal.",
+      "no_models_title": "Aucun modèle disponible",
+      "no_models_token_error": "Impossible de charger les modèles pour ce jeton. Aucun modèle n'est configuré.",
+      "no_tokens_error": "Impossible de charger les modèles pour ce jeton. Ajoutez un jeton API activé pour utiliser le playground.",
+      "no_tokens_title": "Aucun jeton API disponible"
+    },
+    "parameters": {
+      "channel": {
+        "browse_all": "Laissez vide pour parcourir les modèles de tous les canaux.",
+        "label": "Filtre par canal",
+        "loading": "Chargement...",
+        "no_match": "Aucun canal ne correspond à votre recherche.",
+        "placeholder": "Filtrer par canal",
+        "showing_associated": "Affichage des modèles associés à {{channel}}."
+      },
+      "extended_thinking": {
+        "description": "Autoriser Claude à afficher son raisonnement",
+        "label": "Activer la réflexion étendue"
+      },
+      "frequency_penalty": {
+        "description": "Pénalise les tokens fréquents : -2,0 à 2,0",
+        "label": "Pénalité de fréquence"
+      },
+      "max_completion_tokens": {
+        "description": "Nombre maximal de tokens de complétion (préféré à max_tokens)",
+        "label": "Tokens max de complétion"
+      },
+      "max_tokens": {
+        "description": "Longueur maximale de la réponse",
+        "label": "Tokens max"
+      },
+      "model": {
+        "active": "Modèle actif : {{model}}.",
+        "channels_label": "Canaux : {{channels}}",
+        "label": "Modèle",
+        "loading": "Chargement des modèles...",
+        "more_channels": "+{{count}} autres",
+        "no_available": "Aucun modèle disponible pour ce jeton et ce canal.",
+        "no_match": "Aucun modèle ne correspond à votre recherche.",
+        "no_models": "Aucun modèle disponible",
+        "no_models_for_selection": "Aucun modèle disponible pour le jeton et le canal sélectionnés.",
+        "search_hint": "Recherchez un modèle puis appuyez sur Entrée ou cliquez pour le sélectionner.",
+        "search_placeholder": "Rechercher des modèles"
+      },
+      "presence_penalty": {
+        "description": "Pénalise les tokens répétés : -2,0 à 2,0",
+        "label": "Pénalité de présence"
+      },
+      "reasoning_effort": {
+        "description": "Niveau d'effort de raisonnement (pour les modèles compatibles comme DeepSeek)",
+        "label": "Effort de raisonnement",
+        "options": {
+          "high": "Élevé",
+          "low": "Faible",
+          "medium": "Moyen",
+          "none": "Aucun"
+        }
+      },
+      "show_reasoning": {
+        "description": "Afficher le raisonnement de l'IA lorsqu'il est disponible",
+        "label": "Afficher le raisonnement"
+      },
+      "stop_sequences": {
+        "description": "Arrêter la génération sur ces séquences (séparées par des virgules)",
+        "label": "Séquences d'arrêt",
+        "placeholder": "Séquences séparées par des virgules"
+      },
+      "system_message": {
+        "description": "Les messages système fournissent le contexte et les instructions qui guident l'IA.",
+        "label": "Message système",
+        "placeholder": "Entrez les instructions système qui guideront le comportement de l'IA..."
+      },
+      "temperature": {
+        "description": "Contrôle l'aléatoire : 0 = concentré, 2 = créatif",
+        "label": "Température"
+      },
+      "thinking_budget": {
+        "description": "Nombre maximal de tokens réservés au raisonnement (minimum 1024)",
+        "label": "Budget de raisonnement"
+      },
+      "title": "Modèle et paramètres",
+      "token": {
+        "create_link": "Créer un jeton",
+        "label": "Jeton API",
+        "loading": "Chargement...",
+        "no_enabled": "Aucun jeton activé trouvé.",
+        "no_tokens": "Aucun jeton disponible",
+        "select_placeholder": "Sélectionnez un jeton",
+        "unlimited": "Illimité"
+      },
+      "top_k": {
+        "description": "Échantillonnage Top-K : limite les choix aux K tokens les plus probables",
+        "label": "Top K"
+      },
+      "top_p": {
+        "description": "Échantillonnage nucleus : 0,1 = concentré, 1,0 = diversifié",
+        "label": "Top P"
+      }
+    },
+    "roles": {
+      "assistant": "Assistant",
+      "error": "Erreur",
+      "message": "Message",
+      "system": "Système",
+      "system_message": "Message système",
+      "user": "Utilisateur"
+    },
+    "system_prompt": "Vous êtes un assistant IA serviable, compétent dans de nombreux domaines techniques, créatifs et analytiques.\n\n## Contexte et capacités\n\nVos réponses doivent s'appuyer sur vos données d'entraînement et s'adapter aux besoins de l'utilisateur. Lorsque vous n'êtes pas certain d'informations récentes ou hors périmètre, reconnaissez vos limites plutôt que de spéculer.\n\n**Vous excellez à :**\n- Décomposer les problèmes complexes en étapes claires et gérables\n- Fournir des exemples de code avec une mise en forme claire et des explications\n- Analyser des données et proposer des insights étayés\n- Écrire de manière créative en respectant le ton, le style et le public\n- Enseigner des concepts grâce à des explications précises et illustrées\n\n**Vous ne pouvez pas :**\n- Accéder à des URL externes, parcourir le Web ou récupérer des informations en temps réel\n- Exécuter du code, lancer des commandes ou interagir avec des systèmes externes\n- Accéder à des fichiers, bases de données ou données personnelles en dehors de cette conversation\n\n## Directives de réponse\n\n**Adaptez votre style à la tâche :**\n- Questions techniques → réponses structurées et précises avec code/exemples\n- Demandes créatives → réponses engageantes et imaginatives\n- Analyses → raisonnement fondé sur des preuves et conclusions claires\n- Questions simples → réponses directes (ajoutez des détails si nécessaire)\n- Problèmes complexes → explications étape par étape\n\n**Pour plus de clarté :**\n- Utilisez Markdown (titres, listes, blocs de code, emphase)\n- Ajoutez des blocs de code avec la langue correspondante\n- Structurez les longues réponses en sections logiques\n- Utilisez tableaux, listes et numérotation pour améliorer la lisibilité\n\n**Interaction authentique :**\n- Posez des questions de clarification en cas d'ambiguïté\n- Reconnaissez directement vos incertitudes ou limites\n- Proposez des approches alternatives si nécessaire\n- Variez naturellement votre langage\n- Expliquez votre raisonnement pour les sujets complexes ou subjectifs\n\n## Gestion des contenus sensibles\n\nPour les sujets potentiellement nuisibles, illégaux ou sensibles :\n- Fournissez des informations factuelles et pédagogiques lorsque c'est pertinent\n- Expliquez les risques, aspects juridiques et implications éthiques\n- Orientez vers des alternatives constructives si une demande peut causer du tort\n- Refusez les requêtes qui encouragent clairement des activités illégales ou nocives\n\n## Critères de qualité\n\n- **Exactitude** : ancrez vos réponses dans vos connaissances et signalez les lacunes\n- **Clarté** : utilisez un langage précis, définissez les termes techniques\n- **Concision** : adaptez la profondeur au niveau de la question\n- **Utilité** : anticipez les besoins suivants et proposez des étapes\n- **Respect** : gardez un ton professionnel et empathique en toutes circonstances",
+    "title": "AI Playground"
+  }
+}

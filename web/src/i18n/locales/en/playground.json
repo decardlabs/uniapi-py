@@ -1,0 +1,202 @@
+{
+  "chat": {
+    "iframe_title": "Chat Interface",
+    "not_available": "Chat Not Available",
+    "not_configured": "Chat service has not been configured by the administrator."
+  },
+  "playground": {
+    "actions": {
+      "copy": "Copy",
+      "delete": "Delete",
+      "edit": "Edit",
+      "message_options": "Message options",
+      "retry": "Retry"
+    },
+    "chat": {
+      "clear": "Clear",
+      "disable_focus": "Disable Focus Mode",
+      "empty_state": {
+        "description": "Select a model and type your message below",
+        "title": "Start a conversation with the AI"
+      },
+      "enable_focus": "Enable Focus Mode",
+      "export": "Export",
+      "focus": "Focus",
+      "generating": "Generating...",
+      "generating_mobile": "Gen...",
+      "input": {
+        "hint_no_model": "Please select a model from the sidebar to begin",
+        "hint_no_token": "Please select an API token from the sidebar to begin",
+        "placeholder_default": "Type your message... (Shift+Enter for new line)",
+        "placeholder_generating": "Generating response...",
+        "placeholder_no_model": "Select a model to start chatting...",
+        "placeholder_no_token": "Select an API token to start chatting...",
+        "send": "Send",
+        "stop": "Stop"
+      },
+      "model_label": "Model:",
+      "preview": "Preview",
+      "preview_desc": "This is how your message will be rendered",
+      "processing": "is processing..."
+    },
+    "delete": {
+      "cancel": "Cancel",
+      "confirm": "Delete Message",
+      "description": "Are you sure you want to delete this message? This action cannot be undone.",
+      "preview_label": "{{role}} Message:",
+      "title": "Delete {{role}} Message"
+    },
+    "edit": {
+      "attachments_hint": "You can delete individual attachments by clicking the × button that appears when you hover over them.",
+      "attachments_label": "Message Attachments ({{count}})",
+      "cancel": "Cancel",
+      "content_label": "{{role}} Message Content",
+      "description": "Make changes to the message content. You can use \u003c1\u003eCtrl+Enter\u003c/1\u003e to save or \u003c3\u003eEsc\u003c/3\u003e to cancel.",
+      "save": "Save Changes",
+      "shortcuts": {
+        "cancel": "to cancel",
+        "save": "to save"
+      },
+      "stats": {
+        "chars": "chars",
+        "modified": "Modified",
+        "words": "words"
+      },
+      "title": "Edit {{role}} Message"
+    },
+    "export": {
+      "button_label": "Export as JSON",
+      "button_sublabel": "Structured data format",
+      "cancel": "Cancel",
+      "description": "Export your conversation in JSON format. The file will include a unique digest for verification.",
+      "filename_hint": "Date and digest will be automatically added. Extension will be set to .json",
+      "filename_label": "Custom Filename (optional)",
+      "from_model": " from {{model}}",
+      "generating": "Generating export file...",
+      "ready_to_export": "Ready to export {{count}} message{{plural}}",
+      "title": "Export Conversation"
+    },
+    "notifications": {
+      "channel_metadata_error": "Failed to load channel metadata for model filtering",
+      "copied_message": "Message copied to clipboard",
+      "copied_title": "Copied!",
+      "copy_failed_message": "Failed to copy message to clipboard",
+      "copy_failed_title": "Copy failed",
+      "error_title": "Error",
+      "load_models_error": "Failed to load models from the selected token",
+      "load_tokens_error": "Failed to load API tokens",
+      "message_deleted_message": "Message has been removed from conversation",
+      "message_deleted_title": "Message deleted",
+      "message_edited_message": "Message has been updated successfully",
+      "message_edited_title": "Message edited",
+      "no_models_channel_error": "No models matched the selected channel ({{channel}}). Adjust the filter or choose another channel.",
+      "no_models_title": "No Models Available",
+      "no_models_token_error": "Failed to load models from selected token. The selected token has no models configured.",
+      "no_tokens_error": "Failed to load models from selected token. Please add an enabled API token to use the playground.",
+      "no_tokens_title": "No API Tokens Available"
+    },
+    "parameters": {
+      "channel": {
+        "browse_all": "Leave blank to browse models across every channel.",
+        "label": "Channel Filter",
+        "loading": "Loading...",
+        "no_match": "No channels match your search.",
+        "placeholder": "Filter by channel",
+        "showing_associated": "Showing models associated with {{channel}}."
+      },
+      "extended_thinking": {
+        "description": "Allow Claude to show its reasoning process",
+        "label": "Enable Extended Thinking"
+      },
+      "frequency_penalty": {
+        "description": "Penalizes frequent tokens: -2.0 to 2.0",
+        "label": "Frequency Penalty"
+      },
+      "max_completion_tokens": {
+        "description": "Maximum completion tokens (preferred over max_tokens)",
+        "label": "Max Completion Tokens"
+      },
+      "max_tokens": {
+        "description": "Maximum response length",
+        "label": "Max Tokens"
+      },
+      "model": {
+        "active": "Active model: {{model}}.",
+        "channels_label": "Channels: {{channels}}",
+        "label": "Model",
+        "loading": "Loading models...",
+        "more_channels": "+{{count}} more",
+        "no_available": "No models are available for the current token and channel selection.",
+        "no_match": "No models match your search.",
+        "no_models": "No models available",
+        "no_models_for_selection": "No models available for the selected token and channel.",
+        "search_hint": "Search to find a model, then press Enter or click to select it.",
+        "search_placeholder": "Search models"
+      },
+      "presence_penalty": {
+        "description": "Penalizes repeated tokens: -2.0 to 2.0",
+        "label": "Presence Penalty"
+      },
+      "reasoning_effort": {
+        "description": "Reasoning effort level (for supported models like DeepSeek)",
+        "label": "Reasoning Effort",
+        "options": {
+          "high": "High",
+          "low": "Low",
+          "medium": "Medium",
+          "none": "None"
+        }
+      },
+      "show_reasoning": {
+        "description": "Display AI reasoning processes when available",
+        "label": "Show Reasoning Content"
+      },
+      "stop_sequences": {
+        "description": "Stop generation at these sequences (comma-separated)",
+        "label": "Stop Sequences",
+        "placeholder": "Comma-separated stop sequences"
+      },
+      "system_message": {
+        "description": "System messages provide context and instructions that guide the AI's behavior throughout the conversation",
+        "label": "System Message",
+        "placeholder": "Enter system instructions that will guide the AI's behavior and responses..."
+      },
+      "temperature": {
+        "description": "Controls randomness: 0 = focused, 2 = creative",
+        "label": "Temperature"
+      },
+      "thinking_budget": {
+        "description": "Maximum tokens for thinking content (minimum 1024)",
+        "label": "Thinking Budget Tokens"
+      },
+      "title": "Model \u0026 Parameters",
+      "token": {
+        "create_link": "Create a token",
+        "label": "API Token",
+        "loading": "Loading...",
+        "no_enabled": "No enabled tokens found.",
+        "no_tokens": "No tokens available",
+        "select_placeholder": "Select a token",
+        "unlimited": "Unlimited"
+      },
+      "top_k": {
+        "description": "Top-K sampling: limits token choices to top K most likely",
+        "label": "Top K"
+      },
+      "top_p": {
+        "description": "Nucleus sampling: 0.1 = focused, 1.0 = diverse",
+        "label": "Top P"
+      }
+    },
+    "roles": {
+      "assistant": "Assistant",
+      "error": "Error",
+      "message": "Message",
+      "system": "System",
+      "system_message": "System Message",
+      "user": "User"
+    },
+    "system_prompt": "You are a helpful AI assistant with expertise across multiple domains including technical topics, creative tasks, and analytical reasoning.\n\n## Context and Capabilities\n\nYour responses should be grounded in your training data and adapted to the user's needs. When uncertain about current events or information beyond your training, acknowledge these limitations rather than speculate.\n\n**You excel at:**\n- Breaking down complex problems into clear, manageable steps\n- Providing code examples with proper syntax highlighting and explanation\n- Analyzing data and offering evidence-based insights\n- Creative writing with attention to tone, style, and audience\n- Teaching concepts through clear explanations and examples\n\n**You cannot:**\n- Access external URLs, browse the web, or retrieve real-time information\n- Execute code, run commands, or interact with external systems\n- Access files, databases, or personal data outside this conversation\n\n## Response Guidelines\n\n**Adapt your style to the task:**\n- Technical questions → Precise, structured answers with code/examples\n- Creative requests → Engaging, imaginative responses\n- Analysis tasks → Evidence-based reasoning with clear conclusions\n- Simple queries → Direct answers (offer elaboration if relevant)\n- Complex problems → Step-by-step breakdowns with explanations\n\n**Format for clarity:**\n- Use Markdown for structure (headers, lists, code blocks, emphasis)\n- Include code blocks with language tags for syntax highlighting\n- Break long responses into logical sections\n- Use tables, bullet points, and numbering for readability\n\n**Engage authentically:**\n- Ask clarifying questions when requirements are ambiguous\n- Acknowledge uncertainty or limitations directly\n- Offer alternative approaches when appropriate\n- Vary language naturally (avoid repetitive phrasing)\n- Show reasoning for complex or subjective topics\n\n## Handling Sensitive Content\n\nFor potentially harmful, illegal, or sensitive topics:\n- Provide factual, educational information where appropriate\n- Explain risks, legal considerations, and ethical implications\n- Redirect to constructive alternatives when requests could cause harm\n- Decline requests that clearly promote illegal activities or harm\n\n## Quality Standards\n\n- **Accuracy**: Ground responses in knowledge, acknowledge gaps\n- **Clarity**: Use precise language, define technical terms\n- **Conciseness**: Match depth to question complexity\n- **Helpfulness**: Anticipate follow-up needs, offer next steps\n- **Respect**: Maintain professional, empathetic tone regardless of topic",
+    "title": "AI Playground"
+  }
+}

@@ -1,0 +1,100 @@
+{
+  "dashboard": {
+    "cards": {
+      "avg_cost": "Avg Cost / Request",
+      "avg_daily": "Avg daily: {{value}}",
+      "quota_used": "Quota Used",
+      "tokens_consumed": "Tokens Consumed",
+      "tokens_per_request": "{{value}} tokens per request",
+      "total_requests": "Total Requests"
+    },
+    "description": "Monitor your API usage and account statistics",
+    "errors": {
+      "fetch_failed": "Failed to fetch dashboard data",
+      "future": "To date cannot be in the future",
+      "label": "Error",
+      "range_limit_admin": "Date range cannot exceed 1 year",
+      "range_limit_user": "Date range cannot exceed 7 days",
+      "range_order": "From date must be before or equal to To date",
+      "too_old_admin": "From date cannot be more than 1 year ago",
+      "too_old_user": "From date cannot be more than 7 days ago"
+    },
+    "fallbacks": {
+      "model": "Unknown model",
+      "owner": "unknown",
+      "token": "unnamed token",
+      "user": "Unknown user"
+    },
+    "filters": {
+      "all_users": "All Users",
+      "apply": "Apply",
+      "from": "From",
+      "from_aria": "From date",
+      "loading": "Loading...",
+      "seven_days": "7D",
+      "thirty_days": "30D",
+      "to": "To",
+      "to_aria": "To date",
+      "today": "Today",
+      "user": "User",
+      "user_aria": "Select user"
+    },
+    "insights": {
+      "busiest_day": "Busiest Day",
+      "models_in_use": "Models in Use",
+      "peak_token_day": "Peak Token Day",
+      "requests_per_model": "{{value}} requests per model"
+    },
+    "labels": {
+      "no_data": "No data",
+      "no_value": "—",
+      "quota": "Quota",
+      "quota_consumed": "{{value}} consumed",
+      "requests": "Requests",
+      "requests_value": "{{value}} requests",
+      "tokens": "Tokens",
+      "tokens_value": "{{value}} tokens"
+    },
+    "loading": "Refreshing dashboard…",
+    "login_required": "Please log in to access the dashboard.",
+    "metrics": {
+      "expenses": "Expenses",
+      "requests": "Requests",
+      "tokens": "Tokens"
+    },
+    "overview": {
+      "subtitle": "Totals and leaders for the selected time range",
+      "title": "Usage Overview",
+      "updated": "Updated:"
+    },
+    "sections": {
+      "metric_label": "Metric: {{metric}}",
+      "metric_placeholder": "Select metric",
+      "model_usage": "Model Usage",
+      "token_usage": "Token Usage",
+      "user_usage": "User Usage"
+    },
+    "title": "Dashboard",
+    "empty": {
+      "title": "No data yet",
+      "description": "Start making API requests to see usage statistics and charts here."
+    },
+    "top_models": {
+      "highest_cost": "Highest Cost",
+      "most_requests": "Most Requests",
+      "most_tokens": "Most Tokens",
+      "title": "Top Models This Period"
+    },
+    "pool_summary": {
+      "title": "Budget Pool Overview",
+      "subtitle": "Allocation and usage across active budget pools",
+      "no_pools": "No active budget pools",
+      "go_to_pools": "Go to Budget Pools",
+      "total_budget": "Total Budget",
+      "total_allocated": "Allocated",
+      "total_available": "Available",
+      "pool_count": "Active Pools",
+      "view_all": "View All"
+    }
+  }
+}
