@@ -134,6 +134,7 @@ def create_app() -> FastAPI:
     # Register routers
     from app.routers.api.auth import router as auth_router
     from app.routers.api.status import router as status_router
+    from app.routers.api.dashboard import router as dashboard_router
     from app.routers.api.web import router as web_router
     from app.routers.api.admin_user import router as admin_user_router
     from app.routers.api.token import router as token_router
@@ -147,6 +148,7 @@ def create_app() -> FastAPI:
 
     app.include_router(status_router)
     app.include_router(auth_router)
+    app.include_router(dashboard_router)
     app.include_router(admin_user_router)
     app.include_router(token_router)
     app.include_router(log_router)
@@ -155,6 +157,7 @@ def create_app() -> FastAPI:
     app.include_router(channel_router)
     app.include_router(budget_router)
     app.include_router(admin_budget_router)
+    app.include_router(dashboard_router)
     app.include_router(web_router)
     app.include_router(relay_router)
 
