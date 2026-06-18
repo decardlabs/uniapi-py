@@ -184,6 +184,10 @@ async def _handle_relay(request: Request, db: AsyncSession):
 
     upstream_headers = adaptor.setup_request_headers(meta.api_key)
 
+    # Determine if SSE format conversion is needed
+    needs_sse_conversion = stream and relay_mode == 12 and not adaptor.supports_native_format(relay_mode)
+    output_format = "anthropic" if needs_sse_conversion else "chat"
+
     # Relay upstream
     try:
         upstream_response = await relay_chat_completion(
@@ -191,6 +195,7 @@ async def _handle_relay(request: Request, db: AsyncSession):
             upstream_url=upstream_url,
             api_key=meta.api_key,
             stream=stream,
+            output_format=output_format,
         )
     except httpx.HTTPStatusError as exc:
         # Pass through upstream 4xx/5xx errors

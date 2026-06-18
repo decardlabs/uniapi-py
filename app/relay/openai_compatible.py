@@ -76,8 +76,15 @@ async def relay_chat_completion(
     upstream_url: str,
     api_key: str,
     stream: bool = False,
+    output_format: str = "chat",
 ) -> dict | StreamingResponse:
-    """Handle both streaming and non-streaming chat completion requests."""
+    """Handle both streaming and non-streaming chat completion requests.
+
+    Parameters
+    ----------
+    output_format : str
+        "chat" (default, OpenAI format) or "anthropic" (convert SSE to Anthropic format).
+    """
     headers = {
         "Authorization": f"Bearer {api_key}",
         "Content-Type": "application/json",
@@ -85,8 +92,38 @@ async def relay_chat_completion(
 
     if stream:
         client = httpx.AsyncClient()
+        raw_stream = stream_chat_completion(client, upstream_url, body, headers)
+
+        if output_format == "anthropic":
+            # Wrap with SSE converter
+            from app.relay.sse_converter import chat_to_anthropic_sse, _format_anthropic_sse
+
+            async def converted_stream():
+                # Collect raw lines into a list for the sync converter
+                lines: list[str] = []
+                async for line in raw_stream:
+                    if line.startswith("data: "):
+                        lines.append(line.strip())
+                    elif line.startswith("data:") and line.strip() == "data: [DONE]":
+                        lines.append("data: [DONE]")
+
+                # Convert synchronously
+                events = list(chat_to_anthropic_sse(iter(lines)))
+                for event in events:
+                    yield _format_anthropic_sse(event["event"], event["data"])
+
+            return StreamingResponse(
+                converted_stream(),
+                media_type="text/event-stream",
+                headers={
+                    "Cache-Control": "no-cache",
+                    "Connection": "keep-alive",
+                    "X-Accel-Buffering": "no",
+                },
+            )
+
         return StreamingResponse(
-            stream_chat_completion(client, upstream_url, body, headers),
+            raw_stream,
             media_type="text/event-stream",
             headers={
                 "Cache-Control": "no-cache",
