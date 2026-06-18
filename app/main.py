@@ -13,26 +13,47 @@ from app.config import settings
 from app.database import async_session_factory, engine
 from app.exceptions import AppException, app_exception_handler
 from app.models.base import Base
-from app.relay.registry import registry
-from app.relay.adaptors.deepseek.adaptor import DeepSeekAdaptor, DEEPSEEK_CHANNEL_TYPE
+
+# Ensure all models are registered in Base.metadata
+import app.models.user  # noqa: F401
+import app.models.token  # noqa: F401
+import app.models.log  # noqa: F401
+import app.models.option  # noqa: F401
+import app.models.channel  # noqa: F401
+import app.models.ability  # noqa: F401
+import app.models.budget  # noqa: F401
+from app.config import settings
 
 
 @asynccontextmanager
 async def lifespan(app: FastAPI) -> AsyncGenerator:
-    """Application lifespan: initialize DB and register adaptors."""
+    """Application lifespan: initialize DB, budget system, seed defaults."""
     # Create tables if they don't exist
     async with engine.begin() as conn:
         await conn.run_sync(Base.metadata.create_all)
 
+    # Initialize BudgetArbiter
+    if settings.budget_enabled:
+        from app.budget.redis import BudgetRedisClient
+        from app.budget.arbiter import BudgetArbiter
+        redis_client = BudgetRedisClient(settings.budget_redis_url)
+        await redis_client.initialize()
+        arbiter = BudgetArbiter(
+            redis_client=redis_client,
+            db_session_factory=async_session_factory,
+            default_monthly_budget=settings.default_monthly_budget,
+        )
+        app.state.budget_arbiter = arbiter
+        app.state.budget_redis = redis_client
+
     # Seed default data
     await _seed_defaults()
-
-    # Register DeepSeek adaptor
-    registry.register(DEEPSEEK_CHANNEL_TYPE, DeepSeekAdaptor)
 
     yield
 
     # Cleanup
+    if hasattr(app.state, "budget_redis"):
+        await app.state.budget_redis.close()
     await engine.dispose()
 
 
@@ -119,6 +140,7 @@ def create_app() -> FastAPI:
     from app.routers.api.log import router as log_router
     from app.routers.api.options import router as options_router
     from app.routers.api.channel_types import router as channel_types_router
+    from app.routers.api.budget import router as budget_router
     from app.routers.v1.relay import router as relay_router
 
     app.include_router(status_router)
@@ -128,6 +150,7 @@ def create_app() -> FastAPI:
     app.include_router(log_router)
     app.include_router(options_router)
     app.include_router(channel_types_router)
+    app.include_router(budget_router)
     app.include_router(web_router)
     app.include_router(relay_router)
 

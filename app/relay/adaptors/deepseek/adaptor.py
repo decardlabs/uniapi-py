@@ -15,6 +15,7 @@ from app.relay.meta import RelayMeta
 
 DEEPSEEK_CHANNEL_TYPE = 39
 DEFAULT_BASE_URL = "https://api.deepseek.com/v1"
+ANTHROPIC_BASE_URL = "https://api.deepseek.com/anthropic"
 
 # Relay mode constants matching app.relay.mode.RelayMode
 _CHAT = 1       # ChatCompletions
@@ -28,14 +29,16 @@ class DeepSeekAdaptor(BaseAdaptor):
     DEFAULT_BASE_URL = DEFAULT_BASE_URL
 
     def get_request_url(self, meta: RelayMeta, relay_mode: int = 1) -> str:
+        if relay_mode == _CLAUDE:
+            return f"{ANTHROPIC_BASE_URL}/v1/messages"
         base = meta.base_url or self.DEFAULT_BASE_URL
         path = self._get_path_for_mode(relay_mode)
         return f"{base.rstrip('/')}{path}"
 
     def _get_path_for_mode(self, relay_mode: int) -> str:
         if relay_mode == _CLAUDE:
-            return "/v1/messages"
-        return "/v1/chat/completions"
+            return f"{ANTHROPIC_BASE_URL}/v1/messages"
+        return "/chat/completions"
 
     def setup_request_headers(self, api_key: str) -> dict[str, str]:
         return {

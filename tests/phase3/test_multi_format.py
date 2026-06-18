@@ -30,7 +30,7 @@ async def test_deepseek_get_url_for_claude_messages(client: AsyncClient):
     from app.relay.meta import RelayMeta
     meta = RelayMeta(base_url="https://api.deepseek.com/v1")
     url = DeepSeekAdaptor().get_request_url(meta, 12)  # 12=CLAUDE_MESSAGES
-    assert "/v1/messages" in url
+    assert "api.deepseek.com/anthropic/v1/messages" in url
 
 
 @pytest.mark.asyncio
@@ -40,7 +40,7 @@ async def test_deepseek_get_url_for_chat(client: AsyncClient):
     from app.relay.meta import RelayMeta
     meta = RelayMeta(base_url="https://api.deepseek.com/v1")
     url = DeepSeekAdaptor().get_request_url(meta, 1)  # 1=CHAT_COMPLETIONS
-    assert "/v1/chat/completions" in url
+    assert "/chat/completions" in url
 
 
 @pytest.mark.asyncio

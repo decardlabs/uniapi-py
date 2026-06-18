@@ -1,0 +1,51 @@
+# Fusion 策略配置
+strategies:
+  default:
+    panel:
+      - "deepseek-v4-pro"
+      - "minimax-abab7"
+      - "glm-4-plus"
+    judge: "minimax-abab7"
+    synthesizer: "deepseek-v4-pro"
+    timeout_seconds: 30
+    retry_count: 2
+    fallback_model: "deepseek-v4-pro"
+
+  # 代码场景：侧重 MiniMax + DeepSeek
+  code:
+    panel:
+      - "deepseek-v4-pro"
+      - "minimax-abab7"
+    judge: "deepseek-v4-pro"
+    synthesizer: "minimax-abab7"
+
+  # 推理场景：DeepSeek 自融合 + MiniMax 裁判
+  reasoning:
+    panel:
+      - "deepseek-v4-pro"
+      - "deepseek-v4-pro"
+    judge: "minimax-abab7"
+    synthesizer: "deepseek-v4-pro"
+
+  # 预算模式：仅用 GLM + MiniMax
+  budget:
+    panel:
+      - "minimax-abab7"
+      - "glm-4-plus"
+    judge: "glm-4-plus"
+    synthesizer: "minimax-abab7"
+
+# 路由规则：根据请求特征自动选择策略
+routing:
+  - condition:
+      content_contains: ["```", "def ", "function ", "class ", "import "]
+    strategy: "code"
+  - condition:
+      content_contains: ["证明", "推导", "计算", "求解", "证明以下"]
+    strategy: "reasoning"
+  - condition:
+      max_messages: 3
+      max_tokens_estimate: 500
+    strategy: "passthrough"
+  - default: true
+    strategy: "default"

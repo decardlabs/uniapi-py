@@ -24,14 +24,14 @@ class GLMAdaptor(BaseAdaptor):
 
     def get_request_url(self, meta: RelayMeta, relay_mode: int = 1) -> str:
         if relay_mode == 12:  # CLAUDE_MESSAGES
-            return ANTHROPIC_BASE_URL
+            return f"{ANTHROPIC_BASE_URL}/v1/messages"
         base = meta.base_url or self.DEFAULT_BASE_URL
-        return f"{base.rstrip('/')}/api/paas/v4/chat/completions"
+        return f"{base.rstrip('/')}/chat/completions"
 
     def _get_path_for_mode(self, relay_mode: int) -> str:
         if relay_mode == 12:
-            return ANTHROPIC_BASE_URL
-        return f"{self.DEFAULT_BASE_URL}/api/paas/v4/chat/completions"
+            return f"{ANTHROPIC_BASE_URL}/v1/messages"
+        return "/chat/completions"
 
     def setup_request_headers(self, api_key: str) -> dict[str, str]:
         token = generate_glm_token(api_key)

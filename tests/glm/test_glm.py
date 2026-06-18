@@ -34,7 +34,7 @@ async def test_glm_get_url_for_claude(client: AsyncClient):
     from app.relay.meta import RelayMeta
     meta = RelayMeta(base_url="https://open.bigmodel.cn/api/paas/v4")
     url = GLMAdaptor().get_request_url(meta, 12)  # CLAUDE_MESSAGES
-    assert url == "https://open.bigmodel.cn/api/anthropic"
+    assert url == "https://open.bigmodel.cn/api/anthropic/v1/messages"
 
 
 @pytest.mark.asyncio

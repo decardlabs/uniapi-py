@@ -52,6 +52,18 @@ class Settings(BaseSettings):
     # DeepSeek
     deepseek_api_key: str = ""
 
+    # GLM
+    glm_api_key: str = ""
+
+    # Qwen (百炼)
+    qwen_api_key: str = ""
+
+    # Kimi (Moonshot)
+    kimi_api_key: str = ""
+
+    # MiniMax
+    minimax_api_key: str = ""
+
     # Batch update
     batch_update_enabled: bool = False
     batch_update_interval: int = 30
@@ -74,7 +86,11 @@ class Settings(BaseSettings):
     sticky_session_enabled: bool = True
     sticky_session_timeout_seconds: int = 600
 
-    # Misc
+    # Redis / Budget
+    budget_redis_url: str = ""
+    budget_enabled: bool = True
+    default_monthly_budget: float = 800.0
+    budget_safety_margin: float = 1.2
     cache_enabled: bool = True
     sync_frequency: int = 120
     max_items_per_page: int = 50

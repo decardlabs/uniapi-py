@@ -23,12 +23,29 @@ class AdaptorRegistry:
     def all_adaptors(self) -> list[BaseAdaptor]:
         return [cls() for cls in self._registry.values()]
 
+    def resolve_channel_type(self, model_name: str) -> int | None:
+        """Find which registered channel type supports the given model.
 
-# Global registry - auto-register DeepSeek and GLM
+        Returns channel_type (int) or None if no adaptor supports this model.
+        """
+        for channel_type, adaptor_cls in self._registry.items():
+            adaptor = adaptor_cls()
+            if model_name in adaptor.get_supported_models():
+                return channel_type
+        return None
+
+
+# Global registry - auto-register all known adaptors
 registry = AdaptorRegistry()
 
 from app.relay.adaptors.deepseek.adaptor import DEEPSEEK_CHANNEL_TYPE, DeepSeekAdaptor  # noqa: E402
 from app.relay.adaptors.glm.adaptor import GLM_CHANNEL_TYPE, GLMAdaptor  # noqa: E402
+from app.relay.adaptors.qwen.adaptor import QWEN_CHANNEL_TYPE, QwenAdaptor  # noqa: E402
+from app.relay.adaptors.kimi.adaptor import KIMI_CHANNEL_TYPE, KimiAdaptor  # noqa: E402
+from app.relay.adaptors.minimax.adaptor import MINIMAX_CHANNEL_TYPE, MiniMaxAdaptor  # noqa: E402
 
 registry.register(DEEPSEEK_CHANNEL_TYPE, DeepSeekAdaptor)
 registry.register(GLM_CHANNEL_TYPE, GLMAdaptor)
+registry.register(QWEN_CHANNEL_TYPE, QwenAdaptor)
+registry.register(KIMI_CHANNEL_TYPE, KimiAdaptor)
+registry.register(MINIMAX_CHANNEL_TYPE, MiniMaxAdaptor)

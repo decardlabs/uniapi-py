@@ -1,0 +1,1115 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Fusion API 中转站 — 架构设计文档</title>
+<style>
+  :root {
+    --bg: #f8f9fa;
+    --card: #ffffff;
+    --border: #e2e8f0;
+    --text: #1a202c;
+    --muted: #64748b;
+    --accent: #6366f1;
+    --accent-light: #eef2ff;
+    --green: #10b981;
+    --orange: #f59e0b;
+    --red: #ef4444;
+    --blue: #3b82f6;
+    --code-bg: #1e293b;
+    --code-text: #e2e8f0;
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, "PingFang SC", "Microsoft YaHei", sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    line-height: 1.7;
+    -webkit-font-smoothing: antialiased;
+  }
+  .container { max-width: 1100px; margin: 0 auto; padding: 40px 24px 80px; }
+  h1 { font-size: 2rem; font-weight: 800; margin-bottom: 8px; letter-spacing: -0.02em; }
+  h2 { font-size: 1.4rem; font-weight: 700; margin: 40px 0 16px; padding-bottom: 8px; border-bottom: 2px solid var(--accent); display: inline-block; }
+  h3 { font-size: 1.15rem; font-weight: 600; margin: 28px 0 12px; }
+  p { margin-bottom: 12px; color: #334155; }
+  .subtitle { color: var(--muted); font-size: 0.95rem; margin-bottom: 32px; }
+  .badge { display: inline-block; padding: 2px 10px; border-radius: 12px; font-size: 0.75rem; font-weight: 600; margin-right: 6px; }
+  .badge-core { background: var(--accent-light); color: var(--accent); }
+  .badge-new { background: #d1fae5; color: var(--green); }
+  .card { background: var(--card); border: 1px solid var(--border); border-radius: 12px; padding: 24px; margin: 16px 0; box-shadow: 0 1px 3px rgba(0,0,0,0.04); }
+  .card-titled { font-weight: 700; margin-bottom: 8px; font-size: 1.05rem; }
+  code { background: #f1f5f9; padding: 2px 6px; border-radius: 4px; font-size: 0.88em; font-family: "SF Mono", "Fira Code", monospace; color: var(--accent); }
+  pre { background: var(--code-bg); color: var(--code-text); padding: 16px 20px; border-radius: 10px; overflow-x: auto; margin: 12px 0; font-size: 0.82rem; line-height: 1.5; }
+  pre code { background: none; color: inherit; padding: 0; }
+  table { width: 100%; border-collapse: collapse; margin: 12px 0; font-size: 0.9rem; }
+  th { background: var(--accent-light); text-align: left; padding: 10px 14px; font-weight: 600; border-bottom: 2px solid var(--accent); }
+  td { padding: 10px 14px; border-bottom: 1px solid var(--border); }
+  tr:hover { background: #f8fafc; }
+  .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+  .grid-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 12px; }
+  @media (max-width: 768px) { .grid-2, .grid-3 { grid-template-columns: 1fr; } }
+  .stat-box { text-align: center; padding: 20px; border-radius: 10px; }
+  .stat-num { font-size: 1.8rem; font-weight: 800; }
+  .stat-label { font-size: 0.8rem; color: var(--muted); }
+  .highlight { border-left: 4px solid var(--accent); padding-left: 16px; margin: 16px 0; color: #475569; font-style: italic; }
+  ul, ol { margin-left: 24px; margin-bottom: 12px; }
+  li { margin-bottom: 6px; color: #334155; }
+  .tag-row { display: flex; gap: 8px; flex-wrap: wrap; margin: 8px 0; }
+  .tag { padding: 4px 12px; border-radius: 6px; font-size: 0.82rem; font-weight: 500; }
+  .tag-deepseek { background: #4f6df5; color: white; }
+  .tag-minimax { background: #ff6b35; color: white; }
+  .tag-glm { background: #10b981; color: white; }
+  .toc { background: var(--card); border: 1px solid var(--border); border-radius: 10px; padding: 20px 24px; margin-bottom: 32px; }
+  .toc a { color: var(--accent); text-decoration: none; font-size: 0.9rem; }
+  .toc a:hover { text-decoration: underline; }
+  .toc ul { list-style: none; margin-left: 0; }
+  .toc > ul > li { margin-bottom: 4px; }
+  .toc ul ul { margin-left: 20px; }
+
+  /* Architecture Diagram */
+  .arch-diagram { width: 100%; overflow-x: auto; }
+  .arch-diagram svg { min-width: 900px; }
+
+  .flow-step { display: flex; align-items: flex-start; gap: 12px; margin: 12px 0; }
+  .flow-num { flex-shrink: 0; width: 28px; height: 28px; border-radius: 50%; background: var(--accent); color: white; display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 0.85rem; }
+  .flow-content { flex: 1; }
+  .flow-title { font-weight: 600; margin-bottom: 2px; }
+  .flow-desc { font-size: 0.88rem; color: var(--muted); }
+</style>
+</head>
+<body>
+<div class="container">
+
+<h1>🔬 Fusion API 中转站 — 架构设计文档</h1>
+<p class="subtitle">面向多智能体的本地模型融合中转站 · 5 家双协议模型阵容 · 零协议转换架构 · 参考 agentfw 设计</p>
+
+<div class="tag-row">
+  <span class="tag tag-deepseek">DeepSeek V4 Pro</span>
+  <span class="tag tag-minimax">MiniMax</span>
+  <span class="tag tag-glm">GLM</span>
+</div>
+
+<div class="toc">
+  <strong>📋 目录</strong>
+  <ul>
+    <li><a href="#overview">1. 方案概述</a></li>
+    <li><a href="#arch">2. 系统架构</a></li>
+    <li><a href="#dual-protocol">3. 双协议入站设计</a></li>
+    <li><a href="#fusion-flow">4. Fusion 流程设计</a></li>
+    <li><a href="#core">5. 核心模块设计</a></li>
+    <li><a href="#api">6. API 接口设计</a></li>
+    <li><a href="#config">7. 配置体系</a></li>
+    <li><a href="#deploy">8. 部署方案</a></li>
+    <li><a href="#security">9. 安全与审计</a></li>
+    <li><a href="#roadmap">10. 演进路线</a></li>
+  </ul>
+</div>
+
+<!-- ==================== 1. 方案概述 ==================== -->
+<h2 id="overview">1. 方案概述</h2>
+
+<div class="grid-3">
+  <div class="stat-box" style="background: var(--accent-light);">
+    <div class="stat-num" style="color: var(--accent);">3</div>
+    <div class="stat-label">Panel 模型并行</div>
+  </div>
+  <div class="stat-box" style="background: #fef3c7;">
+    <div class="stat-num" style="color: var(--orange);">2</div>
+    <div class="stat-label">Judge + Synthesizer</div>
+  </div>
+  <div class="stat-box" style="background: #d1fae5;">
+    <div class="stat-num" style="color: var(--green);">~50%</div>
+    <div class="stat-label">成本降低（vs 前沿单模型）</div>
+  </div>
+</div>
+
+<h3>设计目标</h3>
+<div class="card">
+  <p><strong>核心思路：</strong>参考 agentfw 的 Wire Tap 反向代理架构和 OpenRouter Fusion 的 Panel→Judge→Synthesizer 流水线，构建一个<strong>本地可控、OpenAI 兼容</strong>的 API 中转站，让下游 Agent / 应用感知不到多模型协作，只看到"一个更聪明的模型"。</p>
+</div>
+
+<table>
+  <thead>
+    <tr><th>维度</th><th>OpenRouter Fusion</th><th>本方案（Fusion Relay）</th></tr>
+  </thead>
+  <tbody>
+    <tr><td>部署位置</td><td>云端黑盒</td><td><strong>本地/自建服务器</strong></td></tr>
+    <tr><td>API 兼容</td><td>OpenRouter 私有格式</td><td><strong>OpenAI + Anthropic 双协议入站</strong></td></tr>
+    <tr><td>模型可控</td><td>限于 OR 支持的模型</td><td><strong>任意 OpenAI 兼容上游</strong></td></tr>
+    <tr><td>数据隐私</td><td>数据过境 OR</td><td><strong>本地审计 + PII 脱敏</strong></td></tr>
+    <tr><td>Fusion 策略</td><td>固定 Judge→Synthesizer</td><td><strong>可配置/可插拔/可扩展</strong></td></tr>
+    <tr><td>成本控制</td><td>按 OR 计价</td><td><strong>自选上游、自控成本</strong></td></tr>
+  </tbody>
+</table>
+
+<h3>模型阵容</h3>
+<div class="grid-3">
+  <div class="card" style="border-top: 4px solid #4f6df5;">
+    <div class="card-titled" style="color: #4f6df5;">🧠 DeepSeek V4 Pro</div>
+    <p style="font-size:0.88rem;"><strong>Panel + Synthesizer</strong></p>
+    <ul style="font-size:0.85rem;">
+      <li>高强度推理、问题拆解</li>
+      <li>数学/逻辑/代码分析</li>
+      <li>适合做最终综合裁决</li>
+    </ul>
+  </div>
+  <div class="card" style="border-top: 4px solid #ff6b35;">
+    <div class="card-titled" style="color: #ff6b35;">📝 MiniMax</div>
+    <p style="font-size:0.88rem;"><strong>Panel + Judge</strong></p>
+    <ul style="font-size:0.85rem;">
+      <li>长上下文、长文归纳</li>
+      <li>中文理解优势</li>
+      <li>适合做交叉检查 Judge</li>
+    </ul>
+  </div>
+  <div class="card" style="border-top: 4px solid #10b981;">
+    <div class="card-titled" style="color: #10b981;">⚡ GLM</div>
+    <p style="font-size:0.88rem;"><strong>Panel</strong></p>
+    <ul style="font-size:0.85rem;">
+      <li>稳定结构化输出</li>
+      <li>多模态任务支持</li>
+      <li>快速响应、低延迟</li>
+    </ul>
+  </div>
+</div>
+
+<!-- ==================== 2. 系统架构 ==================== -->
+<h2 id="arch">2. 系统架构</h2>
+
+<div class="arch-diagram">
+<svg viewBox="0 0 1000 560" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <marker id="arrow" markerWidth="10" markerHeight="7" refX="10" refY="3.5" orient="auto">
+      <polygon points="0 0, 10 3.5, 0 7" fill="#6366f1"/>
+    </marker>
+    <marker id="arrow-green" markerWidth="10" markerHeight="7" refX="10" refY="3.5" orient="auto">
+      <polygon points="0 0, 10 3.5, 0 7" fill="#10b981"/>
+    </marker>
+    <linearGradient id="grad-fusion" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" style="stop-color:#eef2ff;stop-opacity:1"/>
+      <stop offset="100%" style="stop-color:#e0e7ff;stop-opacity:1"/>
+    </linearGradient>
+  </defs>
+
+  <!-- Title -->
+  <text x="500" y="25" text-anchor="middle" font-size="16" font-weight="700" fill="#1a202c">Fusion API 中转站 — 系统架构</text>
+
+  <!-- Layer 1: Client -->
+  <rect x="350" y="45" width="300" height="50" rx="8" fill="#f1f5f9" stroke="#cbd5e1" stroke-width="1.5"/>
+  <text x="500" y="68" text-anchor="middle" font-size="12" font-weight="600" fill="#334155">Agent / 应用 / IDE</text>
+  <text x="500" y="83" text-anchor="middle" font-size="10" fill="#64748b">Claude Code · Cursor · LangChain · 自研 Agent · 任意 OpenAI/Anthropic 客户端</text>
+
+  <!-- Arrow down -->
+  <line x1="500" y1="95" x2="500" y2="115" stroke="#6366f1" stroke-width="2" marker-end="url(#arrow)"/>
+
+  <!-- Layer 2: API Gateway -->
+  <rect x="300" y="115" width="400" height="60" rx="8" fill="#dbeafe" stroke="#3b82f6" stroke-width="1.5"/>
+  <text x="500" y="138" text-anchor="middle" font-size="13" font-weight="700" fill="#1e40af">API Gateway (FastAPI)</text>
+  <text x="500" y="155" text-anchor="middle" font-size="10" fill="#3b82f6">OpenAI 兼容 · Anthropic 兼容 · Auth · Rate Limit · 请求路由 · 审计日志</text>
+  <text x="500" y="168" text-anchor="middle" font-size="9" fill="#64748b">POST /v1/chat/completions · POST /v1/messages · model: "fusion" → 触发融合</text>
+
+  <!-- Arrow down -->
+  <line x1="500" y1="175" x2="500" y2="195" stroke="#6366f1" stroke-width="2" marker-end="url(#arrow)"/>
+
+  <!-- Layer 3: Fusion Engine (Big Box) -->
+  <rect x="80" y="195" width="840" height="220" rx="12" fill="url(#grad-fusion)" stroke="#6366f1" stroke-width="2" stroke-dasharray="6,3"/>
+  <text x="500" y="215" text-anchor="middle" font-size="14" font-weight="700" fill="#4338ca">⚙ Fusion Engine（核心引擎）</text>
+
+  <!-- Step 1: Request Cloner -->
+  <rect x="110" y="230" width="160" height="50" rx="8" fill="#fff" stroke="#6366f1" stroke-width="1.5"/>
+  <text x="190" y="250" text-anchor="middle" font-size="11" font-weight="600" fill="#4338ca">① Request Cloner</text>
+  <text x="190" y="265" text-anchor="middle" font-size="9" fill="#64748b">请求复制 · 参数适配</text>
+
+  <!-- Arrow -->
+  <line x1="270" y1="255" x2="300" y2="255" stroke="#6366f1" stroke-width="1.5" marker-end="url(#arrow)"/>
+
+  <!-- Step 2: Parallel Dispatch -->
+  <rect x="300" y="230" width="180" height="50" rx="8" fill="#fff" stroke="#6366f1" stroke-width="1.5"/>
+  <text x="390" y="250" text-anchor="middle" font-size="11" font-weight="600" fill="#4338ca">② Parallel Dispatch</text>
+  <text x="390" y="265" text-anchor="middle" font-size="9" fill="#64748b">asyncio.gather · 超时控制</text>
+
+  <!-- Three model boxes below dispatch -->
+  <line x1="390" y1="280" x2="390" y2="295" stroke="#6366f1" stroke-width="1.5"/>
+  <line x1="210" y1="295" x2="570" y2="295" stroke="#6366f1" stroke-width="1.5"/>
+  <line x1="210" y1="295" x2="210" y2="305" stroke="#4f6df5" stroke-width="1.5" marker-end="url(#arrow)"/>
+  <line x1="390" y1="295" x2="390" y2="305" stroke="#ff6b35" stroke-width="1.5" marker-end="url(#arrow)"/>
+  <line x1="570" y1="295" x2="570" y2="305" stroke="#10b981" stroke-width="1.5" marker-end="url(#arrow)"/>
+
+  <rect x="150" y="305" width="120" height="38" rx="6" fill="#4f6df5" opacity="0.12" stroke="#4f6df5" stroke-width="1"/>
+  <text x="210" y="322" text-anchor="middle" font-size="10" font-weight="600" fill="#4f6df5">DeepSeek V4 Pro</text>
+  <text x="210" y="335" text-anchor="middle" font-size="8" fill="#64748b">推理/拆解</text>
+
+  <rect x="330" y="305" width="120" height="38" rx="6" fill="#ff6b35" opacity="0.12" stroke="#ff6b35" stroke-width="1"/>
+  <text x="390" y="322" text-anchor="middle" font-size="10" font-weight="600" fill="#ff6b35">MiniMax</text>
+  <text x="390" y="335" text-anchor="middle" font-size="8" fill="#64748b">代码/长文/中文</text>
+
+  <rect x="510" y="305" width="120" height="38" rx="6" fill="#10b981" opacity="0.12" stroke="#10b981" stroke-width="1"/>
+  <text x="570" y="322" text-anchor="middle" font-size="10" font-weight="600" fill="#10b981">GLM</text>
+  <text x="570" y="335" text-anchor="middle" font-size="8" fill="#64748b">结构化/多模态</text>
+
+  <!-- Collect results arrows -->
+  <line x1="210" y1="343" x2="210" y2="355" stroke="#6366f1" stroke-width="1" stroke-dasharray="3,2"/>
+  <line x1="390" y1="343" x2="390" y2="355" stroke="#6366f1" stroke-width="1" stroke-dasharray="3,2"/>
+  <line x1="570" y1="343" x2="570" y2="355" stroke="#6366f1" stroke-width="1" stroke-dasharray="3,2"/>
+  <line x1="210" y1="355" x2="570" y2="355" stroke="#6366f1" stroke-width="1" stroke-dasharray="3,2"/>
+  <line x1="390" y1="355" x2="390" y2="365" stroke="#6366f1" stroke-width="1.5" marker-end="url(#arrow)"/>
+
+  <!-- Step 3: Judge -->
+  <rect x="300" y="365" width="180" height="42" rx="8" fill="#fef3c7" stroke="#f59e0b" stroke-width="1.5"/>
+  <text x="390" y="382" text-anchor="middle" font-size="11" font-weight="600" fill="#92400e">③ Judge (MiniMax)</text>
+  <text x="390" y="398" text-anchor="middle" font-size="9" fill="#92400e">共识 · 矛盾 · 盲区 · 独特洞察</text>
+
+  <!-- Arrow to Synthesizer -->
+  <line x1="480" y1="386" x2="530" y2="386" stroke="#f59e0b" stroke-width="1.5" marker-end="url(#arrow)"/>
+
+  <!-- Step 4: Synthesizer -->
+  <rect x="530" y="365" width="180" height="42" rx="8" fill="#d1fae5" stroke="#10b981" stroke-width="1.5"/>
+  <text x="620" y="382" text-anchor="middle" font-size="11" font-weight="600" fill="#065f46">④ Synthesizer (DS)</text>
+  <text x="620" y="398" text-anchor="middle" font-size="9" fill="#065f46">融合生成最终答案</text>
+
+  <!-- Arrow up to Gateway -->
+  <line x1="620" y1="365" x2="620" y2="180" stroke="#10b981" stroke-width="2" marker-end="url(#arrow-green)" stroke-dasharray="4,3"/>
+
+  <!-- Side: Security & Audit -->
+  <rect x="730" y="230" width="160" height="170" rx="8" fill="#fef2f2" stroke="#ef4444" stroke-width="1.5" stroke-dasharray="4,2"/>
+  <text x="810" y="252" text-anchor="middle" font-size="11" font-weight="700" fill="#dc2626">🔒 安全与审计</text>
+  <text x="810" y="270" text-anchor="middle" font-size="9" fill="#dc2626">PII 脱敏</text>
+  <text x="810" y="285" text-anchor="middle" font-size="9" fill="#dc2626">调用全审计</text>
+  <text x="810" y="300" text-anchor="middle" font-size="9" fill="#dc2626">Prompt 注入检测</text>
+  <text x="810" y="315" text-anchor="middle" font-size="9" fill="#dc2626">密钥掩码</text>
+  <text x="810" y="330" text-anchor="middle" font-size="9" fill="#dc2626">故障自动切换</text>
+  <text x="810" y="345" text-anchor="middle" font-size="9" fill="#dc2626">成本追踪</text>
+  <text x="810" y="360" text-anchor="middle" font-size="9" fill="#dc2626">Prometheus</text>
+  <text x="810" y="378" text-anchor="middle" font-size="9" fill="#dc2626">→ Grafana</text>
+
+  <!-- Layer 4: Adapters -->
+  <line x1="210" y1="415" x2="210" y2="435" stroke="#6366f1" stroke-width="1" stroke-dasharray="3,2"/>
+  <line x1="390" y1="415" x2="390" y2="435" stroke="#ff6b35" stroke-width="1" stroke-dasharray="3,2"/>
+  <line x1="570" y1="415" x2="570" y2="435" stroke="#10b981" stroke-width="1" stroke-dasharray="3,2"/>
+
+  <rect x="100" y="435" width="220" height="40" rx="8" fill="#f8fafc" stroke="#cbd5e1" stroke-width="1"/>
+  <text x="210" y="452" text-anchor="middle" font-size="10" font-weight="600" fill="#4f6df5">DeepSeek Adapter</text>
+  <text x="210" y="465" text-anchor="middle" font-size="8" fill="#64748b">api.deepseek.com · OpenAI 兼容</text>
+
+  <rect x="340" y="435" width="180" height="40" rx="8" fill="#f8fafc" stroke="#cbd5e1" stroke-width="1"/>
+  <text x="430" y="452" text-anchor="middle" font-size="10" font-weight="600" fill="#ff6b35">MiniMax Adapter</text>
+  <text x="430" y="465" text-anchor="middle" font-size="8" fill="#64748b">api.minimax.chat</text>
+
+  <rect x="540" y="435" width="180" height="40" rx="8" fill="#f8fafc" stroke="#cbd5e1" stroke-width="1"/>
+  <text x="630" y="452" text-anchor="middle" font-size="10" font-weight="600" fill="#10b981">GLM Adapter</text>
+  <text x="630" y="465" text-anchor="middle" font-size="8" fill="#64748b">open.bigmodel.cn</text>
+
+  <!-- Config & State -->
+  <rect x="730" y="435" width="160" height="40" rx="8" fill="#f5f3ff" stroke="#8b5cf6" stroke-width="1"/>
+  <text x="810" y="452" text-anchor="middle" font-size="10" font-weight="600" fill="#7c3aed">Config (YAML) + Redis</text>
+  <text x="810" y="465" text-anchor="middle" font-size="8" fill="#7c3aed">策略/模型/路由/缓存</text>
+
+  <!-- Layer 5: Upstream APIs -->
+  <line x1="210" y1="475" x2="210" y2="490" stroke="#94a3b8" stroke-width="1"/>
+  <line x1="430" y1="475" x2="430" y2="490" stroke="#94a3b8" stroke-width="1"/>
+  <line x1="630" y1="475" x2="630" y2="490" stroke="#94a3b8" stroke-width="1"/>
+
+  <rect x="100" y="490" width="220" height="30" rx="6" fill="#e2e8f0" stroke="#94a3b8" stroke-width="1"/>
+  <text x="210" y="509" text-anchor="middle" font-size="9" fill="#475569">DeepSeek API</text>
+
+  <rect x="340" y="490" width="180" height="30" rx="6" fill="#e2e8f0" stroke="#94a3b8" stroke-width="1"/>
+  <text x="430" y="509" text-anchor="middle" font-size="9" fill="#475569">MiniMax API</text>
+
+  <rect x="540" y="490" width="180" height="30" rx="6" fill="#e2e8f0" stroke="#94a3b8" stroke-width="1"/>
+  <text x="630" y="509" text-anchor="middle" font-size="9" fill="#475569">GLM/Zhipu API</text>
+
+  <!-- Labels -->
+  <text x="30" y="70" font-size="9" fill="#94a3b8" font-weight="600">CLIENT</text>
+  <text x="30" y="140" font-size="9" fill="#3b82f6" font-weight="600">GATEWAY</text>
+  <text x="30" y="300" font-size="9" fill="#6366f1" font-weight="600">FUSION</text>
+  <text x="30" y="455" font-size="9" fill="#64748b" font-weight="600">ADAPTERS</text>
+  <text x="30" y="505" font-size="9" fill="#94a3b8" font-weight="600">UPSTREAM</text>
+</svg>
+</div>
+
+<h3>分层说明</h3>
+<table>
+  <thead>
+    <tr><th>层</th><th>组件</th><th>职责</th></tr>
+  </thead>
+  <tbody>
+    <tr><td><strong>Client</strong></td><td>Agent / 应用</td><td>通过 OpenAI 或 Anthropic API 调用，<code>model: "fusion"</code> 或 <code>model: "claude-*"</code> 触发融合</td></tr>
+    <tr><td><strong>Gateway</strong></td><td>FastAPI + Middleware + Protocol Boundary</td><td>认证、限流、协议轻量包装（Anthropic→Internal）、请求路由、审计日志</td></tr>
+    <tr><td><strong>Fusion Engine</strong></td><td>4 步流水线</td><td>① 请求克隆 → ② 并行分发 → ③ Judge 分析 → ④ Synthesizer 融合</td></tr>
+    <tr><td><strong>Adapters</strong></td><td>模型适配器</td><td>统一接口适配不同上游 API，处理格式差异、流式、重试</td></tr>
+    <tr><td><strong>Upstream</strong></td><td>各家模型 API</td><td>DeepSeek / MiniMax / GLM 实际推理服务</td></tr>
+    <tr><td><strong>Security</strong></td><td>安全审计层</td><td>PII 脱敏、密钥掩码、注入检测、全量审计、故障切换</td></tr>
+    <tr><td><strong>Config</strong></td><td>YAML + Redis</td><td>Fusion 策略、模型路由、缓存策略、热更新</td></tr>
+  </tbody>
+</table>
+
+<!-- ==================== 3. 双协议入站 ==================== -->
+<h2 id="dual-protocol">3. 双协议入站设计</h2>
+
+<div class="card" style="border-left: 4px solid var(--green);">
+  <p style="font-weight:600; color: var(--green);">🎯 关键洞察：零协议转换</p>
+  <p>5 家头部国产模型（DeepSeek / MiniMax / GLM / Kimi / Qwen）<strong>均原生支持 OpenAI + Anthropic 双协议</strong>——每家都有独立的 Anthropic 兼容端点。</p>
+  <p>这意味着：<strong>Fusion 中转站的出站方向完全不需要协议转换</strong>——所有模型都能直接接受 OpenAI 格式请求。</p>
+  <p>入站方向只需<strong>轻量格式包装</strong>（不是"深度转换"）：Claude Code 发来 Anthropic 格式 → 提取 system、flatten content blocks → Fusion Engine 内部用 OpenAI 格式处理 → 最终响应做反向包装回 Anthropic 格式。整个过程只是字段位置调整和名称映射，不涉及语义转换。</p>
+  <p><strong>排除 Codex v0.81+</strong>（Responses API，国产模型不支持）后，主流编程智能体（Claude Code / Cursor / LangChain / Windsurf）的协议问题已完全消解。</p>
+</div>
+
+<div class="arch-diagram">
+<svg viewBox="0 0 900 320" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <marker id="arr-p" markerWidth="10" markerHeight="7" refX="10" refY="3.5" orient="auto">
+      <polygon points="0 0, 10 3.5, 0 7" fill="#6366f1"/>
+    </marker>
+    <marker id="arr-b" markerWidth="10" markerHeight="7" refX="10" refY="3.5" orient="auto">
+      <polygon points="0 0, 10 3.5, 0 7" fill="#3b82f6"/>
+    </marker>
+    <marker id="arr-o" markerWidth="10" markerHeight="7" refX="10" refY="3.5" orient="auto">
+      <polygon points="0 0, 10 3.5, 0 7" fill="#f59e0b"/>
+    </marker>
+  </defs>
+
+  <text x="450" y="22" text-anchor="middle" font-size="14" font-weight="700" fill="#1a202c">双协议入站 → 统一内部格式 → OpenAI 格式出站</text>
+
+  <!-- Agent Clients -->
+  <rect x="20" y="45" width="130" height="55" rx="8" fill="#dbeafe" stroke="#3b82f6" stroke-width="1.5"/>
+  <text x="85" y="65" text-anchor="middle" font-size="10" font-weight="700" fill="#1e40af">Claude Code</text>
+  <text x="85" y="78" text-anchor="middle" font-size="8" fill="#3b82f6">Anthropic SDK</text>
+  <text x="85" y="90" text-anchor="middle" font-size="8" fill="#64748b">/v1/messages</text>
+
+  <rect x="170" y="45" width="130" height="55" rx="8" fill="#e0e7ff" stroke="#6366f1" stroke-width="1.5"/>
+  <text x="235" y="65" text-anchor="middle" font-size="10" font-weight="700" fill="#4338ca">Cursor / LangChain</text>
+  <text x="235" y="78" text-anchor="middle" font-size="8" fill="#6366f1">OpenAI SDK</text>
+  <text x="235" y="90" text-anchor="middle" font-size="8" fill="#64748b">/v1/chat/completions</text>
+
+  <rect x="320" y="45" width="130" height="55" rx="8" fill="#fef3c7" stroke="#f59e0b" stroke-width="1.5"/>
+  <text x="385" y="65" text-anchor="middle" font-size="10" font-weight="700" fill="#92400e">Codex v0.81+</text>
+  <text x="385" y="78" text-anchor="middle" font-size="8" fill="#f59e0b">Responses API</text>
+  <text x="385" y="90" text-anchor="middle" font-size="8" fill="#64748b">CC-Switch 代理</text>
+
+  <!-- Arrows down -->
+  <line x1="85" y1="100" x2="85" y2="120" stroke="#3b82f6" stroke-width="1.5" marker-end="url(#arr-b)"/>
+  <line x1="235" y1="100" x2="235" y2="120" stroke="#6366f1" stroke-width="1.5" marker-end="url(#arr-p)"/>
+  <line x1="385" y1="100" x2="385" y2="120" stroke="#f59e0b" stroke-width="1.5" marker-end="url(#arr-o)" stroke-dasharray="4,2"/>
+
+  <!-- Protocol Boundary Layer -->
+  <rect x="20" y="120" width="440" height="55" rx="10" fill="#d1fae5" stroke="#10b981" stroke-width="2"/>
+  <text x="240" y="140" text-anchor="middle" font-size="12" font-weight="700" fill="#065f46">Protocol Boundary Layer</text>
+  <text x="240" y="155" text-anchor="middle" font-size="9" fill="#065f46">Anthropic → 轻量包装为 ChatRequest · OpenAI → 直接 passthrough · (Responses → CC-Switch)</text>
+  <text x="240" y="168" text-anchor="middle" font-size="8" fill="#64748b">零协议转换：只是字段位置调整和名称映射，不涉及语义转换</text>
+
+  <!-- Arrow down to Internal -->
+  <line x1="240" y1="175" x2="240" y2="195" stroke="#6366f1" stroke-width="2" marker-end="url(#arr-p)"/>
+  <text x="250" y="190" font-size="8" fill="#6366f1" font-weight="600">ChatRequest (统一)</text>
+
+  <!-- Internal Format -->
+  <rect x="130" y="195" width="250" height="45" rx="8" fill="url(#grad-fusion)" stroke="#6366f1" stroke-width="2"/>
+  <text x="255" y="215" text-anchor="middle" font-size="11" font-weight="700" fill="#4338ca">Internal Request (ChatRequest)</text>
+  <text x="255" y="230" text-anchor="middle" font-size="8" fill="#64748b">messages · system · model · tools · temperature · max_tokens</text>
+
+  <!-- Arrow down to Fusion -->
+  <line x1="255" y1="240" x2="255" y2="255" stroke="#6366f1" stroke-width="2" marker-end="url(#arr-p)"/>
+
+  <!-- Fusion Engine -->
+  <rect x="130" y="255" width="250" height="30" rx="8" fill="#d1fae5" stroke="#10b981" stroke-width="1.5"/>
+  <text x="255" y="275" text-anchor="middle" font-size="11" font-weight="700" fill="#065f46">Fusion Engine → ChatResponse</text>
+
+  <!-- Arrow to Response Adapter -->
+  <line x1="380" y1="270" x2="470" y2="270" stroke="#6366f1" stroke-width="1.5" marker-end="url(#arr-p)"/>
+
+  <!-- Response Boundary Adapter -->
+  <rect x="470" y="245" width="220" height="55" rx="10" fill="#d1fae5" stroke="#10b981" stroke-width="2"/>
+  <text x="580" y="265" text-anchor="middle" font-size="11" font-weight="700" fill="#065f46">Response Boundary Layer</text>
+  <text x="580" y="280" text-anchor="middle" font-size="9" fill="#065f46">根据 _source_protocol 做反向包装</text>
+  <text x="580" y="292" text-anchor="middle" font-size="8" fill="#64748b">anthropic → Anthropic Messages Response（轻量包装）</text>
+  <text x="580" y="305" text-anchor="middle" font-size="8" fill="#64748b">openai → OpenAI Chat Completions Response（直接输出）</text>
+
+  <!-- Arrow to Agents -->
+  <line x1="580" y1="245" x2="580" y2="120" stroke="#6366f1" stroke-width="1" stroke-dasharray="3,2"/>
+
+  <!-- Side: Outbound -->
+  <rect x="600" y="130" width="250" height="110" rx="8" fill="#f8fafc" stroke="#94a3b8" stroke-width="1"/>
+  <text x="725" y="150" text-anchor="middle" font-size="10" font-weight="600" fill="#334155">出站：统一 OpenAI 格式</text>
+  <text x="725" y="165" text-anchor="middle" font-size="9" fill="#64748b">→ DeepSeek (OpenAI 兼容)</text>
+  <text x="725" y="180" text-anchor="middle" font-size="9" fill="#64748b">→ MiniMax (OpenAI 兼容)</text>
+  <text x="725" y="195" text-anchor="middle" font-size="9" fill="#64748b">→ GLM (OpenAI 兼容)</text>
+  <text x="725" y="210" text-anchor="middle" font-size="9" fill="#64748b">→ Kimi (OpenAI 兼容)</text>
+  <text x="725" y="225" text-anchor="middle" font-size="9" fill="#64748b">→ Qwen (OpenAI 兼容)</text>
+  <text x="725" y="240" text-anchor="middle" font-size="8" fill="#10b981" font-weight="600">5 家均原生支持双协议，零转换 ✅</text>
+</svg>
+</div>
+
+<h3>协议差异对照</h3>
+<table>
+  <thead>
+    <tr><th>维度</th><th>OpenAI Chat Completions</th><th>Anthropic Messages API</th><th>处理方式</th></tr>
+  </thead>
+  <tbody>
+    <tr><td><strong>入站端点</strong></td><td><code>/v1/chat/completions</code></td><td><code>/v1/messages</code></td><td>双端点并存，OpenAI 直传</td></tr>
+    <tr><td><strong>system prompt</strong></td><td>嵌入 messages 数组</td><td>顶层 <code>system</code> 字段</td><td>提取 → prepend 为 system message（轻量包装）</td></tr>
+    <tr><td><strong>content 格式</strong></td><td>字符串或数组</td><td>content blocks 数组</td><td>text blocks → 拼接为 string；tool_use → tool_calls（轻量包装）</td></tr>
+    <tr><td><strong>tool calling</strong></td><td><code>tool_calls</code> 字段</td><td><code>tool_use</code> content block</td><td>轻量包装（字段名+结构映射）</td></tr>
+    <tr><td><strong>tool 结果</strong></td><td><code>role: "tool"</code> message</td><td><code>tool_result</code> content block</td><td>轻量包装为 tool message</td></tr>
+    <tr><td><strong>响应 stop</strong></td><td><code>finish_reason: "stop"</code></td><td><code>stop_reason: "end_turn"</code></td><td>名称映射（轻量包装）</td></tr>
+    <tr><td><strong>usage 格式</strong></td><td><code>prompt_tokens / completion_tokens</code></td><td><code>input_tokens / output_tokens</code></td><td>字段名映射（轻量包装）</td></tr>
+    <tr><td><strong>streaming</strong></td><td>SSE <code>data: {...}</code></td><td>SSE <code>event: content_block_delta</code></td><td>Chunk → Anthropic typed events（轻量包装）</td></tr>
+    <tr><td><strong>模型名映射</strong></td><td><code>model: "fusion"</code></td><td><code>model: "claude-sonnet-4"</code></td><td>claude-* 自动触发 fusion</td></tr>
+    <tr><td colspan="4" style="text-align:center; color:#10b981; font-weight:600;">👆 以上所有"转换"均为轻量字段包装，不涉及语义转换或协议深度适配</td></tr>
+  </tbody>
+</table>
+
+<h3>Claude Code 配置示例</h3>
+<pre><code># Claude Code 直连 Fusion Relay（Agent 以为在调 Claude，实际触发 Fusion）
+ANTHROPIC_BASE_URL=http://your-relay-host:8080
+ANTHROPIC_API_KEY=your-relay-api-key
+
+# Claude Code 发送: POST /v1/messages { model: "claude-sonnet-4", ... }
+# Relay 内部: 自动将 claude-* 模型名转为 fusion 触发
+# Relay 返回: Anthropic Messages 格式（content blocks, stop_reason, input/output_tokens）
+# Claude Code 完全无感知 ✅</code></pre>
+
+<h3>Cursor / LangChain 配置示例</h3>
+<pre><code># Cursor / LangChain 直连 Fusion Relay（OpenAI SDK）
+from openai import OpenAI
+client = OpenAI(base_url="http://your-relay-host:8080/v1", api_key="your-relay-api-key")
+
+# 发送: POST /v1/chat/completions { model: "fusion", ... }
+# Relay 返回: OpenAI Chat Completions 格式 ✅</code></pre>
+
+<!-- ==================== 4. Fusion 流程 ==================== -->
+<h2 id="fusion-flow">3. Fusion 流程设计</h2>
+
+<div class="arch-diagram">
+<svg viewBox="0 0 1000 400" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <marker id="arr2" markerWidth="10" markerHeight="7" refX="10" refY="3.5" orient="auto">
+      <polygon points="0 0, 10 3.5, 0 7" fill="#6366f1"/>
+    </marker>
+  </defs>
+  <text x="500" y="25" text-anchor="middle" font-size="16" font-weight="700" fill="#1a202c">Fusion 流水线 — 请求生命周期</text>
+
+  <!-- Step 1: Incoming Request -->
+  <rect x="20" y="50" width="180" height="80" rx="10" fill="#dbeafe" stroke="#3b82f6" stroke-width="1.5"/>
+  <text x="110" y="75" text-anchor="middle" font-size="12" font-weight="700" fill="#1e40af">Client Request</text>
+  <text x="110" y="93" text-anchor="middle" font-size="9" fill="#3b82f6">model: "fusion"</text>
+  <text x="110" y="107" text-anchor="middle" font-size="9" fill="#3b82f6">messages: [...]</text>
+  <text x="110" y="121" text-anchor="middle" font-size="9" fill="#3b82f6">tools: [...]</text>
+
+  <line x1="200" y1="90" x2="230" y2="90" stroke="#6366f1" stroke-width="2" marker-end="url(#arr2)"/>
+
+  <!-- Step 2: Cloner -->
+  <rect x="230" y="50" width="160" height="80" rx="10" fill="url(#grad-fusion)" stroke="#6366f1" stroke-width="1.5"/>
+  <text x="310" y="72" text-anchor="middle" font-size="11" font-weight="700" fill="#4338ca">① Request Cloner</text>
+  <text x="310" y="90" text-anchor="middle" font-size="9" fill="#64748b">复制 N 份请求</text>
+  <text x="310" y="104" text-anchor="middle" font-size="9" fill="#64748b">适配各模型参数</text>
+  <text x="310" y="118" text-anchor="middle" font-size="9" fill="#64748b">注入 system prompt</text>
+
+  <line x1="390" y1="90" x2="420" y2="90" stroke="#6366f1" stroke-width="2" marker-end="url(#arr2)"/>
+
+  <!-- Step 3: Parallel -->
+  <rect x="420" y="50" width="180" height="80" rx="10" fill="url(#grad-fusion)" stroke="#6366f1" stroke-width="1.5"/>
+  <text x="510" y="72" text-anchor="middle" font-size="11" font-weight="700" fill="#4338ca">② Parallel Dispatch</text>
+  <text x="510" y="90" text-anchor="middle" font-size="9" fill="#64748b">asyncio.gather()</text>
+  <text x="510" y="104" text-anchor="middle" font-size="9" fill="#64748b">超时 / 重试 / 降级</text>
+  <text x="510" y="118" text-anchor="middle" font-size="9" fill="#64748b">流式中转 (可选)</text>
+
+  <!-- Three parallel lines down -->
+  <line x1="510" y1="130" x2="510" y2="160" stroke="#6366f1" stroke-width="1.5"/>
+  <line x1="430" y1="160" x2="590" y2="160" stroke="#6366f1" stroke-width="1.5"/>
+  <line x1="430" y1="160" x2="430" y2="175" stroke="#4f6df5" stroke-width="1.5" marker-end="url(#arr2)"/>
+  <line x1="510" y1="160" x2="510" y2="175" stroke="#ff6b35" stroke-width="1.5" marker-end="url(#arr2)"/>
+  <line x1="590" y1="160" x2="590" y2="175" stroke="#10b981" stroke-width="1.5" marker-end="url(#arr2)"/>
+
+  <!-- Model responses -->
+  <rect x="380" y="175" width="100" height="60" rx="8" fill="#4f6df5" opacity="0.08" stroke="#4f6df5" stroke-width="1"/>
+  <text x="430" y="195" text-anchor="middle" font-size="9" font-weight="600" fill="#4f6df5">DeepSeek</text>
+  <text x="430" y="210" text-anchor="middle" font-size="8" fill="#64748b">Response A</text>
+  <text x="430" y="222" text-anchor="middle" font-size="7" fill="#64748b">推理链 · 数学</text>
+
+  <rect x="460" y="175" width="100" height="60" rx="8" fill="#ff6b35" opacity="0.08" stroke="#ff6b35" stroke-width="1"/>
+  <text x="510" y="195" text-anchor="middle" font-size="9" font-weight="600" fill="#ff6b35">MiniMax</text>
+  <text x="510" y="210" text-anchor="middle" font-size="8" fill="#64748b">Response B</text>
+  <text x="510" y="222" text-anchor="middle" font-size="7" fill="#64748b">代码 · 长文</text>
+
+  <rect x="540" y="175" width="100" height="60" rx="8" fill="#10b981" opacity="0.08" stroke="#10b981" stroke-width="1"/>
+  <text x="590" y="195" text-anchor="middle" font-size="9" font-weight="600" fill="#10b981">GLM</text>
+  <text x="590" y="210" text-anchor="middle" font-size="8" fill="#64748b">Response C</text>
+  <text x="590" y="222" text-anchor="middle" font-size="7" fill="#64748b">结构化 · 多模态</text>
+
+  <!-- Collect -->
+  <line x1="430" y1="235" x2="430" y2="250" stroke="#6366f1" stroke-width="1" stroke-dasharray="3,2"/>
+  <line x1="510" y1="235" x2="510" y2="250" stroke="#6366f1" stroke-width="1" stroke-dasharray="3,2"/>
+  <line x1="590" y1="235" x2="590" y2="250" stroke="#6366f1" stroke-width="1" stroke-dasharray="3,2"/>
+  <line x1="430" y1="250" x2="590" y2="250" stroke="#6366f1" stroke-width="1"/>
+  <line x1="510" y1="250" x2="510" y2="265" stroke="#6366f1" stroke-width="2" marker-end="url(#arr2)"/>
+
+  <!-- Step 4: Judge -->
+  <rect x="360" y="265" width="300" height="55" rx="10" fill="#fef3c7" stroke="#f59e0b" stroke-width="1.5"/>
+  <text x="510" y="287" text-anchor="middle" font-size="12" font-weight="700" fill="#92400e">③ Judge — MiniMax</text>
+  <text x="510" y="303" text-anchor="middle" font-size="9" fill="#92400e">输入: Response A + B + C + 原始 Prompt</text>
+  <text x="510" y="315" text-anchor="middle" font-size="9" fill="#92400e">输出: { consensus, contradictions, gaps, insights, blind_spots }</text>
+
+  <line x1="660" y1="292" x2="690" y2="292" stroke="#f59e0b" stroke-width="2" marker-end="url(#arr2)"/>
+
+  <!-- Step 5: Synthesizer -->
+  <rect x="690" y="265" width="290" height="55" rx="10" fill="#d1fae5" stroke="#10b981" stroke-width="1.5"/>
+  <text x="835" y="287" text-anchor="middle" font-size="12" font-weight="700" fill="#065f46">④ Synthesizer — DeepSeek</text>
+  <text x="835" y="303" text-anchor="middle" font-size="9" fill="#065f46">输入: Judge 分析 + 三方原始回复</text>
+  <text x="835" y="315" text-anchor="middle" font-size="9" fill="#065f46">输出: 融合后的最终答案 (OpenAI 格式)</text>
+
+  <!-- Return arrow -->
+  <path d="M 835 265 Q 835 200 835 90 L 200 90" fill="none" stroke="#10b981" stroke-width="2" stroke-dasharray="5,3" marker-end="url(#arr2)"/>
+  <text x="850" y="180" font-size="9" fill="#10b981" font-weight="600">返回最终答案</text>
+
+  <!-- Side: Fallback -->
+  <rect x="20" y="265" width="200" height="55" rx="10" fill="#fef2f2" stroke="#ef4444" stroke-width="1.5" stroke-dasharray="4,2"/>
+  <text x="120" y="287" text-anchor="middle" font-size="11" font-weight="700" fill="#dc2626">Fallback / Passthrough</text>
+  <text x="120" y="303" text-anchor="middle" font-size="9" fill="#dc2626">模型超时/失败 → 降级</text>
+  <text x="120" y="315" text-anchor="middle" font-size="9" fill="#dc2644">或 model ≠ "fusion" → 直连</text>
+
+  <line x1="120" y1="265" x2="120" y2="130" stroke="#ef4444" stroke-width="1" stroke-dasharray="3,3"/>
+  <text x="30" y="200" font-size="8" fill="#ef4444">故障切换</text>
+</svg>
+</div>
+
+<h3>Judge 输出结构</h3>
+<pre><code>{
+  "consensus": [
+    "三个模型一致认为应使用 Transformer 架构...",
+    "均推荐先做数据清洗再训练"
+  ],
+  "contradictions": [
+    {
+      "topic": "学习率选择",
+      "deepseek": "建议 1e-4",
+      "minimax": "建议 3e-5",
+      "glm": "建议 5e-5",
+      "judge_note": "DeepSeek 偏激进，其他两家更保守"
+    }
+  ],
+  "coverage_gaps": [
+    "三个模型均未提及分布式训练策略",
+    "无人讨论数据隐私合规问题"
+  ],
+  "unique_insights": {
+    "deepseek": "提出了梯度裁剪的具体阈值方案",
+    "minimax": "指出了长序列处理的内存瓶颈",
+    "glm": "给出了多模态扩展路径"
+  },
+  "blind_spots": [
+    "推理延迟优化未涉及",
+    "模型压缩/量化方案未讨论"
+  ],
+  "confidence": 0.82,
+  "recommendation": "采用保守学习率 3e-5，采纳 DeepSeek 的梯度裁剪方案..."
+}</code></pre>
+
+<!-- ==================== 4. 核心模块 ==================== -->
+<h2 id="core">4. 核心模块设计</h2>
+
+<h3>4.1 Fusion Engine — 核心编排器</h3>
+<div class="card">
+  <p><strong>职责：</strong>接收 Gateway 转发的请求，编排完整的 Panel → Judge → Synthesizer 流水线。</p>
+  <table>
+    <thead><tr><th>方法</th><th>输入</th><th>输出</th><th>说明</th></tr></thead>
+    <tbody>
+      <tr><td><code>execute()</code></td><td>OpenAI ChatRequest</td><td>OpenAI ChatResponse</td><td>主入口，编排完整流水线</td></tr>
+      <tr><td><code>_clone_request()</code></td><td>ChatRequest, model_configs</td><td>List[ModelRequest]</td><td>按各模型适配参数</td></tr>
+      <tr><td><code>_dispatch_parallel()</code></td><td>List[ModelRequest]</td><td>List[ModelResponse]</td><td>asyncio.gather + 超时/重试</td></tr>
+      <tr><td><code>_judge()</code></td><td>原始Prompt + 三方回复</td><td>JudgeAnalysis</td><td>调用 Judge 模型输出结构化分析</td></tr>
+      <tr><td><code>_synthesize()</code></td><td>JudgeAnalysis + 三方回复</td><td>ChatResponse</td><td>融合生成最终答案</td></tr>
+      <tr><td><code>_fallback()</code></td><td>ChatRequest</td><td>ChatResponse</td><td>故障降级：单模型直连</td></tr>
+    </tbody>
+  </table>
+</div>
+
+<h3>4.2 Model Adapter — 统一适配层</h3>
+<div class="card">
+  <p><strong>设计模式：</strong>策略模式 + 工厂模式。所有适配器实现统一接口 <code>BaseAdapter</code>，通过 <code>AdapterRegistry</code> 动态注册和获取。</p>
+  <pre><code>class BaseAdapter(ABC):
+    @abstractmethod
+    async def chat(self, request: ModelRequest) -> ModelResponse: ...
+
+    @abstractmethod
+    async def stream_chat(self, request: ModelRequest) -> AsyncGenerator: ...
+
+    @abstractmethod
+    def adapt_request(self, openai_request: dict) -> dict:
+        """将 OpenAI 格式转换为目标模型格式"""
+        ...
+
+    @abstractmethod
+    def adapt_response(self, native_response: dict) -> dict:
+        """将目标模型响应转回 OpenAI 格式"""
+        ...</code></pre>
+  <table>
+    <thead><tr><th>适配器</th><th>API 端点</th><th>格式</th><th>特殊处理</th></tr></thead>
+    <tbody>
+      <tr><td>DeepSeekAdapter</td><td>api.deepseek.com/v1</td><td>OpenAI 原生兼容</td><td>支持 reasoning_content 分离</td></tr>
+      <tr><td>MiniMaxAdapter</td><td>api.minimax.chat/v1</td><td>OpenAI 兼容</td><td>长上下文截断策略</td></tr>
+      <tr><td>GLMAdapter</td><td>open.bigmodel.cn/api/paas/v4</td><td>OpenAI 兼容</td><td>多模态 content 数组适配</td></tr>
+    </tbody>
+  </table>
+</div>
+
+<h3>4.3 Judge Module — 交叉分析器</h3>
+<div class="card">
+  <p><strong>核心 Prompt 设计：</strong>Judge 不是简单投票，而是结构化分析——找共识、找矛盾、找盲区、提取独特洞察。</p>
+  <div class="highlight">
+    你是一个严格的交叉分析裁判。你将收到同一问题的多个模型回答。请分析：
+    1. <strong>共识</strong>（Consensus）：多数或全部模型一致的观点
+    2. <strong>矛盾</strong>（Contradictions）：模型间的分歧点及各方立场
+    3. <strong>覆盖盲区</strong>（Coverage Gaps）：所有模型都遗漏的要点
+    4. <strong>独特洞察</strong>（Unique Insights）：仅某个模型提出的有价值观点
+    5. <strong>置信度评估</strong>（Confidence）：对共识部分的置信度评分
+    输出严格 JSON 格式。
+  </div>
+</div>
+
+<h3>4.4 Synthesizer — 最终融合器</h3>
+<div class="card">
+  <p><strong>核心逻辑：</strong>不是简单拼接，而是基于 Judge 的分析报告，选择最优方案、补充盲区、融合独特洞察，生成连贯的最终答案。</p>
+  <pre><code>SYNTHESIZER_PROMPT = """
+你是一个综合合成器。你将收到：
+1. 原始用户问题
+2. 三个模型的原始回答
+3. Judge 的交叉分析报告
+
+请基于分析报告，生成一个融合后的最终答案：
+- 优先采纳共识部分
+- 对矛盾点给出最优判断和理由
+- 补充覆盖盲区
+- 整合各模型的独特洞察
+- 保持回答连贯、自然、完整
+"""</code></pre>
+</div>
+
+<!-- ==================== 5. API 接口 ==================== -->
+<h2 id="api">5. API 接口设计</h2>
+
+<h3>5.1 OpenAI 兼容接口</h3>
+<pre><code># 标准 OpenAI 兼容请求 — 触发 Fusion
+POST /v1/chat/completions
+Authorization: Bearer &lt;YOUR_RELAY_KEY&gt;
+Content-Type: application/json
+
+{
+  "model": "fusion",                    ← 关键：使用 "fusion" 触发融合
+  "messages": [
+    {"role": "user", "content": "比较 React Server Components 和传统 SSR 的优劣"}
+  ],
+  "temperature": 0.7,
+  "stream": false
+}
+
+# 指定 Fusion 阵容（可选覆盖配置）
+{
+  "model": "fusion",
+  "messages": [...],
+  "extra_body": {
+    "fusion": {
+      "panel": ["deepseek-v4-pro", "minimax-abab7", "glm-4-plus"],
+      "judge": "minimax-abab7",
+      "synthesizer": "deepseek-v4-pro",
+      "strategy": "balanced"           ← conservative | balanced | aggressive
+    }
+  }
+}
+
+# 直连模式（不走 Fusion）
+{
+  "model": "deepseek-v4-pro",          ← 直接指定模型名
+  "messages": [...]
+}
+
+# 流式 Fusion
+{
+  "model": "fusion",
+  "messages": [...],
+  "stream": true                       ← Synthesizer 以流式返回
+}</code></pre>
+
+<h3>5.2 管理接口</h3>
+<pre><code># 查看 Fusion 配置
+GET  /admin/fusion/config
+
+# 更新 Fusion 策略（热更新）
+PUT  /admin/fusion/config
+
+# 查看可用模型
+GET  /admin/models
+
+# 查看 Fusion 调用统计
+GET  /admin/stats?fusion=true&days=7
+
+# 查看审计日志
+GET  /admin/audit?limit=100
+
+# 健康检查
+GET  /health</code></pre>
+
+<h3>5.3 响应格式</h3>
+<pre><code>{
+  "id": "fuse-abc123",
+  "object": "chat.completion",
+  "model": "fusion",
+  "choices": [{
+    "index": 0,
+    "message": {
+      "role": "assistant",
+      "content": "经过三模型融合分析..."
+    },
+    "finish_reason": "stop"
+  }],
+  "usage": {
+    "prompt_tokens": 1200,
+    "completion_tokens": 800,
+    "total_tokens": 2000,
+    "fusion_breakdown": {              ← 透明的成本拆分
+      "panel_deepseek": {"tokens": 600, "cost": 0.002},
+      "panel_minimax": {"tokens": 580, "cost": 0.001},
+      "panel_glm": {"tokens": 620, "cost": 0.001},
+      "judge": {"tokens": 400, "cost": 0.001},
+      "synthesizer": {"tokens": 800, "cost": 0.003},
+      "total_cost": 0.008
+    }
+  },
+  "fusion_meta": {
+    "panel_models": ["deepseek-v4-pro", "minimax-abab7", "glm-4-plus"],
+    "judge_model": "minimax-abab7",
+    "synthesizer_model": "deepseek-v4-pro",
+    "judge_confidence": 0.82,
+    "latency_ms": 4200,
+    "fallback_triggered": false
+  }
+}</code></pre>
+
+<!-- ==================== 6. 配置 ==================== -->
+<h2 id="config">6. 配置体系</h2>
+
+<h3>6.1 模型配置 (models.yaml)</h3>
+<pre><code># 模型提供商配置
+providers:
+  deepseek:
+    base_url: "https://api.deepseek.com/v1"
+    api_key: "${DEEPSEEK_API_KEY}"
+    models:
+      - id: "deepseek-v4-pro"
+        name: "DeepSeek V4 Pro"
+        max_tokens: 8192
+        cost_per_1k_input: 0.0014
+        cost_per_1k_output: 0.0028
+        capabilities: ["reasoning", "code", "math"]
+
+  minimax:
+    base_url: "https://api.minimax.chat/v1"
+    api_key: "${MINIMAX_API_KEY}"
+    models:
+      - id: "minimax-abab7"
+        name: "MiniMax abab7"
+        max_tokens: 16384
+        cost_per_1k_input: 0.001
+        cost_per_1k_output: 0.002
+        capabilities: ["code", "long-context", "chinese"]
+
+  glm:
+    base_url: "https://open.bigmodel.cn/api/paas/v4"
+    api_key: "${GLM_API_KEY}"
+    models:
+      - id: "glm-4-plus"
+        name: "GLM-4-Plus"
+        max_tokens: 8192
+        cost_per_1k_input: 0.0005
+        cost_per_1k_output: 0.001
+        capabilities: ["structured", "multimodal"]</code></pre>
+
+<h3>6.2 Fusion 策略配置 (fusion.yaml)</h3>
+<pre><code># Fusion 策略配置
+strategies:
+  default:
+    panel:
+      - "deepseek-v4-pro"
+      - "minimax-abab7"
+      - "glm-4-plus"
+    judge: "minimax-abab7"
+    synthesizer: "deepseek-v4-pro"
+    timeout_seconds: 30
+    retry_count: 2
+    fallback_model: "deepseek-v4-pro"
+
+  # 代码场景：侧重 MiniMax + DeepSeek
+  code:
+    panel:
+      - "deepseek-v4-pro"
+      - "minimax-abab7"
+    judge: "deepseek-v4-pro"
+    synthesizer: "minimax-abab7"
+
+  # 推理场景：双 DeepSeek 自融合
+  reasoning:
+    panel:
+      - "deepseek-v4-pro"
+      - "deepseek-v4-pro"
+    judge: "minimax-abab7"
+    synthesizer: "deepseek-v4-pro"
+
+  # 预算模式：仅用 GLM + MiniMax
+  budget:
+    panel:
+      - "minimax-abab7"
+      - "glm-4-plus"
+    judge: "glm-4-plus"
+    synthesizer: "minimax-abab7"
+
+# 路由规则：根据请求特征自动选择策略
+routing:
+  - condition:
+      content_contains: ["```", "def ", "function ", "class "]
+    strategy: "code"
+  - condition:
+      content_contains: ["证明", "推导", "计算", "求解"]
+    strategy: "reasoning"
+  - condition:
+      max_messages: 3
+      max_tokens_estimate: 500
+    strategy: "passthrough"      # 简单问题直连，省成本
+  - default: true
+    strategy: "default"</code></pre>
+
+<h3>6.3 安全策略 (security.yaml)</h3>
+<pre><code># 安全与审计配置
+security:
+  pii_masking:
+    enabled: true
+    patterns:
+      - type: "phone"
+        regex: '1[3-9]\d{9}'
+        replacement: "[PHONE]"
+      - type: "id_card"
+        regex: '\d{17}[\dXx]'
+        replacement: "[ID_CARD]"
+      - type: "email"
+        regex: '[\w.-]+@[\w.-]+\.\w+'
+        replacement: "[EMAIL]"
+      - type: "api_key"
+        regex: 'sk-[a-zA-Z0-9]{40,}'
+        replacement: "[API_KEY]"
+
+  prompt_injection_detection:
+    enabled: true
+    threshold: 0.7
+
+  audit_log:
+    enabled: true
+    storage: "redis"
+    retention_days: 30
+    log_requests: true
+    log_responses: true
+    log_judge_analysis: true
+
+  rate_limiting:
+    requests_per_minute: 60
+    fusion_requests_per_minute: 20
+    cost_budget_daily: 10.0       # 每日成本上限 (USD)</code></pre>
+
+<!-- ==================== 7. 部署 ==================== -->
+<h2 id="deploy">7. 部署方案</h2>
+
+<h3>7.1 项目结构</h3>
+<pre><code>fusion-relay/
+├── docker-compose.yml          # 一键部署
+├── Dockerfile
+├── requirements.txt
+├── .env.example                # API 密钥模板
+├── config/
+│   ├── models.yaml             # 模型配置
+│   ├── fusion.yaml             # Fusion 策略
+│   └── security.yaml           # 安全策略
+├── src/
+│   ├── main.py                 # FastAPI 入口
+│   ├── api/
+│   │   ├── routes.py           # OpenAI + Anthropic 双协议路由
+│   │   ├── protocol_adapters.py # Anthropic ↔ OpenAI 协议转换
+│   │   └── middleware.py       # Auth/RateLimit/Audit
+│   ├── core/
+│   │   ├── fusion_engine.py    # Fusion 编排器
+│   │   ├── request_cloner.py   # 请求克隆
+│   │   ├── parallel_dispatch.py# 并行分发
+│   │   ├── judge.py            # Judge 模块
+│   │   ├── synthesizer.py     # Synthesizer 模块
+│   │   └── response_builder.py# OpenAI 响应构建
+│   ├── adapters/
+│   │   ├── base.py             # 统一适配器接口
+│   │   ├── deepseek.py         # DeepSeek 适配器
+│   │   ├── minimax.py          # MiniMax 适配器
+│   │   ├── glm.py              # GLM 适配器
+│   │   └── registry.py         # 适配器注册表
+│   ├── models/
+│   │   ├── config.py           # Pydantic 配置模型
+│   │   └── schemas.py          # 请求/响应 Schema
+│   ├── security/
+│   │   ├── pii_mask.py         # PII 脱敏
+│   │   └── audit.py            # 审计日志
+│   └── utils/
+│       ├── logger.py           # 日志
+│       ├── metrics.py          # Prometheus 指标
+│       └── cost_tracker.py     # 成本追踪
+├── tests/
+│   └── test_fusion.py
+└── docs/
+    └── ARCHITECTURE.html       # 本文档</code></pre>
+
+<h3>7.2 Docker 部署</h3>
+<pre><code># docker-compose.yml
+version: "3.8"
+services:
+  fusion-relay:
+    build: .
+    ports:
+      - "8080:8080"
+    env_file: .env
+    volumes:
+      - ./config:/app/config     # 配置热更新
+    depends_on:
+      - redis
+
+  redis:
+    image: redis:7-alpine
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis-data:/data
+
+  prometheus:
+    image: prom/prometheus
+    ports:
+      - "9090:9090"
+    volumes:
+      - ./monitoring/prometheus.yml:/etc/prometheus/prometheus.yml
+
+  grafana:
+    image: grafana/grafana
+    ports:
+      - "3000:3000"
+    volumes:
+      - grafana-data:/var/lib/grafana
+
+volumes:
+  redis-data:
+  grafana-data:</code></pre>
+
+<h3>7.3 快速启动</h3>
+<pre><code># 1. 克隆项目
+git clone https://github.com/your-org/fusion-relay.git
+cd fusion-relay
+
+# 2. 配置 API 密钥
+cp .env.example .env
+# 编辑 .env 填入 DeepSeek/MiniMax/GLM 的 API Key
+
+# 3. Docker 一键启动
+docker-compose up -d
+
+# 4. 测试
+curl http://localhost:8080/v1/chat/completions \
+  -H "Authorization: Bearer your-relay-key" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "model": "fusion",
+    "messages": [{"role": "user", "content": "比较 RAG 和 Fine-tuning 的优劣"}]
+  }'
+
+# 5. 在 Agent 中使用（以 OpenAI SDK 为例）
+from openai import OpenAI
+client = OpenAI(base_url="http://localhost:8080/v1", api_key="your-relay-key")
+response = client.chat.completions.create(
+    model="fusion",
+    messages=[{"role": "user", "content": "设计一个微服务拆分方案"}]
+)</code></pre>
+
+<!-- ==================== 8. 安全 ==================== -->
+<h2 id="security">8. 安全与审计</h2>
+
+<div class="grid-2">
+  <div class="card">
+    <div class="card-titled" style="color: var(--red);">🔐 PII 脱敏</div>
+    <ul>
+      <li>请求中手机号/身份证/邮箱/API Key 自动掩码</li>
+      <li>发送给上游模型前脱敏，响应中不还原</li>
+      <li>正则 + NER 双重检测</li>
+    </ul>
+  </div>
+  <div class="card">
+    <div class="card-titled" style="color: var(--orange);">📊 全量审计</div>
+    <ul>
+      <li>每次 Fusion 调用全链路记录</li>
+      <li>含 Panel 原始回复、Judge 分析、Synthesizer 输出</li>
+      <li>Redis 存储 30 天，可导出</li>
+    </ul>
+  </div>
+  <div class="card">
+    <div class="card-titled" style="color: var(--accent);">🛡️ Prompt 注入检测</div>
+    <ul>
+      <li>检测 tool_result 中的间接注入</li>
+      <li>阈值可配置，超阈值标记/拦截</li>
+      <li>参考 agentfw 的 DETECT 管道</li>
+    </ul>
+  </div>
+  <div class="card">
+    <div class="card-titled" style="color: var(--green);">💰 成本控制</div>
+    <ul>
+      <li>实时追踪每次 Fusion 总成本</li>
+      <li>按日/周/月预算上限</li>
+      <li>超预算自动降级为单模型</li>
+    </ul>
+  </div>
+</div>
+
+<!-- ==================== 9. 演进路线 ==================== -->
+<h2 id="roadmap">9. 演进路线</h2>
+
+<table>
+  <thead>
+    <tr><th>阶段</th><th>目标</th><th>关键功能</th></tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td><strong>P0 — MVP</strong></td>
+      <td>核心 Fusion + 双协议入站</td>
+      <td>3 模型并行 + Judge + Synthesizer + OpenAI /v1/chat/completions + Anthropic /v1/messages</td>
+    </tr>
+    <tr>
+      <td><strong>P1 — 生产化</strong></td>
+      <td>安全、监控、运维</td>
+      <td>PII 脱敏 + 审计日志 + Prometheus 监控 + Docker 部署</td>
+    </tr>
+    <tr>
+      <td><strong>P2 — 智能路由</strong></td>
+      <td>按任务特征自动选策略</td>
+      <td>请求分类 → 策略路由 → 简单问题直连省钱，复杂问题走 Fusion</td>
+    </tr>
+    <tr>
+      <td><strong>P3 — 流式 + Agent 集成</strong></td>
+      <td>流式响应 + Agent 透明接入</td>
+      <td>SSR 流式中转 + tool_call 融合 + MCP 协议支持</td>
+    </tr>
+    <tr>
+      <td><strong>P4 — 自适应优化</strong></td>
+      <td>自动调优</td>
+      <td>基于历史数据学习最优 Panel 组合 + Judge/ Synthesizer 选择</td>
+    </tr>
+  </tbody>
+</table>
+
+<div class="card" style="margin-top: 32px; border-left: 4px solid var(--accent);">
+  <p style="font-weight: 600; color: var(--accent);">核心理念</p>
+  <p>未来大模型能力不只来自"更大的单模型"，更来自"更好的模型协作系统"。本方案让每个人拥有<strong>本地可控、可审计、可替换</strong>的 Fable 5 级 AI 基础设施。</p>
+</div>
+
+<p style="text-align: center; color: var(--muted); margin-top: 40px; font-size: 0.85rem;">
+  Fusion API 中转站 · 架构设计文档 v1.2 · 5 家双协议阵容 + 零协议转换 + Fusion 流水线
+</p>
+
+</div>
+</body>
+</html>

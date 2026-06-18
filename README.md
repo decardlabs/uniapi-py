@@ -3,6 +3,8 @@
 **UniAPI** 的 Python 后端实现 — 一个聚合多供应商 LLM 的统一 API 网关。
 
 > 这是 [uniapi](https://github.com/decardlabs/uniapi) (Go) 的 Python 重写版，前端复用原项目的 React/TypeScript 实现。
+>
+> **为什么用 Python 重写？** 原 Go 版的适配器模式和路由逻辑适合静态类型语言，但在快速迭代供应商适配器和动态协议转换场景下，Python 的类型系统和元编程能力（ABC + 注册表模式）能显著降低新增供应商的开发成本。Python 版不追求替换 Go 版，而是作为轻量级替代方案，聚焦于快速接入新供应商和实验性功能验证。
 
 ## Status
 
@@ -18,6 +20,8 @@
 | **Live Tests** | 真实账号探测框架 (10 scenarios × 供应商) | ✅ |
 
 ### 已接入供应商
+
+> 当前已接入 2 家，后续按需求批量接入 Qwen、Kimi、MiniMax 等（接口模式成熟的厂商可在 1-2 天内完成适配）。参见 [app/relay/adaptors/](app/relay/adaptors/) 了解适配器结构。
 
 | Provider | NATIVE_FORMATS | Claude Code 体验 |
 |----------|---------------|------------------|
@@ -46,6 +50,16 @@ curl -X POST http://localhost:8000/api/user/login \
   -H "Content-Type: application/json" \
   -d '{"username":"root","password":"123456"}'
 ```
+
+### 故障排查
+
+| 现象 | 原因 | 解决 |
+|------|------|------|
+| `curl /api/status` 连接失败 | 服务未启动或端口不匹配 | 确认 `uvicorn` 日志正常；检查 `SERVER_PORT` 环境变量 |
+| SQLite 数据库锁错误 | 并发写 SQLite 触发锁超时 | 开发环境正常现象，生产应切换为 MySQL (`SQL_DSN`) |
+| `ModuleNotFoundError` | 依赖未安装或虚拟环境未激活 | 确认 `.venv/bin/activate` 已执行；`pip list` 检查依赖 |
+| `401 Unauthorized` | API Key 错误或未设置 | 检查 `Authorization: Bearer` 头部和对应供应商环境变量 |
+| Cursor/Claude Code 调用无响应 | Base URL 配置错误 | 参见 [大模型接入协议研究_Review.md](docs/大模型接入协议研究_Review.md#二各厂商协议兼容端点--调用注意事项) |
 
 ### 连接前端
 
