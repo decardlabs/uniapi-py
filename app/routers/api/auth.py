@@ -229,3 +229,25 @@ async def models_display():
             }
         }
     )
+
+
+@router.get("/api/home_page_content")
+async def home_page_content():
+    return GenericApiResponse(data={"content": ""})
+
+
+@router.get("/api/about")
+async def about_page():
+    return GenericApiResponse(data={"content": ""})
+
+
+@router.get("/api/tools/display")
+async def tools_display():
+    return GenericApiResponse(data=[])
+
+
+@router.get("/api/models")
+async def models_list():
+    """Model list (same as /api/models/display for compatibility)."""
+    # Import and delegate
+    return await models_display()

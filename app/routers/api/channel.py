@@ -148,6 +148,40 @@ async def test_all_channels(
     return GenericApiResponse(data={"total": len(channels), "tested": [c.name for c in channels]})
 
 
+@router.get("/api/channel/default-pricing")
+async def channel_default_pricing(
+    type: int = Query(0, alias="type"),
+    _=Depends(admin_auth),
+):
+    """Return default pricing for a given channel type."""
+    from app.relay.registry import registry
+    adaptor = registry.get(type)
+    if not adaptor:
+        return GenericApiResponse(data={})
+    from app.relay.adaptor import ModelConfig
+    models = adaptor.get_supported_models()
+    pricing = {}
+    for name, cfg in models.items():
+        pricing[name] = {
+            "input_price": cfg.input_ratio,
+            "output_price": cfg.output_ratio,
+            "cached_input_price": cfg.cached_input_ratio,
+        }
+    return GenericApiResponse(data=pricing)
+
+
+@router.get("/api/channel/metadata")
+async def channel_metadata(
+    type: int = Query(0, alias="type"),
+    _=Depends(admin_auth),
+):
+    """Return metadata (supported params, capabilities) for a channel type."""
+    return GenericApiResponse(data={
+        "type": type,
+        "capabilities": ["chat_completions", "claude_messages"],
+    })
+
+
 @router.get("/api/channel/test/{channel_id}")
 async def test_channel(
     channel_id: int,
