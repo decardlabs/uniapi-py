@@ -85,7 +85,13 @@ class BaseAdaptor(ABC):
         ...
 
     def convert_claude_request(self, body: dict) -> dict:
-        raise NotImplementedError("Claude Messages not supported")
+        """Convert Claude Messages request to OpenAI Chat format.
+
+        Override in adaptors that do NOT natively support claude_messages.
+        Default implementation uses the generic converter.
+        """
+        from app.relay.converter import anthropic_to_chat
+        return anthropic_to_chat(body)
 
     def convert_image_request(self, body: dict) -> dict:
         raise NotImplementedError("Image generation not supported")

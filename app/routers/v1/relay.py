@@ -175,8 +175,11 @@ async def _handle_relay(request: Request, db: AsyncSession):
         upstream_body = body
         upstream_url = adaptor.get_request_url(meta, relay_mode)
     else:
-        # 🔄 CONVERT: transform to chat format
-        upstream_body = await adaptor.convert_request(body, meta)
+        # 🔄 CONVERT: transform to Chat format
+        if relay_mode == 12:  # CLAUDE_MESSAGES → Chat
+            upstream_body = adaptor.convert_claude_request(body)
+        else:
+            upstream_body = await adaptor.convert_request(body, meta)
         upstream_url = adaptor.get_request_url(meta, 1)  # ChatCompletions mode
 
     upstream_headers = adaptor.setup_request_headers(meta.api_key)
