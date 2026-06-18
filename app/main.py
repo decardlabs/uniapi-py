@@ -141,6 +141,7 @@ def create_app() -> FastAPI:
     from app.routers.api.options import router as options_router
     from app.routers.api.channel_types import router as channel_types_router
     from app.routers.api.budget import router as budget_router
+    from app.routers.api.admin_budget import router as admin_budget_router
     from app.routers.v1.relay import router as relay_router
 
     app.include_router(status_router)
@@ -151,6 +152,7 @@ def create_app() -> FastAPI:
     app.include_router(options_router)
     app.include_router(channel_types_router)
     app.include_router(budget_router)
+    app.include_router(admin_budget_router)
     app.include_router(web_router)
     app.include_router(relay_router)
 
