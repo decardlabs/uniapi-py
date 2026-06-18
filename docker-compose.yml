@@ -1,0 +1,19 @@
+services:
+  uniapi-py:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    ports:
+      - "8000:8000"
+    environment:
+      - SERVER_PORT=8000
+      - DEBUG=false
+      - SQLITE_PATH=/data/uniapi.db
+      - SESSION_SECRET=
+      - DEEPSEEK_API_KEY=${DEEPSEEK_API_KEY:-}
+    volumes:
+      - uniapi-data:/data
+    restart: unless-stopped
+
+volumes:
+  uniapi-data:

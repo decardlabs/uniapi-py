@@ -1,0 +1,36 @@
+from __future__ import annotations
+
+import datetime
+from typing import Optional
+
+from sqlalchemy import BigInteger, Boolean, Integer, String, Text, func
+from sqlalchemy.orm import Mapped, mapped_column
+
+from app.models.base import Base
+
+
+class User(Base):
+    __tablename__ = "users"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
+    username: Mapped[str] = mapped_column(String(30), unique=True, index=True)
+    password: Mapped[str] = mapped_column(String(255), nullable=False)
+    display_name: Mapped[Optional[str]] = mapped_column(String(20), index=True, nullable=True)
+    role: Mapped[int] = mapped_column(Integer, default=1)  # 0=Guest, 1=Common, 10=Admin, 100=Root
+    status: Mapped[int] = mapped_column(Integer, default=1)  # 1=Enabled, 2=Disabled, 3=Deleted
+    email: Mapped[Optional[str]] = mapped_column(String(50), index=True, nullable=True)
+    github_id: Mapped[Optional[str]] = mapped_column("github_id", String(64), index=True, nullable=True)
+    wechat_id: Mapped[Optional[str]] = mapped_column("wechat_id", String(64), index=True, nullable=True)
+    lark_id: Mapped[Optional[str]] = mapped_column("lark_id", String(64), index=True, nullable=True)
+    oidc_id: Mapped[Optional[str]] = mapped_column("oidc_id", String(64), index=True, nullable=True)
+    access_token: Mapped[Optional[str]] = mapped_column(String(64), unique=True, nullable=True)
+    totp_secret: Mapped[Optional[str]] = mapped_column(String(64), nullable=True)
+    quota: Mapped[int] = mapped_column(BigInteger, default=0)
+    used_quota: Mapped[int] = mapped_column("used_quota", BigInteger, default=0)
+    request_count: Mapped[int] = mapped_column(Integer, default=0)
+    group: Mapped[str] = mapped_column(String(32), default="default")
+    aff_code: Mapped[Optional[str]] = mapped_column(String(32), unique=True, nullable=True)
+    inviter_id: Mapped[Optional[int]] = mapped_column(Integer, nullable=True, index=True)
+    mcp_tool_blacklist: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
+    created_at: Mapped[int] = mapped_column(BigInteger, default=0)
+    updated_at: Mapped[int] = mapped_column(BigInteger, default=0)
