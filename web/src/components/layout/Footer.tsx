@@ -1,12 +1,14 @@
 import { useResponsive } from '@/hooks/useResponsive';
+import { useSystemStatus } from '@/hooks/useSystemStatus';
 import { cn } from '@/lib/utils';
 import { useTranslation } from 'react-i18next';
 
 export function Footer() {
   const { isMobile } = useResponsive();
+  const { systemStatus } = useSystemStatus();
   const { t } = useTranslation();
   const currentYear = new Date().getFullYear();
-  const version = (import.meta as ImportMeta & { env?: { VITE_APP_VERSION?: string } }).env?.VITE_APP_VERSION || '1.0.0';
+  const version = (systemStatus as Record<string, string | number | boolean | undefined>).version as string || '1.0.0';
 
   return (
     <footer className="border-t bg-muted/30">

@@ -17,9 +17,9 @@ router = APIRouter(tags=["dashboard"])
 @router.get("/api/user/dashboard")
 async def dashboard(
     request: Request,
-    from_date: str = Query("", alias="from"),
-    to: str = Query("", alias="to"),
-    user_id: int = Query(0, alias="user_id"),
+    from_date: str = Query(""),
+    to_date: str = Query(""),
+    user_id: str = Query("0"),
     db: AsyncSession = Depends(get_db),
 ):
     """Dashboard stats: usage aggregated by day/model/user/token."""
@@ -28,8 +28,12 @@ async def dashboard(
 
     # Build filter: user scope
     conditions = [Log.user_id == user.id]
-    if is_admin and user_id > 0:
-        conditions = [Log.user_id == user_id]
+    if is_admin and user_id not in ("", "0", "all"):
+        try:
+            uid = int(user_id)
+            conditions = [Log.user_id == uid]
+        except (ValueError, TypeError):
+            pass
 
     # Date filter
     import time
@@ -44,6 +48,17 @@ async def dashboard(
             pass
 
     conditions.append(Log.created_at >= week_ago)
+
+    # Optional end date filter
+    if to_date:
+        try:
+            from datetime import datetime
+            dt = datetime.strptime(to_date, "%Y-%m-%d")
+            # End of the selected day
+            end_ts = int(dt.timestamp() * 1000) + 86400_000
+            conditions.append(Log.created_at <= end_ts)
+        except ValueError:
+            pass
 
     # Model-level aggregation
     from sqlalchemy import text

@@ -163,7 +163,7 @@ async def _seed_defaults():
 def create_app() -> FastAPI:
     app = FastAPI(
         title="UniAPI Python Backend",
-        version="0.9.0",
+        version="0.9.1",
         lifespan=lifespan,
     )
 
@@ -193,7 +193,7 @@ def create_app() -> FastAPI:
     # Health check (before web router to avoid catch-all interception)
     @app.get("/health")
     async def health():
-        return {"status": "healthy", "service": "uniapi-py", "version": "0.9.0"}
+        return {"status": "healthy", "service": "uniapi-py", "version": "0.9.1"}
 
     # Admin stats
     @app.get("/api/admin/stats")
@@ -225,10 +225,13 @@ def create_app() -> FastAPI:
     from app.routers.api.channel import router as channel_router
     from app.routers.api.budget import router as budget_router
     from app.routers.api.admin_budget import router as admin_budget_router
+    from app.routers.api.cache_analytics import router as cache_analytics_router
+    from app.routers.api.mcp_servers import router as mcp_servers_router
     from app.routers.v1.relay import router as relay_router
 
     app.include_router(status_router)
     app.include_router(auth_router)
+    app.include_router(cache_analytics_router)  # before /api/user/{user_id}
     app.include_router(dashboard_router)
     app.include_router(topup_router)
     app.include_router(redemption_router)
@@ -240,9 +243,8 @@ def create_app() -> FastAPI:
     app.include_router(channel_router)
     app.include_router(budget_router)
     app.include_router(admin_budget_router)
-    app.include_router(dashboard_router)
-    app.include_router(topup_router)
-    app.include_router(redemption_router)
+    app.include_router(cache_analytics_router)
+    app.include_router(mcp_servers_router)
     app.include_router(web_router)
     app.include_router(relay_router)
 

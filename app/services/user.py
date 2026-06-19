@@ -215,8 +215,11 @@ async def get_system_status(db: AsyncSession) -> dict:
     options_result = await db.execute(select(Option))
     options = {row.key: row.value for row in options_result.scalars().all()}
 
+    import importlib.metadata
+    version = importlib.metadata.version("uniapi-py")
+
     return {
-        "version": "0.1.0",
+        "version": version,
         "system_name": options.get("SystemName", "UniAPI"),
         "logo": options.get("Logo", ""),
         "footer_html": options.get("Footer", ""),

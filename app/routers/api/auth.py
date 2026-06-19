@@ -4,9 +4,11 @@ import time
 
 from fastapi import APIRouter, Depends, Request
 from fastapi.responses import JSONResponse, Response
+from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.database import get_db
+from app.models.option import Option
 from app.schemas.common import GenericApiResponse
 from app.schemas.user import (
     LoginRequest,
@@ -232,13 +234,18 @@ async def models_display():
 
 
 @router.get("/api/home_page_content")
-async def home_page_content():
-    return GenericApiResponse(data={"content": ""})
+async def home_page_content(db: AsyncSession = Depends(get_db)):
+    result = await db.execute(select(Option).where(Option.key == "HomePageContent"))
+    opt = result.scalar_one_or_none()
+    return GenericApiResponse(data=opt.value if opt else "")
 
 
 @router.get("/api/about")
-async def about_page():
-    return GenericApiResponse(data={"content": ""})
+async def about_page(db: AsyncSession = Depends(get_db)):
+    result = await db.execute(select(Option).where(Option.key == "About"))
+    opt = result.scalar_one_or_none()
+    about = opt.value if opt else ""
+    return GenericApiResponse(data=about)
 
 
 @router.get("/api/tools/display")

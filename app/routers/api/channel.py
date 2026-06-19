@@ -6,6 +6,7 @@ defined BEFORE the {channel_id} parameterized route to avoid conflicts.
 from __future__ import annotations
 
 import time
+import uuid
 
 import httpx
 from fastapi import APIRouter, Depends, HTTPException, Query, Request
@@ -15,6 +16,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.database import get_db
 from app.dependencies import admin_auth
 from app.models.channel import Channel
+from app.models.log import Log
 from app.schemas.common import GenericApiResponse, PaginatedResponse
 
 router = APIRouter(tags=["channels"])
@@ -142,10 +144,71 @@ async def test_all_channels(
     db: AsyncSession = Depends(get_db),
     _=Depends(admin_auth),
 ):
-    """Test connectivity for all enabled channels."""
+    """Test connectivity for all enabled channels by calling their /models endpoint."""
     result = await db.execute(select(Channel).where(Channel.status == 1))
     channels = result.scalars().all()
-    return GenericApiResponse(data={"total": len(channels), "tested": [c.name for c in channels]})
+
+    results = []
+    for channel in channels:
+        # Resolve base URL: channel setting → adaptor default
+        base_url = channel.base_url
+        if not base_url:
+            from app.relay.registry import registry
+            adaptor = registry.get(channel.type)
+            if adaptor:
+                base_url = adaptor.DEFAULT_BASE_URL
+
+        if not base_url:
+            results.append({"channel_id": channel.id, "name": channel.name, "status": "skipped", "detail": "No base_url"})
+            continue
+
+        api_key = channel.key
+        if not api_key:
+            from app.relay.registry import registry
+            from app.config import settings
+            from app.relay import channeltype
+            key_map = {
+                channeltype.DeepSeek: settings.deepseek_api_key,
+                channeltype.GLM: settings.glm_api_key,
+                channeltype.Moonshot: settings.kimi_api_key,
+                channeltype.Minimax: settings.minimax_api_key,
+                channeltype.AliBailian: settings.qwen_api_key,
+            }
+            api_key = key_map.get(channel.type, "")
+
+        try:
+            test_url = f"{base_url.rstrip('/')}/models"
+            async with httpx.AsyncClient(timeout=10) as client:
+                headers = {"Authorization": f"Bearer {api_key}"} if api_key else {}
+                resp = await client.get(test_url, headers=headers)
+                channel.test_time = int(time.time() * 1000)
+                status = "ok" if resp.is_success else "error"
+
+            # Log the test request
+            now_ms = int(time.time() * 1000)
+            db.add(Log(
+                user_id=0,
+                created_at=now_ms,
+                type=1,
+                content=f"Channel test: {channel.name} ({base_url})",
+                username="admin",
+                model_name="",
+                quota=0,
+                channel_id=channel.id,
+                request_id=uuid.uuid4().hex,
+            ))
+
+            results.append({
+                "channel_id": channel.id,
+                "name": channel.name,
+                "status": status,
+                "http_status": resp.status_code,
+            })
+        except Exception as exc:
+            results.append({"channel_id": channel.id, "name": channel.name, "status": "error", "detail": str(exc)})
+
+    await db.commit()
+    return GenericApiResponse(data={"total": len(channels), "results": results})
 
 
 @router.get("/api/channel/default-pricing")
@@ -194,21 +257,59 @@ async def test_channel(
     if not channel:
         raise HTTPException(status_code=404, detail="Channel not found")
 
-    if not channel.base_url:
+    # Resolve base URL: channel setting → adaptor default
+    base_url = channel.base_url
+    if not base_url:
+        from app.relay.registry import registry
+        adaptor = registry.get(channel.type)
+        if adaptor:
+            base_url = adaptor.DEFAULT_BASE_URL
+
+    if not base_url:
         return GenericApiResponse(data={"channel_id": channel_id, "status": "skipped", "detail": "No base_url"})
 
+    # Resolve API key: channel key → env var
+    api_key = channel.key
+    if not api_key:
+        from app.config import settings
+        from app.relay import channeltype
+        key_map = {
+            channeltype.DeepSeek: settings.deepseek_api_key,
+            channeltype.GLM: settings.glm_api_key,
+            channeltype.Moonshot: settings.kimi_api_key,
+            channeltype.Minimax: settings.minimax_api_key,
+            channeltype.AliBailian: settings.qwen_api_key,
+        }
+        api_key = key_map.get(channel.type, "")
+
     try:
-        test_url = f"{channel.base_url.rstrip('/')}/models"
+        test_url = f"{base_url.rstrip('/')}/models"
         async with httpx.AsyncClient(timeout=10) as client:
-            headers = {"Authorization": f"Bearer {channel.key}"} if channel.key else {}
+            headers = {"Authorization": f"Bearer {api_key}"} if api_key else {}
             resp = await client.get(test_url, headers=headers)
             channel.test_time = int(time.time() * 1000)
-            await db.commit()
-            return GenericApiResponse(data={
-                "channel_id": channel_id,
-                "status": "ok" if resp.is_success else "error",
-                "http_status": resp.status_code,
-            })
+            status = "ok" if resp.is_success else "error"
+
+        # Log the test request
+        now_ms = int(time.time() * 1000)
+        db.add(Log(
+            user_id=0,
+            created_at=now_ms,
+            type=1,
+            content=f"Channel test: {channel.name} ({base_url})",
+            username="admin",
+            model_name="",
+            quota=0,
+            channel_id=channel_id,
+            request_id=uuid.uuid4().hex,
+        ))
+        await db.commit()
+
+        return GenericApiResponse(data={
+            "channel_id": channel_id,
+            "status": status,
+            "http_status": resp.status_code,
+        })
     except Exception as exc:
         return GenericApiResponse(data={"channel_id": channel_id, "status": "error", "detail": str(exc)})
 
