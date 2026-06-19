@@ -1,5 +1,4 @@
-"""GLM model pricing configuration."""
-
+"""GLM (Zhipu) model pricing configuration."""
 from app.relay.adaptor import ModelConfig
 
 MODEL_PRICING: dict[str, ModelConfig] = {
@@ -27,16 +26,22 @@ MODEL_PRICING: dict[str, ModelConfig] = {
         cached_input_ratio=0.02,
         max_tokens=131072,
     ),
-    "glm-4": ModelConfig(
-        input_ratio=0.05,
-        output_ratio=1.0,
-        cached_input_ratio=0.01,
+    "glm-4.5-air": ModelConfig(
+        input_ratio=0.033,
+        output_ratio=1.5,
+        cached_input_ratio=0.007,
         max_tokens=131072,
     ),
-    "glm-4v": ModelConfig(
-        input_ratio=0.1,
-        output_ratio=1.0,
-        cached_input_ratio=0.01,
-        max_tokens=8192,
+    "glm-4.7-flash": ModelConfig(
+        input_ratio=0,
+        output_ratio=0,
+        cached_input_ratio=0,
+        max_tokens=131072,
+    ),
+    "glm-z1-flash": ModelConfig(
+        input_ratio=0,
+        output_ratio=0,
+        cached_input_ratio=0,
+        max_tokens=131072,
     ),
 }

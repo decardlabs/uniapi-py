@@ -53,7 +53,7 @@ async def test_glm_supported_models(client: AsyncClient):
     from app.relay.adaptors.glm.adaptor import GLMAdaptor
     models = GLMAdaptor().get_supported_models()
     assert "glm-5.2" in models
-    assert "glm-4" in models
+    assert "glm-4.7" in models
     assert models["glm-5.2"].input_ratio > 0
     assert models["glm-5.2"].output_ratio > 0
 

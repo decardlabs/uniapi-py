@@ -1,6 +1,6 @@
 [project]
 name = "uniapi-py"
-version = "0.9.1"
+version = "0.9.2"
 description = "UniAPI Python backend - AI API gateway"
 requires-python = ">=3.12"
 dependencies = [

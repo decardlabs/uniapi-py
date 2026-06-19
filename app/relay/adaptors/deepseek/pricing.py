@@ -10,12 +10,6 @@ QUOTA_PER_MILLION_INPUT = 500000
 QUOTA_PER_USD = 500000
 
 MODEL_PRICING: dict[str, ModelConfig] = {
-    "deepseek-chat": ModelConfig(
-        input_ratio=0.3,
-        output_ratio=2.0,
-        cached_input_ratio=0.03,
-        max_tokens=128000,
-    ),
     "deepseek-v4-pro": ModelConfig(
         input_ratio=1.2,
         output_ratio=2.0,

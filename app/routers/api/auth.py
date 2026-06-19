@@ -8,6 +8,7 @@ from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.database import get_db
+from app.models.channel import Channel
 from app.models.option import Option
 from app.schemas.common import GenericApiResponse
 from app.schemas.user import (
@@ -209,28 +210,44 @@ async def user_available_models():
 
 
 @router.get("/api/models/display")
-async def models_display():
-    """Public model listing with pricing."""
-    from app.relay.adaptors.deepseek.pricing import MODEL_PRICING
+async def models_display(db: AsyncSession = Depends(get_db)):
+    """List models from configured channels with pricing.
 
-    models_data = {}
-    for model_name, config in MODEL_PRICING.items():
-        input_price = config.input_ratio * 500000 / 1000000
-        output_price = config.output_ratio * config.input_ratio * 500000 / 1000000
-        cached_price = config.cached_input_ratio * 500000 / 1000000
-        models_data[model_name] = {
-            "input_price": input_price,
-            "output_price": output_price,
-            "cached_input_price": cached_price,
-        }
+    Returns channel_name → {models: {model_name: pricing}} mapping.
+    Only shows models from channels that are actually configured (status=1).
+    """
+    from app.relay.registry import registry
 
-    return GenericApiResponse(
-        data={
-            "DeepSeek": {
-                "models": models_data,
-            }
-        }
-    )
+    result = await db.execute(select(Channel).where(Channel.status == 1))
+    channels = result.scalars().all()
+
+    display = {}
+    for ch in channels:
+        adaptor = registry.get(ch.type)
+        if not adaptor:
+            continue
+        all_pricing = adaptor.get_supported_models()
+
+        # Determine which models to show for this channel
+        if ch.models:
+            model_names = [m.strip() for m in ch.models.split(",")]
+        else:
+            model_names = list(all_pricing.keys())
+
+        models_data = {}
+        for model_name in model_names:
+            config = all_pricing.get(model_name)
+            if config:
+                models_data[model_name] = {
+                    "input_price": config.input_ratio,
+                    "output_price": config.output_ratio,
+                    "cached_input_price": config.cached_input_ratio,
+                }
+
+        if models_data:
+            display[ch.name or adaptor.provider_name] = {"models": models_data}
+
+    return GenericApiResponse(data=display)
 
 
 @router.get("/api/home_page_content")
@@ -255,6 +272,16 @@ async def tools_display():
 
 @router.get("/api/models")
 async def models_list():
-    """Model list (same as /api/models/display for compatibility)."""
-    # Import and delegate
-    return await models_display()
+    """Model catalog by provider type — used by channel form for model selection.
+
+    Returns: {type_id: [model_name, ...]} for all registered providers.
+    """
+    from app.relay.registry import registry
+
+    catalog = {}
+    for ct in [39, 41, 50, 25, 27]:
+        adaptor = registry.get(ct)
+        if adaptor:
+            catalog[str(ct)] = list(adaptor.get_supported_models().keys())
+
+    return GenericApiResponse(data=catalog)
