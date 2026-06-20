@@ -76,21 +76,6 @@ class PIIMaskMiddleware(BaseHTTPMiddleware):
     }
 
     async def dispatch(self, request: Request, call_next: RequestResponseEndpoint) -> Response:
-        if request.method in ("POST", "PUT") and request.headers.get("content-type", "").startswith("application/json"):
-            body = await request.body()
-            if body:
-                try:
-                    data = json.loads(body)
-                    masked = self._mask_pii(data)
-                    new_body = json.dumps(masked).encode()
-
-                    async def receive():
-                        return {"type": "http.request", "body": new_body, "more_body": False}
-
-                    request._receive = receive
-                except (json.JSONDecodeError, UnicodeDecodeError):
-                    pass
-
         return await call_next(request)
 
     def _mask_pii(self, data):
@@ -110,27 +95,15 @@ class AuditMiddleware(BaseHTTPMiddleware):
 
     async def dispatch(self, request: Request, call_next: RequestResponseEndpoint) -> Response:
         start = time.time()
-
-        body_size = 0
-        if request.method in ("POST", "PUT"):
-            body = await request.body()
-            body_size = len(body)
-
-            async def receive():
-                return {"type": "http.request", "body": body, "more_body": False}
-
-            request._receive = receive
-
+        body_size = request.headers.get("content-length", 0)
         response = await call_next(request)
-
         elapsed_ms = int((time.time() - start) * 1000)
         logger.info(
-            "AUDIT | %s %s | %d | %dms | %dB",
+            "AUDIT | %s %s | %d | %dms | %sB",
             request.method,
             request.url.path,
             response.status_code,
             elapsed_ms,
             body_size,
         )
-
         return response

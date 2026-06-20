@@ -8,6 +8,7 @@ from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.database import get_db
+from app.dependencies import user_auth
 from app.models.channel import Channel
 from app.models.option import Option
 from app.schemas.common import GenericApiResponse
@@ -115,8 +116,8 @@ async def self_info(
             quota=user.quota,
             used_quota=user.used_quota,
             group=user.group,
-            created_at=user.created_at,
-            updated_at=user.updated_at,
+            created_at=user.created_at // 1000 if user.created_at else 0,
+            updated_at=user.updated_at // 1000 if user.updated_at else 0,
         ).model_dump()
     )
 
@@ -204,9 +205,34 @@ async def available_models():
 
 
 @router.get("/api/user/available_models")
-async def user_available_models():
-    """Public model listing (expected by frontend at this path)."""
-    return GenericApiResponse(data=[])
+async def user_available_models(
+    db: AsyncSession = Depends(get_db),
+    _=Depends(user_auth),
+):
+    """Return models available from enabled channels.
+
+    Used by the frontend playground to populate the model selector.
+    Returns model names from all enabled channels.
+    """
+    result = await db.execute(select(Channel).where(Channel.status == 1))
+    channels = result.scalars().all()
+
+    models = set()
+    for ch in channels:
+        if ch.models:
+            for m in ch.models.split(","):
+                name = m.strip()
+                if name:
+                    models.add(name)
+        else:
+            # Channel without specific model list: add its adaptor's models
+            from app.relay.registry import registry
+            adaptor = registry.get(ch.type)
+            if adaptor:
+                for m in adaptor.get_supported_models():
+                    models.add(m)
+
+    return GenericApiResponse(data=sorted(models))
 
 
 @router.get("/api/models/display")

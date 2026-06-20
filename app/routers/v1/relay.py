@@ -143,6 +143,15 @@ async def _find_fallback_channel(
     return None
 
 
+def _check_token_model(token, model_name: str) -> bool:
+    """Check if the token has permission to use the given model."""
+    if hasattr(token, "models") and token.models:
+        allowed = [m.strip() for m in token.models.split(",")]
+        if model_name not in allowed:
+            return False
+    return True
+
+
 async def _record_channel_failure(channel_id: int, db: AsyncSession) -> bool:
     """Record a channel failure. Returns True if channel was auto-disabled."""
     count = _channel_failures.get(channel_id, 0) + 1
@@ -169,6 +178,7 @@ def _reset_channel_failures(channel_id: int):
 
 async def _handle_relay(request: Request, db: AsyncSession):
     """Universal relay handler: smart routes based on adaptor NATIVE_FORMATS."""
+    relay_start = time.time()
     user, token = await _resolve_token_and_channel(request, db)
     body = await request.json()
     path = request.url.path
@@ -177,61 +187,124 @@ async def _handle_relay(request: Request, db: AsyncSession):
     model_name = body.get("model", "")
     stream = body.get("stream", False)
 
-    # Fusion: run multi-model ensemble pipeline
+    # Fusion: multi-model ensemble from token-authorized models
     if model_name == "fusion":
-        fusion_engine = getattr(request.app.state, "fusion_engine", None)
-        if not fusion_engine:
+        fusion_registry = getattr(request.app.state, "fusion_registry", None)
+        if not fusion_registry:
             raise HTTPException(status_code=400, detail="Fusion engine not available (no API keys configured)")
 
-        from app.fusion.schemas import ChatRequest
+        # Select panel from token-authorized models that are in the fusion registry
+        token_models: list[str] = []
+        if hasattr(token, "models") and token.models:
+            token_models = [m.strip() for m in token.models.split(",")]
 
-        chat_request = ChatRequest.from_dict(body)
-        response = await fusion_engine.execute(chat_request)
-        result = response.to_dict()
+        available = fusion_registry.list_models()
+        if token_models:
+            panel = [m for m in token_models if m in available]
+        else:
+            panel = available[:]
 
-        # Post-consume quota for fusion (estimated from panel usage)
-        estimated = sum(
-            u.get("prompt_tokens", 0) + u.get("completion_tokens", 0)
-            for b in (result.get("usage", {}).get("fusion_breakdown", {}).get("panel", {}) or {}).values()
-            for u in [b]
-        ) or 5000
-        if not token.unlimited_quota and token.remain_quota < estimated:
-            raise HTTPException(status_code=400, detail="Insufficient token quota")
-        if not token.unlimited_quota:
-            token.remain_quota -= estimated
-        await db.commit()
+        if not panel:
+            raise HTTPException(status_code=403, detail="No fusion-authorized models available for this token")
 
-        return result
+        if len(panel) < 2:
+            # Fallback to single model passthrough
+            model_name = panel[0]
+            channel_type = registry.resolve_channel_type(model_name)
+            body["model"] = model_name
+        else:
+            # Use top models: strongest as judge/synthesizer
+            from app.fusion.core.engine import FusionConfig, FusionEngine
 
-    # Auto model selection: pick highest-priority enabled channel
+            # Score models by price (higher = more capable = better for judge/synth)
+            scored = []
+            for m_name in panel:
+                adaptor = registry.resolve_channel_type(m_name)
+                if adaptor is not None:
+                    a = _get_adaptor(adaptor)
+                    if a:
+                        cfg = a.get_supported_models().get(m_name)
+                        if cfg:
+                            scored.append((cfg.input_ratio + cfg.output_ratio, m_name))
+            scored.sort(reverse=True)
+
+            fusion_config = FusionConfig(
+                panel=panel,
+                judge=scored[0][1] if scored else panel[0],
+                synthesizer=scored[0][1] if scored else panel[-1],
+                timeout_seconds=30,
+                retry_count=1,
+                fallback_model=panel[0],
+            )
+            engine = FusionEngine(fusion_registry, fusion_config)
+            from app.fusion.schemas import ChatRequest
+
+            chat_request = ChatRequest.from_dict(body)
+            response = await engine.execute(chat_request)
+            result = response.to_dict()
+
+            estimated = sum(
+                u.get("prompt_tokens", 0) + u.get("completion_tokens", 0)
+                for b in (result.get("usage", {}).get("fusion_breakdown", {}).get("panel", {}) or {}).values()
+                for u in [b]
+            ) or 5000
+            if not token.unlimited_quota and token.remain_quota < estimated:
+                raise HTTPException(status_code=400, detail="Insufficient token quota")
+            if not token.unlimited_quota:
+                token.remain_quota -= estimated
+            await db.commit()
+            return result
+
+    # Auto model selection: pick cheapest model the token can access
     channel: Channel | None = None
     channel_type: int | None = None
     if model_name == "auto":
         from sqlalchemy import select as _select
 
+        # Determine token-allowed models
+        allowed_models: list[str] | None = None
+        if hasattr(token, "models") and token.models:
+            allowed_models = [m.strip() for m in token.models.split(",")]
+
+        # Collect all enabled channels with their models and pricing
         result = await db.execute(
-            _select(Channel)
-            .where(Channel.status == 1)
-            .order_by(Channel.priority.desc())
-            .limit(1)
+            _select(Channel).where(Channel.status == 1)
         )
-        channel = result.scalar_one_or_none()
-        if not channel:
+        channels = result.scalars().all()
+        if not channels:
             raise HTTPException(status_code=400, detail="No enabled channels available for auto selection")
-        channel_type = channel.type
 
-        # Resolve model name: channel's configured model, or adaptor default
-        if channel.models:
-            model_name = channel.models.split(",")[0].strip()
-        else:
-            adaptor = _get_adaptor(channel_type)
+        # Build (price, model_name, channel) candidates
+        candidates: list[tuple[float, str, Channel]] = []
+        for ch in channels:
+            ch_models = [m.strip() for m in ch.models.split(",")] if ch.models else []
+            adaptor = _get_adaptor(ch.type)
             if not adaptor:
-                raise HTTPException(status_code=500, detail="No adaptor configured for auto-selected channel")
+                continue
             supported = adaptor.get_supported_models()
-            if not supported:
-                raise HTTPException(status_code=500, detail="Auto-selected adaptor has no supported models")
-            model_name = next(iter(supported.keys()))
+            model_list = ch_models or list(supported.keys())
+            for m_name in model_list:
+                if allowed_models is not None and m_name not in allowed_models:
+                    continue
+                cfg = supported.get(m_name)
+                if not cfg:
+                    continue
+                # Use combined price as sort key (lower = cheaper)
+                price = cfg.input_ratio + cfg.output_ratio
+                candidates.append((price, m_name, ch))
 
+        if not candidates:
+            if allowed_models:
+                raise HTTPException(
+                    status_code=403,
+                    detail=f"Token has no authorized model for auto selection. Allowed: {', '.join(allowed_models)}"
+                )
+            raise HTTPException(status_code=400, detail="No suitable model found for auto selection")
+
+        # Pick the cheapest
+        candidates.sort(key=lambda x: x[0])
+        price, model_name, channel = candidates[0]
+        channel_type = channel.type
         body["model"] = model_name
 
     # Resolve channel type from model name
@@ -260,6 +333,12 @@ async def _handle_relay(request: Request, db: AsyncSession):
         allowed = [m.strip() for m in token.models.split(",")]
         if model_name not in allowed:
             raise HTTPException(status_code=403, detail=f"Token not allowed to use model '{model_name}'")
+
+    # Channel group access control
+    if channel and channel.group and channel.group != "default":
+        user_group = user.group or "default"
+        if user_group != channel.group:
+            raise HTTPException(status_code=403, detail=f"User group '{user_group}' not allowed to access channel group '{channel.group}'")
 
     # Budget arbitration pre-check
     budget_arbiter: BudgetArbiter | None = getattr(request.app.state, "budget_arbiter", None)
@@ -373,6 +452,9 @@ async def _handle_relay(request: Request, db: AsyncSession):
                 fallback_channel = await _find_fallback_channel(db, channel_type, model_name)
                 if fallback_channel and fallback_channel.models:
                     fallback_model = fallback_channel.models.split(",")[0].strip()
+                    if not _check_token_model(token, fallback_model):
+                        logger.info("FALLBACK skip | model=%s not allowed by token", fallback_model)
+                        break
                     adaptor = _get_adaptor(channel_type)
                     if adaptor:
                         model_name = fallback_model
@@ -412,6 +494,9 @@ async def _handle_relay(request: Request, db: AsyncSession):
                 fallback_channel = await _find_fallback_channel(db, channel_type, model_name)
                 if fallback_channel and fallback_channel.models:
                     fallback_model = fallback_channel.models.split(",")[0].strip()
+                    if not _check_token_model(token, fallback_model):
+                        logger.info("FALLBACK skip | model=%s not allowed by token", fallback_model)
+                        break
                     adaptor = _get_adaptor(channel_type)
                     if adaptor:
                         model_name = fallback_model
@@ -444,6 +529,10 @@ async def _handle_relay(request: Request, db: AsyncSession):
             raise HTTPException(status_code=502, detail="Upstream request failed")
 
     if stream:
+        provisional_log.type = 2
+        provisional_log.elapsed_time = int((time.time() - relay_start) * 1000)
+        provisional_log.content = f"Stream: {relay_mode_name(relay_mode)} with {model_name}"
+        await db.commit()
         return upstream_response
 
     # Post-consume: reconcile quota
@@ -465,6 +554,9 @@ async def _handle_relay(request: Request, db: AsyncSession):
     provisional_log.quota = actual
     provisional_log.prompt_tokens = prompt_tokens
     provisional_log.completion_tokens = completion_tokens
+    provisional_log.elapsed_time = int((time.time() - relay_start) * 1000)
+    provisional_log.cached_prompt_tokens = usage.get("cached_tokens", 0)
+    provisional_log.cached_completion_tokens = usage.get("cached_tokens", 0)
     provisional_log.content = f"{relay_mode_name(relay_mode)} with {model_name}"
 
     # Budget: post-settle with actual usage
@@ -516,14 +608,13 @@ async def response_api(request: Request, db: AsyncSession = Depends(get_db)):
 @router.get("/v1/models")
 async def list_models(request: Request, db: AsyncSession = Depends(get_db)):
     await token_auth(request, db)
+    now = int(time.time())
     models = []
-    # Collect models from ALL registered adaptors
     for ct in [39, 41, 50, 25, 27]:
         adaptor = _get_adaptor(ct)
         if adaptor:
             for m in adaptor.get_supported_models():
                 models.append({"id": m, "object": "model", "created": now, "owned_by": adaptor.provider_name})
-    now = int(time.time())
     return {"object": "list", "data": models}
 
 

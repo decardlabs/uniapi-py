@@ -10,9 +10,7 @@ import { LabelWithHelp } from './LabelWithHelp';
 
 interface ChannelModelSettingsProps {
   form: UseFormReturn<ChannelForm>;
-  availableModels: { id: string; name: string }[];
   currentCatalogModels: string[];
-  hasCuratedModels: boolean;
   defaultPricing: string;
   notify: (options: any) => void;
   tr: (key: string, defaultValue: string, options?: Record<string, unknown>) => string;
@@ -20,9 +18,7 @@ interface ChannelModelSettingsProps {
 
 export const ChannelModelSettings = ({
   form,
-  availableModels,
   currentCatalogModels,
-  hasCuratedModels,
   defaultPricing,
   notify,
   tr,
@@ -45,72 +41,15 @@ export const ChannelModelSettings = ({
     form.setValue('models', uniqueModels);
   };
 
-  const addRecommendedModels = () => {
-    const currentModels = form.getValues('models');
-    const recommendedModelIds = availableModels.map((model) => model.id);
-    const uniqueModels = [...new Set([...currentModels, ...recommendedModelIds])];
-    form.setValue('models', uniqueModels);
-  };
-
-  const clearModels = () => {
-    form.setValue('models', []);
-  };
-
-  const formatModelMapping = () => {
-    const current = form.getValues('model_mapping');
+  const generateModelMapping = () => {
     const selectedModels = form.getValues('models') || [];
     const sourceModels = selectedModels.length > 0 ? selectedModels : currentCatalogModels;
-
-    if (sourceModels.length === 0) {
-      const formatted = formatJSON(current);
-      form.setValue('model_mapping', formatted);
-      return;
-    }
-
-    let existingMapping: Record<string, string> = {};
-    if (current && current.trim() !== '') {
-      try {
-        const parsed = JSON.parse(current);
-        if (typeof parsed === 'object' && parsed !== null && !Array.isArray(parsed)) {
-          existingMapping = Object.entries(parsed as Record<string, unknown>).reduce(
-            (acc, [key, value]) => {
-              if (typeof value === 'string') {
-                acc[key] = value;
-              }
-              return acc;
-            },
-            {} as Record<string, string>
-          );
-        }
-      } catch {
-        existingMapping = {};
-      }
-    }
-
-    const deduplicatedModels = [...new Set(sourceModels)];
-    deduplicatedModels.forEach((modelName) => {
-      if (!Object.prototype.hasOwnProperty.call(existingMapping, modelName)) {
-        existingMapping[modelName] = modelName;
-      }
-    });
-
-    form.setValue('model_mapping', JSON.stringify(existingMapping, null, 2));
+    if (sourceModels.length === 0) return;
+    const mapping: Record<string, string> = {};
+    [...new Set(sourceModels)].forEach((model) => { mapping[model] = model; });
+    form.setValue('model_mapping', JSON.stringify(mapping, null, 2));
   };
 
-  /**
-   * formatModelConfigs formats the model_configs JSON for readability and updates the form value.
-   * @returns void
-   */
-  const formatModelConfigs = () => {
-    const current = form.getValues('model_configs');
-    const formatted = formatJSON(current);
-    form.setValue('model_configs', formatted);
-  };
-
-  /**
-   * loadDefaultModelConfigs applies the default pricing config to the model_configs field.
-   * @returns void
-   */
   const loadDefaultModelConfigs = () => {
     console.debug('[ChannelModelSettings] Load default model configs', {
       hasDefaultPricing: Boolean(defaultPricing),
@@ -164,70 +103,22 @@ export const ChannelModelSettings = ({
 
   return (
     <div className="space-y-6">
-      <div className="rounded-lg border bg-muted/20 p-3 text-sm text-muted-foreground">
-        {hasCuratedModels
-          ? tr(
-              'models.explainer_curated',
-              'This channel type has {{recommendedCount}} recommended model names. If you need the broader upstream list, use "Add Provider Catalog" to import all {{catalogCount}} known model names.',
-              {
-                recommendedCount: availableModels.length,
-                catalogCount: currentCatalogModels.length,
-              }
-            )
-          : tr(
-              'models.explainer_catalog',
-              'This channel type uses the provider catalog directly. You can import all {{catalogCount}} known model names or add custom names manually.',
-              {
-                catalogCount: currentCatalogModels.length,
-              }
-            )}
-      </div>
-
-      <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
-        {hasCuratedModels && (
-          <div className="rounded-lg border bg-background p-4">
-            <div className="flex items-start justify-between gap-3">
-              <div className="space-y-1">
-                <div className="text-sm font-medium">{tr('models.recommended_title', 'Recommended Model Names')}</div>
-                <div className="text-sm text-muted-foreground">
-                  {tr(
-                    'models.recommended_description',
-                    'A smaller curated list for common setups. Use this when you want a cleaner starting point.'
-                  )}
-                </div>
-              </div>
-              <div className="rounded-md bg-muted px-2 py-1 text-xs font-medium text-muted-foreground">{availableModels.length}</div>
-            </div>
-            <div className="mt-3">
-              <Button type="button" variant="outline" size="sm" onClick={addRecommendedModels}>
-                {tr('models.add_recommended', 'Add Recommended Models ({{count}})', {
-                  count: availableModels.length,
-                })}
-              </Button>
+      <div className="rounded-lg border bg-background p-4">
+        <div className="flex items-start justify-between gap-3">
+          <div className="space-y-1">
+            <div className="text-sm font-medium">{tr('models.catalog_title', 'Provider Catalog')}</div>
+            <div className="text-sm text-muted-foreground">
+              {tr('models.catalog_description', 'Available model names for this provider type. Add or customise below.')}
             </div>
           </div>
-        )}
-
-        <div className="rounded-lg border bg-background p-4">
-          <div className="flex items-start justify-between gap-3">
-            <div className="space-y-1">
-              <div className="text-sm font-medium">{tr('models.catalog_title', 'Provider Catalog')}</div>
-              <div className="text-sm text-muted-foreground">
-                {tr(
-                  'models.catalog_description',
-                  'All model names currently known for this provider type. Import this when you need the full catalog instead of the curated subset.'
-                )}
-              </div>
-            </div>
-            <div className="rounded-md bg-muted px-2 py-1 text-xs font-medium text-muted-foreground">{currentCatalogModels.length}</div>
-          </div>
-          <div className="mt-3">
-            <Button type="button" variant="outline" size="sm" onClick={addCatalogModels}>
-              {tr('models.add_catalog', 'Add Provider Catalog ({{count}})', {
-                count: currentCatalogModels.length,
-              })}
-            </Button>
-          </div>
+          <div className="rounded-md bg-muted px-2 py-1 text-xs font-medium text-muted-foreground">{currentCatalogModels.length}</div>
+        </div>
+        <div className="mt-3">
+          <Button type="button" variant="outline" size="sm" onClick={addCatalogModels}>
+            {tr('models.add_catalog', 'Add Provider Catalog ({{count}})', {
+              count: currentCatalogModels.length,
+            })}
+          </Button>
         </div>
       </div>
 
@@ -237,41 +128,17 @@ export const ChannelModelSettings = ({
         render={() => (
           <FormItem>
             <SelectionListManager
-              label={tr('models.label', 'Supported Model Names *')}
-              help={
-                hasCuratedModels
-                  ? tr(
-                      'models.help_curated',
-                      'These are recommended model names for this channel type. You can add the full provider catalog or custom model names below.'
-                    )
-                  : tr(
-                      'models.help_catalog',
-                      'These are known model names for this channel type. You can also add custom model names if your upstream supports them.'
-                    )
-              }
-              options={availableModels.map((model) => ({
-                value: model.id,
-                label: model.name,
-              }))}
+              label=""
+              options={[]}
               selected={form.watch('models')}
               onChange={(next) => form.setValue('models', next)}
-              searchPlaceholder={tr('models.search_placeholder', 'Search models...')}
               customPlaceholder={tr('models.custom_placeholder', 'Add custom model...')}
               addLabel={tr('common.add', 'Add')}
               selectedSummaryLabel={(count) =>
-                tr('models.selected_count', 'Enabled Models ({{count}})', {
-                  count,
-                })
+                tr('models.selected_count', 'Enabled Models ({{count}})', { count })
               }
               emptySelectedLabel={tr('models.no_selection', 'No model names selected')}
               noOptionsLabel={tr('models.no_match', 'No model names found')}
-              actions={
-                <>
-                  <Button type="button" variant="outline" onClick={clearModels} className="text-destructive hover:text-destructive">
-                    {tr('models.clear', 'Clear Models')}
-                  </Button>
-                </>
-              }
             />
             <FormMessage />
           </FormItem>
@@ -294,15 +161,17 @@ export const ChannelModelSettings = ({
                     )
                   }
                 />
-                <Button
-                  type="button"
-                  variant="ghost"
-                  size="sm"
-                  className="h-6 text-xs self-start sm:self-auto"
-                  onClick={formatModelMapping}
-                >
-                  {tr('common.format_json', 'Format JSON')}
-                </Button>
+                <div className="flex flex-wrap gap-2 self-start sm:self-auto">
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="sm"
+                    className="h-6 text-xs"
+                    onClick={generateModelMapping}
+                  >
+                    {tr('model_mapping.generate', 'Format JSON')}
+                  </Button>
+                </div>
               </div>
               <FormControl>
                 <Textarea
@@ -343,9 +212,6 @@ export const ChannelModelSettings = ({
                     onClick={loadDefaultModelConfigs}
                   >
                     {tr('model_configs.load_default', 'Load Provider Defaults')}
-                  </Button>
-                  <Button type="button" variant="ghost" size="sm" className="h-6 text-xs" onClick={formatModelConfigs}>
-                    {tr('common.format_json', 'Format JSON')}
                   </Button>
                 </div>
               </div>

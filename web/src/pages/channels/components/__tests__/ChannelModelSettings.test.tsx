@@ -87,9 +87,7 @@ const TestHarness = ({
     <TooltipProvider>
       <ChannelModelSettings
         form={form}
-        availableModels={availableModels}
         currentCatalogModels={currentCatalogModels}
-        hasCuratedModels={hasCuratedModels}
         defaultPricing={defaultPricing}
         notify={notify}
         tr={tr}

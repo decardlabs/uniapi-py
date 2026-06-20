@@ -25,8 +25,8 @@ def _user_to_response(u) -> dict:
         quota=u.quota,
         used_quota=u.used_quota,
         group=u.group,
-        created_at=u.created_at,
-        updated_at=u.updated_at,
+        created_at=u.created_at // 1000 if u.created_at else 0,
+        updated_at=u.updated_at // 1000 if u.updated_at else 0,
     ).model_dump()
 
 

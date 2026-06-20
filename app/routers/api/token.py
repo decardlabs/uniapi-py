@@ -26,13 +26,13 @@ def _token_to_response(t) -> dict:
         remain_quota=t.remain_quota,
         unlimited_quota=t.unlimited_quota,
         used_quota=t.used_quota,
-        created_time=t.created_time,
-        accessed_time=t.accessed_time,
-        expired_time=t.expired_time,
+        created_time=t.created_time // 1000 if t.created_time else 0,
+        accessed_time=t.accessed_time // 1000 if t.accessed_time else 0,
+        expired_time=t.expired_time // 1000 if t.expired_time else 0,
         models=t.models,
         subnet=t.subnet,
-        created_at=t.created_at,
-        updated_at=t.updated_at,
+        created_at=t.created_at // 1000 if t.created_at else 0,
+        updated_at=t.updated_at // 1000 if t.updated_at else 0,
     ).model_dump()
 
 

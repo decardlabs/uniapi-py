@@ -16,6 +16,12 @@ MODEL_PRICING: dict[str, ModelConfig] = {
         cached_input_ratio=0.4,
         max_tokens=128000,
     ),
+    "qwen3.6-plus": ModelConfig(
+        input_ratio=2.0,
+        output_ratio=12.0,
+        cached_input_ratio=0.4,
+        max_tokens=128000,
+    ),
     "qwen3.6-flash": ModelConfig(
         input_ratio=0.5,
         output_ratio=2.0,
@@ -44,6 +50,12 @@ MODEL_PRICING: dict[str, ModelConfig] = {
         input_ratio=2.0,
         output_ratio=8.0,
         cached_input_ratio=0.4,
+        max_tokens=128000,
+    ),
+    "qwen-turbo": ModelConfig(
+        input_ratio=0.3,
+        output_ratio=1.2,
+        cached_input_ratio=0.06,
         max_tokens=128000,
     ),
 }

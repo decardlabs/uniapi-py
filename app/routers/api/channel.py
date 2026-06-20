@@ -22,6 +22,22 @@ from app.schemas.common import GenericApiResponse, PaginatedResponse
 router = APIRouter(tags=["channels"])
 
 
+def _json_str(val):
+    """Convert a value to a JSON string for DB text columns.
+
+    Handles dicts, lists, and other types that SQLite can't store directly.
+    """
+    if val is None:
+        return None
+    if isinstance(val, (dict, list, bool)):
+        import json
+        try:
+            return json.dumps(val)
+        except (TypeError, ValueError):
+            return str(val)
+    return str(val)
+
+
 # ──────────────────────────────────────────────
 # Static routes first (before {channel_id})
 # ──────────────────────────────────────────────
@@ -76,21 +92,40 @@ async def create_channel(
     _=Depends(admin_auth),
 ):
     """Create a new channel."""
-    now = int(time.time() * 1000)
+    now_ms = int(time.time() * 1000)
+    now_s = int(time.time())
+
+    # Transform arrays to comma-separated strings for DB storage
+    models_raw = body.get("models", "")
+    if isinstance(models_raw, list):
+        models_raw = ",".join(str(m).strip() for m in models_raw)
+
+    groups_raw = body.get("groups", body.get("group", "default"))
+    if isinstance(groups_raw, list):
+        group_val = groups_raw[0] if groups_raw else "default"
+    else:
+        group_val = groups_raw
+
+    # Serialize dict/object fields to JSON strings for DB text columns
     channel = Channel(
         name=body.get("name", ""),
         type=body.get("type", 0),
         key=body.get("key", ""),
         status=body.get("status", 1),
         base_url=body.get("base_url", ""),
-        models=body.get("models", ""),
-        group=body.get("group", "default"),
+        models=models_raw,
+        group=group_val,
         weight=body.get("weight", 0),
         priority=body.get("priority", 0),
-        model_mapping=body.get("model_mapping", ""),
-        created_time=now,
-        created_at=now,
-        updated_at=now,
+        model_mapping=_json_str(body.get("model_mapping")),
+        other=_json_str(body.get("other")),
+        model_configs=_json_str(body.get("model_configs")),
+        system_prompt=_json_str(body.get("system_prompt")),
+        config=_json_str(body.get("config")),
+        rate_limit=body.get("ratelimit", 0),
+        created_time=now_s,
+        created_at=now_ms,
+        updated_at=now_ms,
     )
     db.add(channel)
     await db.commit()
@@ -129,10 +164,21 @@ async def update_channel(
         return GenericApiResponse(data=_channel_to_dict(channel))
 
     # Full field update
+    text_fields = {"model_mapping", "other", "model_configs", "system_prompt", "config"}
     for field in ("name", "type", "key", "status", "base_url", "models",
-                   "group", "weight", "priority", "model_mapping", "other"):
+                   "group", "weight", "priority", "model_mapping", "other",
+                   "model_configs", "system_prompt", "config"):
         if field in body:
-            setattr(channel, field, body[field])
+            val = body[field]
+            if field in text_fields:
+                val = _json_str(val)
+            setattr(channel, field, val)
+    # Map frontend field name to backend field
+    if "ratelimit" in body:
+        channel.rate_limit = body["ratelimit"]
+    if "groups" in body:
+        g = body["groups"]
+        channel.group = g[0] if isinstance(g, list) and g else "default"
     channel.updated_at = int(time.time() * 1000)
     await db.commit()
     await db.refresh(channel)
@@ -177,25 +223,29 @@ async def test_all_channels(
             api_key = key_map.get(channel.type, "")
 
         try:
+            test_start = int(time.time() * 1000)
             test_url = f"{base_url.rstrip('/')}/models"
             async with httpx.AsyncClient(timeout=10) as client:
                 headers = {"Authorization": f"Bearer {api_key}"} if api_key else {}
                 resp = await client.get(test_url, headers=headers)
-                channel.test_time = int(time.time() * 1000)
+                channel.test_time = test_start
                 status = "ok" if resp.is_success else "error"
+                elapsed = int(time.time() * 1000) - test_start
+                channel.response_time = elapsed
 
             # Log the test request
-            now_ms = int(time.time() * 1000)
             db.add(Log(
                 user_id=0,
-                created_at=now_ms,
-                type=1,
-                content=f"Channel test: {channel.name} ({base_url})",
+                created_at=test_start,
+                type=5,
+                content=f"[{status}] {channel.name} — HTTP {resp.status_code} ({elapsed}ms)",
                 username="admin",
-                model_name="",
+                token_name="channel_test",
+                model_name=channel.name if channel.name else "",
                 quota=0,
                 channel_id=channel.id,
                 request_id=uuid.uuid4().hex,
+                elapsed_time=elapsed,
             ))
 
             results.append({
@@ -203,9 +253,22 @@ async def test_all_channels(
                 "name": channel.name,
                 "status": status,
                 "http_status": resp.status_code,
+                "time": round(elapsed / 1000, 3),
             })
         except Exception as exc:
-            results.append({"channel_id": channel.id, "name": channel.name, "status": "error", "detail": str(exc)})
+            db.add(Log(
+                user_id=0,
+                created_at=int(time.time() * 1000),
+                type=5,
+                content=f"[error] {channel.name} — {exc}",
+                username="admin",
+                token_name="channel_test",
+                model_name=channel.name if channel.name else "",
+                quota=0,
+                channel_id=channel.id,
+                request_id=uuid.uuid4().hex,
+            ))
+            results.append({"channel_id": channel.id, "name": channel.name, "status": "error", "detail": str(exc), "time": 0})
 
     await db.commit()
     return GenericApiResponse(data={"total": len(channels), "results": results})
@@ -216,21 +279,33 @@ async def channel_default_pricing(
     type: int = Query(0, alias="type"),
     _=Depends(admin_auth),
 ):
-    """Return default pricing for a given channel type."""
+    """Return default pricing for a given channel type, including model_configs as JSON string."""
     from app.relay.registry import registry
     adaptor = registry.get(type)
     if not adaptor:
         return GenericApiResponse(data={})
-    from app.relay.adaptor import ModelConfig
+
     models = adaptor.get_supported_models()
     pricing = {}
+    model_configs = {}
     for name, cfg in models.items():
         pricing[name] = {
             "input_price": cfg.input_ratio,
             "output_price": cfg.output_ratio,
             "cached_input_price": cfg.cached_input_ratio,
         }
-    return GenericApiResponse(data=pricing)
+        model_configs[name] = {
+            "ratio": cfg.input_ratio,
+            "completion_ratio": cfg.output_ratio,
+            "max_tokens": cfg.max_tokens,
+        }
+
+    import json
+    return GenericApiResponse(data={
+        "model_configs": json.dumps(model_configs),
+        "tooling": json.dumps({"whitelist": [], "pricing": {}}),
+        "pricing": pricing,
+    })
 
 
 @router.get("/api/channel/metadata")
@@ -283,35 +358,41 @@ async def test_channel(
         api_key = key_map.get(channel.type, "")
 
     try:
+        test_start = int(time.time() * 1000)
         test_url = f"{base_url.rstrip('/')}/models"
         async with httpx.AsyncClient(timeout=10) as client:
             headers = {"Authorization": f"Bearer {api_key}"} if api_key else {}
             resp = await client.get(test_url, headers=headers)
-            channel.test_time = int(time.time() * 1000)
+            channel.test_time = test_start
             status = "ok" if resp.is_success else "error"
+            elapsed = int(time.time() * 1000) - test_start
 
-        # Log the test request
-        now_ms = int(time.time() * 1000)
         db.add(Log(
             user_id=0,
-            created_at=now_ms,
-            type=1,
-            content=f"Channel test: {channel.name} ({base_url})",
+            created_at=test_start,
+            type=5,
+            content=f"[{status}] {channel.name} — HTTP {resp.status_code} ({elapsed}ms)",
             username="admin",
-            model_name="",
+            token_name="channel_test",
+            model_name=channel.name,
             quota=0,
             channel_id=channel_id,
             request_id=uuid.uuid4().hex,
+            elapsed_time=elapsed,
         ))
         await db.commit()
 
-        return GenericApiResponse(data={
-            "channel_id": channel_id,
-            "status": status,
-            "http_status": resp.status_code,
-        })
+        return {
+            "success": True,
+            "data": {"channel_id": channel_id, "status": status, "http_status": resp.status_code},
+            "time": round(elapsed / 1000, 3),
+        }
     except Exception as exc:
-        return GenericApiResponse(data={"channel_id": channel_id, "status": "error", "detail": str(exc)})
+        return {
+            "success": False,
+            "message": str(exc),
+            "time": 0,
+        }
 
 
 @router.delete("/api/channel/disabled")
@@ -363,6 +444,13 @@ async def delete_channel(
     return GenericApiResponse(data={"deleted": channel_id})
 
 
+def _to_seconds(ts: int) -> int:
+    """Normalize timestamp to seconds (detect and convert ms values)."""
+    if ts > 100000000000:  # 13+ digits = milliseconds
+        return ts // 1000
+    return ts
+
+
 def _channel_to_dict(c: Channel) -> dict:
     """Convert Channel ORM to dict matching frontend Channel interface."""
     return {
@@ -378,6 +466,13 @@ def _channel_to_dict(c: Channel) -> dict:
         "priority": c.priority,
         "weight": c.weight,
         "other_info": c.other or "",
-        "created_at": c.created_at,
-        "updated_at": c.updated_at,
+        "model_configs": c.model_configs or "",
+        "system_prompt": c.system_prompt or "",
+        "config": c.config or "",
+        "rate_limit": c.rate_limit or 0,
+        "created_time": _to_seconds(c.created_time),
+        "created_at": _to_seconds(c.created_at),
+        "updated_at": _to_seconds(c.updated_at),
+        "test_time": _to_seconds(c.test_time),
+        "response_time": _to_seconds(c.response_time),
     }

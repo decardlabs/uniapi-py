@@ -113,13 +113,15 @@ export function SelectionListManager({
         {actions && <div className="flex flex-col gap-2 sm:flex-row sm:flex-wrap [&>*]:w-full sm:[&>*]:w-auto">{actions}</div>}
 
         <div className="flex flex-col gap-2 sm:flex-row sm:flex-wrap">
-          <Input
-            value={searchTerm}
-            onChange={(event) => setSearchTerm(event.target.value)}
-            placeholder={searchPlaceholder}
-            disabled={disabled}
-            className="w-full sm:flex-1 sm:min-w-[220px]"
-          />
+          {searchPlaceholder && (
+            <Input
+              value={searchTerm}
+              onChange={(event) => setSearchTerm(event.target.value)}
+              placeholder={searchPlaceholder}
+              disabled={disabled}
+              className="w-full sm:flex-1 sm:min-w-[220px]"
+            />
+          )}
           {customPlaceholder && (
             <div className="flex w-full flex-col gap-2 sm:flex-1 sm:min-w-[260px] sm:flex-row">
               <Input

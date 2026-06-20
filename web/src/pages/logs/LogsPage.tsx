@@ -37,6 +37,7 @@ const LOG_TYPE_TRANSLATION_KEYS: Record<number, string> = {
   [LOG_TYPES.MANAGE]: 'manage',
   [LOG_TYPES.SYSTEM]: 'system',
   [LOG_TYPES.TEST]: 'test',
+  [LOG_TYPES.PRE_CONSUME]: 'pre_consume',
 };
 
 const formatLatency = (ms?: number, fallback: string = '-') => {

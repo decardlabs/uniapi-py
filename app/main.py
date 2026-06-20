@@ -91,8 +91,10 @@ async def lifespan(app: FastAPI) -> AsyncGenerator:
             fallback_model="deepseek-v4-pro",
         )
         app.state.fusion_engine = FusionEngine(fusion_registry, fusion_config)
+        app.state.fusion_registry = fusion_registry
     else:
         app.state.fusion_engine = None
+        app.state.fusion_registry = None
 
     # Seed default data
     await _seed_defaults()
@@ -163,7 +165,7 @@ async def _seed_defaults():
 def create_app() -> FastAPI:
     app = FastAPI(
         title="UniAPI Python Backend",
-        version="0.9.2",
+        version="0.9.3",
         lifespan=lifespan,
     )
 
@@ -193,7 +195,7 @@ def create_app() -> FastAPI:
     # Health check (before web router to avoid catch-all interception)
     @app.get("/health")
     async def health():
-        return {"status": "healthy", "service": "uniapi-py", "version": "0.9.2"}
+        return {"status": "healthy", "service": "uniapi-py", "version": "0.9.3"}
 
     # Admin stats
     @app.get("/api/admin/stats")
@@ -245,8 +247,8 @@ def create_app() -> FastAPI:
     app.include_router(admin_budget_router)
     app.include_router(cache_analytics_router)
     app.include_router(mcp_servers_router)
-    app.include_router(web_router)
     app.include_router(relay_router)
+    app.include_router(web_router)
 
     return app
 

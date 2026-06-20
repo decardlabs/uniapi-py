@@ -6,6 +6,7 @@ export const LOG_TYPES = {
   MANAGE: 3,
   SYSTEM: 4,
   TEST: 5,
+  PRE_CONSUME: 6,
 } as const;
 
 // LOG_TYPE_LABELS maps log type codes to human-readable labels used across the UI.
@@ -16,6 +17,7 @@ export const LOG_TYPE_LABELS: Record<number, string> = {
   [LOG_TYPES.MANAGE]: 'Management',
   [LOG_TYPES.SYSTEM]: 'System',
   [LOG_TYPES.TEST]: 'Test',
+  [LOG_TYPES.PRE_CONSUME]: 'Pre-consume',
 };
 
 // LOG_TYPE_OPTIONS feeds select controls with value/label pairs derived from LOG_TYPE_LABELS.

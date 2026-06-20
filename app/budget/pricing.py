@@ -1,7 +1,7 @@
 """Real-currency pricing data and cost calculation for BudgetArbiter.
 
 Pricing in yuan (¥) per million tokens.
-Single source of truth — derived from docs/大模型接入协议研究_Review.md §6.
+Aligned with app/relay/adaptors/*/pricing.py.
 """
 from __future__ import annotations
 
@@ -11,20 +11,30 @@ MODEL_PRICING_YUAN: dict[str, dict[str, float]] = {
     # DeepSeek
     "deepseek-v4-pro": {"input": 3.0, "output": 6.0, "cache_hit": 0.025},
     "deepseek-v4-flash": {"input": 1.0, "output": 2.0, "cache_hit": 0.02},
-    # Qwen
-    "qwen3.7-max": {"input": 12.0, "output": 36.0, "cache_hit": 3.0},
-    "qwen3.7-plus": {"input": 2.0, "output": 8.0, "cache_hit": 0.5},
-    "qwen3-coder-plus": {"input": 7.34, "output": 36.7, "cache_hit": 1.0},
-    "qwen3-coder-flash": {"input": 0.5, "output": 2.0, "cache_hit": 0.125},
     # GLM
-    "glm-5.2": {"input": 8.0, "output": 28.0, "cache_hit": 2.0},
-    "glm-5.1": {"input": 8.0, "output": 28.0, "cache_hit": 2.0},
-    "glm-5": {"input": 10.8, "output": 32.4, "cache_hit": 2.0},
-    "glm-4-flash": {"input": 0.0, "output": 0.0, "cache_hit": 0.0},  # 免费
-    "glm-4": {"input": 0.1, "output": 0.3, "cache_hit": 0.0},
+    "glm-5.2": {"input": 0, "output": 0, "cache_hit": 0},
+    "glm-5.1": {"input": 10.1, "output": 31.7, "cache_hit": 2.0},
+    "glm-5": {"input": 7.2, "output": 23.0, "cache_hit": 1.44},
+    "glm-4.7": {"input": 4.3, "output": 15.8, "cache_hit": 0.86},
+    "glm-4.5-air": {"input": 1.4, "output": 7.9, "cache_hit": 0.28},
+    "glm-4.7-flash": {"input": 0, "output": 0, "cache_hit": 0},
+    "glm-z1-flash": {"input": 0, "output": 0, "cache_hit": 0},
+    # Qwen
+    "qwen3.7-max": {"input": 12.0, "output": 36.0, "cache_hit": 2.4},
+    "qwen3.7-plus": {"input": 2.0, "output": 8.0, "cache_hit": 0.4},
+    "qwen3.6-plus": {"input": 2.0, "output": 12.0, "cache_hit": 0.4},
+    "qwen3.6-flash": {"input": 0.5, "output": 2.0, "cache_hit": 0.1},
+    "qwen3.5-plus": {"input": 0.8, "output": 4.8, "cache_hit": 0.16},
+    "qwen3.5-flash": {"input": 0.35, "output": 1.4, "cache_hit": 0.07},
+    "qwen3-coder-plus": {"input": 7.34, "output": 36.7, "cache_hit": 1.47},
+    "qwen3-coder-flash": {"input": 2.0, "output": 8.0, "cache_hit": 0.4},
+    "qwen-turbo": {"input": 0.3, "output": 1.2, "cache_hit": 0.06},
     # Kimi
+    "kimi-k2.7-code": {"input": 6.5, "output": 27.0, "cache_hit": 1.3},
+    "kimi-k2.7-code-highspeed": {"input": 13.0, "output": 54.0, "cache_hit": 2.6},
     "kimi-k2.6": {"input": 6.5, "output": 27.0, "cache_hit": 1.1},
     "kimi-k2.5": {"input": 4.0, "output": 21.0, "cache_hit": 0.7},
+    "kimi-k2": {"input": 2.0, "output": 10.0, "cache_hit": 0.4},
     # MiniMax
     "MiniMax-M3": {"input": 2.16, "output": 8.64, "cache_hit": 0.43},
     "MiniMax-M2.7": {"input": 2.16, "output": 8.64, "cache_hit": 0.43},

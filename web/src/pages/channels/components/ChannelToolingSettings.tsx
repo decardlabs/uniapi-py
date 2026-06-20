@@ -93,27 +93,6 @@ export const ChannelToolingSettings = ({ form, defaultTooling, tr, notify }: Cha
             </div>
 
             <div className="space-y-2">
-              <div className="text-xs font-medium text-muted-foreground">{tr('tooling.available_tools', 'Available Tools')}</div>
-              <div className="flex flex-wrap gap-2 max-h-[100px] overflow-y-auto p-2 border rounded bg-background">
-                {availableDefaultTools.map((tool) => {
-                  const isSelected = currentToolWhitelist.some((t) => t.toLowerCase() === tool.toLowerCase());
-                  const hasPricing = pricedToolSet.has(tool.toLowerCase());
-                  return (
-                    <Badge
-                      key={tool}
-                      variant={isSelected ? 'default' : 'outline'}
-                      className={`cursor-pointer hover:bg-primary/90 ${hasPricing ? 'border-info-border' : ''}`}
-                      onClick={() => !isSelected && addToolToWhitelist(tool)}
-                    >
-                      {tool}
-                      {hasPricing && <span className="ml-1 text-[10px] text-info">($)</span>}
-                    </Badge>
-                  );
-                })}
-              </div>
-            </div>
-
-            <div className="space-y-2">
               <div className="text-xs font-medium text-muted-foreground">
                 {tr('tooling.whitelisted_tools', 'Whitelisted Tools ({{count}})', { count: currentToolWhitelist.length })}
               </div>

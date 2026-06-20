@@ -114,7 +114,7 @@ class TestPreCheck:
 
         decision = await arbiter.pre_check(
             user_id=103,
-            model="glm-4-flash",
+            model="glm-4.7-flash",
             estimated_input_tokens=10000,
             estimated_output_tokens=5000,
         )

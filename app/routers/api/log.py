@@ -16,7 +16,7 @@ def _log_to_dict(log: Log) -> dict:
     return {
         "id": log.id,
         "user_id": log.user_id,
-        "created_at": log.created_at,
+        "created_at": log.created_at // 1000 if log.created_at else 0,
         "type": log.type,
         "content": log.content,
         "username": log.username,
@@ -27,6 +27,7 @@ def _log_to_dict(log: Log) -> dict:
         "completion_tokens": log.completion_tokens,
         "cached_prompt_tokens": log.cached_prompt_tokens,
         "cached_completion_tokens": log.cached_completion_tokens,
+        "channel": log.channel_id,
         "channel_id": log.channel_id,
         "request_id": log.request_id,
         "trace_id": log.trace_id,

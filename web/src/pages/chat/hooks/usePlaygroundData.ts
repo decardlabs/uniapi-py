@@ -182,20 +182,8 @@ export const usePlaygroundData = () => {
     });
 
     const sortedOptions = options.slice().sort((a, b) => a.label.localeCompare(b.label));
-
-    const query = modelInputValue.trim().toLowerCase();
-    if (!query) {
-      return sortedOptions;
-    }
-
-    const filtered = sortedOptions.filter((option) => {
-      const labelLower = option.label.toLowerCase();
-      const keyLower = option.key.toLowerCase();
-      return labelLower.includes(query) || keyLower.includes(query);
-    });
-
-    return filtered;
-  }, [models, modelInputValue, selectedChannel, t]);
+    return sortedOptions;
+  }, [models, selectedChannel, t]);
 
   const handleModelQueryChange = useCallback((value: string) => {
     setModelInputValue(value);

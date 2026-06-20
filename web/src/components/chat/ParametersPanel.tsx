@@ -391,18 +391,16 @@ export function ParametersPanel({
                 </div>
               )}
             </div>
-            <AutosuggestInput
-              value={channelInputValue}
-              disabled={isLoadingChannels}
-              isLoading={isLoadingChannels}
-              placeholder={isLoadingChannels ? t('playground.parameters.channel.loading') : t('playground.parameters.channel.placeholder')}
-              suggestions={channelSuggestions}
-              activeKey={selectedChannel}
-              emptyText={t('playground.parameters.channel.no_match')}
-              onQueryChange={onChannelQueryChange}
-              onSelect={onChannelSelect}
-              onClear={onChannelClear}
-            />
+            <Select value={selectedChannel} onValueChange={onChannelSelect} disabled={isLoadingChannels || channelSuggestions.length === 0}>
+              <SelectTrigger className="w-full">
+                <SelectValue placeholder={isLoadingChannels ? t('playground.parameters.channel.loading') : t('playground.parameters.channel.placeholder')} />
+              </SelectTrigger>
+              <SelectContent>
+                {channelSuggestions.map((s) => (
+                  <SelectItem key={s.key} value={s.key}>{s.label}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
             <div className="text-xs text-muted-foreground">
               {selectedChannel
                 ? t('playground.parameters.channel.showing_associated', { channel: channelInputValue || 'the selected channel' })
@@ -423,18 +421,16 @@ export function ParametersPanel({
                 </div>
               )}
             </div>
-            <AutosuggestInput
-              value={modelInputValue}
-              disabled={isModelInputDisabled}
-              isLoading={isLoadingModels}
-              placeholder={modelPlaceholder}
-              suggestions={modelSuggestions}
-              activeKey={selectedModel}
-              emptyText={modelEmptyText}
-              onQueryChange={onModelQueryChange}
-              onSelect={onModelSelect}
-              onClear={onModelClear}
-            />
+            <Select value={selectedModel} onValueChange={onModelSelect} disabled={isModelInputDisabled || modelSuggestions.length === 0}>
+              <SelectTrigger className="w-full">
+                <SelectValue placeholder={modelPlaceholder} />
+              </SelectTrigger>
+              <SelectContent>
+                {modelSuggestions.map((s) => (
+                  <SelectItem key={s.key} value={s.key}>{s.label}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
             <div className="text-xs text-muted-foreground">
               {selectedModel
                 ? t('playground.parameters.model.active', { model: modelInputValue || selectedModel })

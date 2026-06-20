@@ -54,8 +54,8 @@ async def test_glm_supported_models(client: AsyncClient):
     models = GLMAdaptor().get_supported_models()
     assert "glm-5.2" in models
     assert "glm-4.7" in models
-    assert models["glm-5.2"].input_ratio > 0
-    assert models["glm-5.2"].output_ratio > 0
+    assert models["glm-5.1"].input_ratio > 0
+    assert models["glm-5.1"].output_ratio > 0
 
 
 @pytest.mark.asyncio

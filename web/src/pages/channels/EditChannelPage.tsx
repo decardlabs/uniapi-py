@@ -16,7 +16,6 @@ import { ChannelSpecificConfig } from './components/ChannelSpecificConfig';
 import { ChannelToolingSettings } from './components/ChannelToolingSettings';
 import { ChannelTypeChangeDialog } from './components/ChannelTypeChangeDialog';
 import { ChannelDynamicParams } from './components/ChannelDynamicParams';
-import { MAINSTREAM_MODELS } from './constants';
 import { useChannelForm } from './hooks/useChannelForm';
 
 export function EditChannelPage() {
@@ -85,22 +84,6 @@ export function EditChannelPage() {
     );
   }
 
-
-  const rawModels = Array.isArray(modelsCatalog[normalizedChannelType ?? -1]) ? modelsCatalog[normalizedChannelType ?? -1] : [];
-  const whitelist = MAINSTREAM_MODELS[normalizedChannelType ?? -1];
-  const hasCuratedModels = Array.isArray(whitelist) && whitelist.length > 0;
-  const availableModels = rawModels
-    .filter((model) => typeof model === 'string' && !!model && (!hasCuratedModels || whitelist.includes(model)))
-    .map((model) => ({ id: model, name: String(model) }))
-    .filter((m) => typeof m.name === 'string' && m.name)
-    .sort((a, b) => {
-      const aName = typeof a?.name === 'string' ? a.name : '';
-      const bName = typeof b?.name === 'string' ? b.name : '';
-      if (!aName && !bName) return 0;
-      if (!aName) return 1;
-      if (!bName) return -1;
-      return aName.localeCompare(bName);
-    });
 
   const currentCatalogModels = modelsCatalog[normalizedChannelType ?? -1] ?? [];
 
@@ -190,9 +173,7 @@ export function EditChannelPage() {
 
                 <ChannelModelSettings
                   form={form}
-                  availableModels={availableModels}
                   currentCatalogModels={currentCatalogModels}
-                  hasCuratedModels={hasCuratedModels}
                   defaultPricing={defaultPricing}
                   notify={notify}
                   tr={tr}
