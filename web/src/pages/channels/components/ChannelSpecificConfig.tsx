@@ -16,7 +16,7 @@ interface ChannelSpecificConfigProps {
 }
 
 // Channel types that have their own dedicated base_url field in the channel-specific config
-const CHANNEL_TYPES_WITH_INTERNAL_BASE_URL = new Set<number>([50]);
+const CHANNEL_TYPES_WITH_INTERNAL_BASE_URL = new Set<number>([]);
 
 export const ChannelSpecificConfig = ({ form, normalizedChannelType, defaultBaseURL, baseURLEditable, tr }: ChannelSpecificConfigProps) => {
   const fieldHasError = (name: string) => !!(form.formState.errors as any)?.[name];
@@ -72,30 +72,6 @@ export const ChannelSpecificConfig = ({ form, normalizedChannelType, defaultBase
         return (
           <div className="space-y-4 p-4 border rounded-lg bg-info-muted">
             <h4 className="font-medium text-info-foreground">{tr('openai_compatible.heading', 'OpenAI Compatible Configuration')}</h4>
-            <FormField
-              control={form.control}
-              name="base_url"
-              render={({ field }) => (
-                <FormItem>
-                  <LabelWithHelp
-                    label={tr('openai_compatible.base_url.label', 'Base URL *')}
-                    help={tr(
-                      'openai_compatible.base_url.help',
-                      'Base URL of the OpenAI-compatible endpoint, e.g., https://api.your-provider.com. /v1 is appended automatically when required.'
-                    )}
-                  />
-                  <FormControl>
-                    <Input
-                      placeholder={defaultBaseURL || tr('openai_compatible.base_url.placeholder', 'https://api.your-provider.com')}
-                      className={errorClass('base_url')}
-                      required
-                      {...field}
-                    />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
             <FormField
               control={form.control}
               name="config.api_format"

@@ -180,8 +180,9 @@ export const useChatRequest = (config: ChatRequestConfig) => {
               try {
                 const parsed = JSON.parse(data);
 
-                if (parsed.type === 'error') {
-                  const errorMsg = parsed.error || 'Stream error';
+                if (parsed.type === 'error' || parsed.error) {
+                  const errorDetail = parsed.error || {};
+                  const errorMsg = typeof errorDetail === 'string' ? errorDetail : (errorDetail.message || 'Stream error');
                   throw new Error(errorMsg);
                 }
 

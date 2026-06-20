@@ -492,7 +492,7 @@ export function ParametersPanel({
                   {topP[0]}
                 </Badge>
               </div>
-              <Slider value={topP} onValueChange={onTopPChange} max={1} min={0} step={0.1} className="w-full" />
+              <Slider value={topP} onValueChange={onTopPChange} max={1} min={0} step={0.05} className="w-full" />
               <div className="text-xs text-muted-foreground">{t('playground.parameters.top_p.description')}</div>
             </div>
           )}

@@ -58,10 +58,12 @@ async def create_token(
     remain_quota: int = 0,
     unlimited_quota: bool = False,
     expired_time: int = -1,
-    models: Optional[str] = None,
+    models: Optional[str | list[str]] = None,
     subnet: Optional[str] = None,
 ) -> Token:
     now = int(time.time())
+    if isinstance(models, list):
+        models = ",".join(str(m) for m in models)
     token = Token(
         user_id=user_id,
         key=generate_token_key(),
@@ -92,7 +94,7 @@ async def update_token(
     remain_quota: Optional[int] = None,
     unlimited_quota: Optional[bool] = None,
     expired_time: Optional[int] = None,
-    models: Optional[str] = None,
+    models: Optional[str | list[str]] = None,
     subnet: Optional[str] = None,
     status: Optional[int] = None,
 ) -> Token:
@@ -110,6 +112,8 @@ async def update_token(
     if expired_time is not None:
         token.expired_time = expired_time
     if models is not None:
+        if isinstance(models, list):
+            models = ",".join(str(m) for m in models)
         token.models = models
     if subnet is not None:
         token.subnet = subnet

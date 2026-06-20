@@ -103,8 +103,9 @@ export const useChatCompletionStream = ({
               try {
                 const parsed = JSON.parse(data);
 
-                if (parsed.type === 'error') {
-                  const errorMsg = parsed.error || 'Stream error';
+                if (parsed.type === 'error' || parsed.error) {
+                  const errorDetail = parsed.error || {};
+                  const errorMsg = typeof errorDetail === 'string' ? errorDetail : (errorDetail.message || 'Stream error');
                   setMessages((prev) => {
                     const messagesWithoutLastAssistant = prev.slice(0, -1);
                     const streamErrorMessage: Message = {

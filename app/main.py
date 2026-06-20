@@ -165,7 +165,7 @@ async def _seed_defaults():
 def create_app() -> FastAPI:
     app = FastAPI(
         title="UniAPI Python Backend",
-        version="0.9.3",
+        version="0.9.4",
         lifespan=lifespan,
     )
 
@@ -195,7 +195,7 @@ def create_app() -> FastAPI:
     # Health check (before web router to avoid catch-all interception)
     @app.get("/health")
     async def health():
-        return {"status": "healthy", "service": "uniapi-py", "version": "0.9.3"}
+        return {"status": "healthy", "service": "uniapi-py", "version": "0.9.4"}
 
     # Admin stats
     @app.get("/api/admin/stats")
