@@ -8,7 +8,7 @@
 
 ## Status
 
-🚧 **Phases 1-4 已完成** — `82 tests, all GREEN`
+🚧 **Phases 1-6 已完成** — `178 tests, all GREEN`
 
 | Phase | 内容 | 状态 |
 |-------|------|------|
@@ -16,17 +16,20 @@
 | 2 | Management API: User/Token/Log/Options CRUD, Billing | ✅ |
 | 3 | Multi-format: NATIVE_FORMATS smart routing | ✅ |
 | 4 | Extensibility: BaseAdaptor ABC, Registry, Provider pattern | ✅ |
-| **GLM** | 新增供应商: GLM (Zhipu/智谱) adaptor | ✅ |
-| **Live Tests** | 真实账号探测框架 (10 scenarios × 供应商) | ✅ |
+| 5 | **Production**: Rate limiting, PII masking, Audit logging, Health check, Channel failover | ✅ |
+| 6 | **Fusion + Auto**: Multi-model ensemble, price-based auto routing, load balancing | ✅ |
 
-### 已接入供应商
+### 已接入供应商（5 家）
 
-> 当前已接入 2 家，后续按需求批量接入 Qwen、Kimi、MiniMax 等（接口模式成熟的厂商可在 1-2 天内完成适配）。参见 [app/relay/adaptors/](app/relay/adaptors/) 了解适配器结构。
+> 所有 5 家供应商均支持 OpenAI Chat 和 Anthropic Claude Messages 双协议直通。
 
-| Provider | NATIVE_FORMATS | Claude Code 体验 |
-|----------|---------------|------------------|
-| **DeepSeek** | `chat_completions`, `claude_messages` | 直通 `/v1/messages`，零转换损耗 |
-| **GLM (智谱)** | `chat_completions`, `claude_messages` | 直通 `open.bigmodel.cn/api/anthropic` |
+| Provider | NATIVE_FORMATS | 模型数 |
+|----------|---------------|--------|
+| **DeepSeek** | `chat_completions`, `claude_messages` | 2 |
+| **GLM (智谱)** | `chat_completions`, `claude_messages` | 7 |
+| **Qwen (百炼)** | `chat_completions`, `claude_messages` | 9 |
+| **Kimi (Moonshot)** | `chat_completions`, `claude_messages` | 5 |
+| **MiniMax** | `chat_completions`, `claude_messages` | 16 |
 
 ## Quick Start
 
@@ -301,7 +304,7 @@ uniapi-py/
 
 | Endpoint | Format | DeepSeek | GLM | Qwen | Kimi | MiniMax |
 |----------|--------|----------|-----|------|------|---------|
-| `POST /v1/chat/completions` | OpenAI Chat | Direct | `/api/paas/v4/...` | Direct | Direct | Direct |
+| `POST /v1/chat/completions` | OpenAI Chat | Direct | `/api/paas/v4/...` | Direct | Direct | Direct | 支持 `model="auto"`（价格最优选模型）和 `model="fusion"`（多模型融合） |
 | `POST /v1/messages` | Claude Messages | Direct (`/anthropic`) | `open.bigmodel.cn/api/anthropic` | Direct | Direct | Direct |
 | `POST /v1/responses` | OpenAI Response | Converted to Chat | Converted to Chat | Converted | Converted | Converted |
 | `GET /v1/models` | OpenAI | Model list | Model list | Model list | Model list | Model list |

@@ -20,6 +20,9 @@ python3 -m pytest tests/phase2/test_channel_crud.py::test_create_channel -v
 # Run tests matching keyword
 python3 -m pytest tests/ -k "deepseek" -v
 
+# Integration test (requires valid token)
+python3 tests/manual/relay_test.py --token sk-xxx --base-url http://localhost:8000
+
 # Live tests (requires real API keys)
 python -m tests.live.live_test --quick
 python -m tests.live.live_test --stream

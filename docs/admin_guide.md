@@ -1,6 +1,6 @@
 # UniAPI 管理员配置手册
 
-> 版本：0.8.0 | 适用：uniapi-py Python 后端
+> 版本：0.9.3 | 适用：uniapi-py Python 后端
 
 ---
 
@@ -140,7 +140,7 @@ model="deepseek-v4-pro"
 
 ### 3.2 自动模式（Auto）
 
-`model="auto"` 时，系统选择数据库中 priority 最高的已启用频道：
+`model="auto"` 时，系统在所有已启用渠道中按价格从低到高选择模型：
 
 ```bash
 curl -X POST http://localhost:8000/v1/chat/completions \
@@ -155,12 +155,15 @@ curl -X POST http://localhost:8000/v1/chat/completions \
 **路由流程**：
 ```
 model="auto"
-  → SELECT * FROM channels WHERE status=1 ORDER BY priority DESC LIMIT 1
-  → 取该 channel 的第一个 model 作为实际模型名
-  → 使用 channel 的 API key 和 base_url → 转发到上游
+  → SELECT * FROM channels WHERE status=1
+  → 遍历所有 channel 的模型列表
+  → 过滤出 Token 有权限的模型
+  → 按价格 (input_ratio + output_ratio) 升序排序
+  → 取最便宜的模型
+  → 使用该 channel 的 API key 和 base_url 转发到上游
 ```
 
-**使用场景**：前端不关心具体模型，由管理员在后台控制走哪个渠道。调整 channel.priority 即可切换。
+**使用场景**：前端不关心具体模型，系统自动选性价比最高的渠道。Token 的 `models` 字段控制可用范围。
 
 ### 3.3 融合模式（Fusion）
 
@@ -584,6 +587,8 @@ GLM_API_KEY=id.secret          # 建议：Panel
 ```
 
 缺少 API key 的模型会被自动跳过。如果所有 Panel 模型都不可用，返回 fallback 错误。
+
+**Panel 模型选择**：从 Token 授权的模型中，与 Fusion 注册表可用模型取交集。不足 2 个时自动降级为单模型直通。Judge 和 Synthesizer 取 Panel 中能力最强的模型。
 
 ### 9.3 默认策略
 
