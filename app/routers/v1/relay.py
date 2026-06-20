@@ -57,10 +57,12 @@ def _estimate_cost(body: dict, model_config: Any) -> int:
     if isinstance(max_tokens, str):
         max_tokens = 256
     completion_tokens = min(max_tokens, 1024)
-    return int(
-        prompt_tokens * model_config.input_ratio
-        + completion_tokens * model_config.output_ratio
-    )
+    if model_config:
+        return int(
+            prompt_tokens * model_config.input_ratio
+            + completion_tokens * model_config.output_ratio
+        )
+    return int(prompt_tokens + completion_tokens)  # fallback 1:1
 
 
 def _get_channel_api_key(channel_type: int = 39) -> str:
@@ -537,12 +539,36 @@ async def _handle_relay(request: Request, db: AsyncSession):
 
     # Post-consume: reconcile quota
     usage = upstream_response.get("usage", {})
+
+    # Parse cache tokens — support both DeepSeek and OpenAI formats
     prompt_tokens = usage.get("prompt_tokens", 0)
     completion_tokens = usage.get("completion_tokens", 0)
-    actual = int(
-        prompt_tokens * model_config.input_ratio
-        + completion_tokens * model_config.output_ratio
-    )
+
+    # DeepSeek format: prompt_cache_hit_tokens / prompt_cache_miss_tokens
+    cache_hit = usage.get("prompt_cache_hit_tokens") or 0
+    cache_miss = usage.get("prompt_cache_miss_tokens") or 0
+
+    # OpenAI format: prompt_tokens_details.cached_tokens
+    if not cache_hit and not cache_miss:
+        details = usage.get("prompt_tokens_details") or {}
+        cache_hit = details.get("cached_tokens") or 0
+        cache_miss = max(0, prompt_tokens - cache_hit)
+
+    # Fallback: legacy cached_tokens field
+    if not cache_hit and not cache_miss:
+        cache_hit = usage.get("cached_tokens") or 0
+        cache_miss = max(0, prompt_tokens - cache_hit)
+
+    # Cost: cached tokens at cached_input_ratio, miss tokens at input_ratio
+    if model_config:
+        actual = int(
+            cache_hit * model_config.cached_input_ratio
+            + cache_miss * model_config.input_ratio
+            + completion_tokens * model_config.output_ratio
+        )
+    else:
+        actual = int(cache_hit * 0.1 + cache_miss * 1.0 + completion_tokens * 1.0)
+
     diff = estimated - actual
     if diff > 0:
         if not token.unlimited_quota:
@@ -555,8 +581,8 @@ async def _handle_relay(request: Request, db: AsyncSession):
     provisional_log.prompt_tokens = prompt_tokens
     provisional_log.completion_tokens = completion_tokens
     provisional_log.elapsed_time = int((time.time() - relay_start) * 1000)
-    provisional_log.cached_prompt_tokens = usage.get("cached_tokens", 0)
-    provisional_log.cached_completion_tokens = usage.get("cached_tokens", 0)
+    provisional_log.cached_prompt_tokens = cache_hit
+    provisional_log.cached_completion_tokens = 0
     provisional_log.content = f"{relay_mode_name(relay_mode)} with {model_name}"
 
     # Budget: post-settle with actual usage
@@ -569,7 +595,7 @@ async def _handle_relay(request: Request, db: AsyncSession):
                 model=model_name,
                 input_tokens=prompt_tokens,
                 output_tokens=completion_tokens,
-                cache_hit_tokens=usage.get("cached_tokens", 0),
+                cache_hit_tokens=cache_hit,
             ),
             db_session=db,
         )
