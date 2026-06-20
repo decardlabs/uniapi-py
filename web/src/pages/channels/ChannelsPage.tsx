@@ -338,8 +338,8 @@ export function ChannelsPage() {
   const handleBulkTest = async () => {
     setBulkTesting(true);
     try {
-      // Unified API call - complete URL with /api prefix
-      await api.get('/api/channel/test');
+      // Unified API call - complete URL with /api prefix (use longer timeout, as per-model testing can take a while)
+      await api.get('/api/channel/test', { timeout: 300000 });
       load(pageIndex, pageSize);
       notify({
         type: 'info',

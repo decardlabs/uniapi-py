@@ -303,7 +303,7 @@ async def test_all_channels(
 
                 logger.info("TEST channel=%s model=%s url=%s", channel.name, model_name, upstream_url)
 
-                async with httpx.AsyncClient(timeout=15) as client:
+                async with httpx.AsyncClient(timeout=10) as client:
                     resp = await client.post(upstream_url, json=test_body, headers=headers)
                     elapsed = int(time.time() * 1000) - test_start
                     body = resp.json()
