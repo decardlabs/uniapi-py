@@ -114,6 +114,7 @@ async def stream_raw_passthrough(
     url: str,
     body: dict,
     headers: dict[str, str],
+    on_usage: Optional[Callable[[dict[str, Any]], None]] = None,
 ) -> AsyncGenerator[bytes, None]:
     """Raw byte-level SSE passthrough — preserves original wire format.
 
@@ -121,6 +122,10 @@ async def stream_raw_passthrough(
     downstream client expects (e.g. native Anthropic SSE from DeepSeek's
     ``/anthropic/v1/messages`` endpoint).  No line processing, no wrapping —
     the upstream bytes are yielded as-is.
+
+    When ``on_usage`` is provided, the byte stream is lightly scanned for
+    Anthropic SSE ``message_delta`` events carrying token usage. The
+    callback is invoked with the usage dict after the stream ends.
 
     Raises ``httpx.HTTPStatusError`` when the upstream returns a non-2xx
     status so the relay pipeline can handle the error properly instead of
@@ -133,8 +138,38 @@ async def stream_raw_passthrough(
         # HTTPStatusError handler can read the error response via exc.response
         if resp.status_code >= 400:
             resp.raise_for_status()
+
+        last_usage: dict[str, Any] | None = None
+        scanner = b""
+
         async for chunk in resp.aiter_bytes(chunk_size=4096):
             yield chunk
+
+            if not last_usage:
+                scanner += chunk
+                # Light scan for Anthropic SSE: event: message_delta + data with usage
+                if b"event: message_delta" in scanner and b'"usage"' in scanner:
+                    idx = scanner.rfind(b"event: message_delta")
+                    data_prefix = b"data: "
+                    data_start = scanner.find(data_prefix, idx)
+                    if data_start >= 0:
+                        data_end = scanner.find(b"\n", data_start)
+                        if data_end >= 0:
+                            try:
+                                data_line = scanner[data_start + len(data_prefix) : data_end]
+                                event_data = json.loads(data_line.decode("utf-8"))
+                                usage = event_data.get("usage")
+                                if usage:
+                                    last_usage = usage
+                            except (json.JSONDecodeError, UnicodeDecodeError):
+                                pass
+
+                # Prevent unbounded growth — keep last 16 KB
+                if len(scanner) > 16384:
+                    scanner = scanner[-8192:]
+
+        if last_usage is not None and on_usage is not None:
+            await on_usage(last_usage)
 
 
 async def relay_chat_completion(
@@ -156,8 +191,7 @@ async def relay_chat_completion(
         Ignored when ``raw_passthrough=True``.
     on_stream_usage : callable, optional
         Called with usage dict after a streaming SSE stream ends.
-        Only used when ``stream=True``. Not used when ``raw_passthrough=True``
-        (usage capture would require parsing the upstream SSE format).
+        Only used when ``stream=True``.
     raw_passthrough : bool
         When True and ``stream=True``, raw upstream bytes are yielded as-is
         without any line processing or format conversion.  Use this for
@@ -174,9 +208,12 @@ async def relay_chat_completion(
 
         if raw_passthrough:
             # Raw byte-level passthrough — preserves original SSE wire format.
-            # Usage capture is NOT attempted because parsing would require
-            # format-specific knowledge of the upstream SSE protocol.
-            raw_stream = stream_raw_passthrough(client, upstream_url, body, headers)
+            # Light-scans the byte stream for Anthropic SSE message_delta
+            # events to capture actual token usage.
+            raw_stream = stream_raw_passthrough(
+                client, upstream_url, body, headers,
+                on_usage=on_stream_usage,
+            )
             return StreamingResponse(
                 raw_stream,
                 media_type="text/event-stream",

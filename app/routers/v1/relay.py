@@ -83,11 +83,12 @@ def _make_stream_usage_callback(
         prompt_tokens = usage.get("prompt_tokens") or usage.get("input_tokens") or 0
         completion_tokens = usage.get("completion_tokens") or usage.get("output_tokens") or 0
 
-        # Parse cache tokens -- support DeepSeek and OpenAI formats
+        # Parse cache tokens -- support DeepSeek Chat, OpenAI, and Anthropic SSE formats
         cache_hit = (
-            usage.get("prompt_cache_hit_tokens")
-            or (usage.get("prompt_tokens_details") or {}).get("cached_tokens")
-            or usage.get("cached_tokens")
+            usage.get("prompt_cache_hit_tokens")             # DeepSeek Chat format
+            or (usage.get("prompt_tokens_details") or {}).get("cached_tokens")  # OpenAI format
+            or usage.get("cache_read_input_tokens")          # Anthropic SSE format (DeepSeek)
+            or usage.get("cached_tokens")                    # legacy fallback
             or 0
         )
         cache_miss = max(0, prompt_tokens - cache_hit)

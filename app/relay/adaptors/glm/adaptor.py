@@ -20,7 +20,13 @@ ANTHROPIC_BASE_URL = "https://open.bigmodel.cn/api/anthropic"
 
 class GLMAdaptor(BaseAdaptor):
     provider_name = "glm"
-    # Keep Claude Messages on conversion path for compatibility.
+    # GLM's Anthropic endpoint requires a separate "Coding Plan" subscription.
+    # Without it, the endpoint returns 429/rate_limit_error with
+    # "GLM Coding Plan 套餐已到期". The Chat-compatible endpoint
+    # (chat/completions) works with regular GLM API key credits,
+    # so we route Claude Messages through conversion → Chat endpoint
+    # → then convert back to Anthropic format. This allows users to
+    # use GLM via Claude Code without a Coding Plan.
     NATIVE_FORMATS = {"chat_completions"}
     DEFAULT_BASE_URL = DEFAULT_BASE_URL
 

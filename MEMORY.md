@@ -1,0 +1,2 @@
+- [Raw passthrough usage capture](.claude/memory/raw-passthrough-usage-capture.md) — native Claude streaming 不记录实际 token 用量的问题与修复
+- [GLM Coding Plan limitation](.claude/memory/glm-coding-plan-limitation.md) — GLM Anthropic 端点需额外套餐，走转换路径绕过
