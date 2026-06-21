@@ -211,12 +211,9 @@ async def list_groups(db: AsyncSession) -> list[str]:
     return [row[0] for row in result.all()]
 
 
-async def get_system_status(db: AsyncSession) -> dict:
+async def get_system_status(db: AsyncSession, version: str = "") -> dict:
     options_result = await db.execute(select(Option))
     options = {row.key: row.value for row in options_result.scalars().all()}
-
-    import importlib.metadata
-    version = importlib.metadata.version("uniapi-py")
 
     return {
         "version": version,

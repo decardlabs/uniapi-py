@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, Request
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.database import get_db
@@ -11,8 +11,8 @@ router = APIRouter(tags=["status"])
 
 
 @router.get("/api/status")
-async def status(db: AsyncSession = Depends(get_db)):
-    data = await get_system_status(db)
+async def status(request: Request, db: AsyncSession = Depends(get_db)):
+    data = await get_system_status(db, request.app.version)
     return GenericApiResponse(data=data)
 
 
