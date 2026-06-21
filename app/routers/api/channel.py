@@ -105,6 +105,22 @@ async def create_channel(
     if isinstance(models_raw, list):
         models_raw = ",".join(str(m).strip() for m in models_raw)
 
+    # Normalize model names to canonical form (handles case-insensitive aliases)
+    if models_raw:
+        from app.relay.registry import registry
+        normalized = []
+        for m_name in (x.strip() for x in models_raw.split(",") if x.strip()):
+            ct = registry.resolve_channel_type(m_name)
+            if ct is not None:
+                adaptor = registry.get(ct)
+                if adaptor:
+                    canonical = adaptor.resolve_model_name(m_name)
+                    if canonical:
+                        normalized.append(canonical)
+                        continue
+            normalized.append(m_name)
+        models_raw = ",".join(normalized)
+
     groups_raw = body.get("groups", body.get("group", "default"))
     if isinstance(groups_raw, list):
         group_val = groups_raw[0] if groups_raw else "default"
