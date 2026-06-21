@@ -64,12 +64,26 @@ async def token_auth(
     request: Request,
     db: AsyncSession = Depends(get_db),
 ):
-    """Authenticate via Bearer token for relay endpoints."""
+    """Authenticate via Bearer token or x-api-key for relay endpoints.
+
+    Supports both OpenAI-style ``Authorization: Bearer <key>`` and
+    Anthropic-style ``x-api-key: <key>`` headers so that Claude Code
+    (which uses the Anthropic SDK) can connect without reconfiguration.
+    """
+    raw_key: str | None = None
+
+    # 1. Authorization: Bearer <key> (OpenAI convention)
     auth_header = request.headers.get("Authorization", "")
-    if not auth_header.startswith("Bearer "):
+    if auth_header.startswith("Bearer "):
+        raw_key = auth_header[7:]
+
+    # 2. x-api-key: <key> (Anthropic convention — used by Claude Code)
+    if not raw_key:
+        raw_key = request.headers.get("x-api-key", "").strip()
+
+    if not raw_key:
         raise UnauthorizedException(message="No token provided")
 
-    raw_key = auth_header[7:]
     # Support admin channel pinning: token_key:channel_id
     channel_id = None
     token_key = raw_key

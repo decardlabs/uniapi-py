@@ -97,6 +97,9 @@ async def stream_chat_completion(
     async with client.stream(
         "POST", url, json=body, headers=headers, timeout=300
     ) as resp:
+        # Check status BEFORE consuming the body so error handlers can read it
+        if resp.status_code >= 400:
+            resp.raise_for_status()
         async for line in resp.aiter_lines():
             if line.startswith("data: "):
                 yield line + "\n\n"
@@ -118,10 +121,18 @@ async def stream_raw_passthrough(
     downstream client expects (e.g. native Anthropic SSE from DeepSeek's
     ``/anthropic/v1/messages`` endpoint).  No line processing, no wrapping —
     the upstream bytes are yielded as-is.
+
+    Raises ``httpx.HTTPStatusError`` when the upstream returns a non-2xx
+    status so the relay pipeline can handle the error properly instead of
+    silently streaming an error body as 200 OK.
     """
     async with client.stream(
         "POST", url, json=body, headers=headers, timeout=300
     ) as resp:
+        # Check status BEFORE consuming the body so the relay pipeline's
+        # HTTPStatusError handler can read the error response via exc.response
+        if resp.status_code >= 400:
+            resp.raise_for_status()
         async for chunk in resp.aiter_bytes(chunk_size=4096):
             yield chunk
 
