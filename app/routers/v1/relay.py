@@ -79,8 +79,8 @@ def _make_stream_usage_callback(
     from app.models.log import Log as LogModel
 
     async def _on_usage(usage: dict[str, Any]) -> None:
-        prompt_tokens = usage.get("prompt_tokens", 0) or 0
-        completion_tokens = usage.get("completion_tokens", 0) or 0
+        prompt_tokens = usage.get("prompt_tokens") or usage.get("input_tokens") or 0
+        completion_tokens = usage.get("completion_tokens") or usage.get("output_tokens") or 0
 
         # Parse cache tokens -- support DeepSeek and OpenAI formats
         cache_hit = (
