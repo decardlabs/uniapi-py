@@ -153,3 +153,46 @@ async def test_test_channel_endpoint(client: AsyncClient):
     # Should return 200 even if the test fails (the test result is in the body)
     assert resp.status_code == 200
     assert resp.json()["success"] is True
+
+
+@pytest.mark.asyncio
+async def test_test_channel_uses_adaptor_headers(client: AsyncClient, monkeypatch):
+    """GET /api/channel/test/{id} should use adaptor-specific auth headers."""
+    cookies = await _login(client)
+    create = await client.post("/api/channel/", json={
+        "name": "Test GLM Conn",
+        "type": 41,
+        "key": "test-id.test-secret",
+        "base_url": "https://open.bigmodel.cn/api/paas/v4",
+    }, cookies=cookies)
+    cid = create.json()["data"]["id"]
+
+    captured = {"headers": {}}
+
+    class _FakeResponse:
+        status_code = 200
+        is_success = True
+        text = "ok"
+
+    class _FakeAsyncClient:
+        def __init__(self, *args, **kwargs):
+            pass
+
+        async def __aenter__(self):
+            return self
+
+        async def __aexit__(self, exc_type, exc, tb):
+            return False
+
+        async def get(self, url, headers=None):
+            captured["headers"] = headers or {}
+            return _FakeResponse()
+
+    import app.routers.api.channel as channel_module
+
+    monkeypatch.setattr(channel_module.httpx, "AsyncClient", _FakeAsyncClient)
+
+    resp = await client.get(f"/api/channel/test/{cid}", cookies=cookies)
+    assert resp.status_code == 200
+    assert resp.json()["success"] is True
+    assert captured["headers"]["Authorization"].startswith("eyJ")

@@ -498,6 +498,39 @@ async def _handle_relay(request: Request, db: AsyncSession):
             model_config=model_config,
         )
 
+    async def _prepare_fallback_request(next_model_name: str, next_channel: Channel) -> tuple[dict, str, dict[str, str]] | None:
+        """Prepare upstream payload/url/headers using fallback channel context."""
+        nonlocal meta
+
+        next_api_key = next_channel.key or _get_channel_api_key(channel_type)
+        if not next_api_key:
+            return None
+
+        next_base_url = next_channel.base_url or adaptor.DEFAULT_BASE_URL
+        meta.channel_id = next_channel.id
+        meta.api_key = next_api_key
+        meta.base_url = next_base_url
+        meta.actual_model_name = next_model_name
+
+        body["model"] = next_model_name
+
+        if adaptor.supports_native_format(relay_mode):
+            next_body = adaptor.normalize_request_body(body)
+            next_url = adaptor.get_request_url(meta, relay_mode)
+        else:
+            if relay_mode == RelayMode.CLAUDE_MESSAGES:
+                next_body = adaptor.convert_claude_request(body)
+            elif relay_mode == RelayMode.RESPONSE_API:
+                from app.relay.converter import responses_to_chat
+
+                next_body = responses_to_chat(body)
+            else:
+                next_body = await adaptor.convert_request(body, meta)
+            next_url = adaptor.get_request_url(meta, RelayMode.CHAT_COMPLETIONS)
+
+        next_headers = adaptor.setup_request_headers(meta.api_key)
+        return next_body, next_url, next_headers
+
     for attempt in range(2):  # primary + 1 fallback
         try:
             upstream_response = await relay_chat_completion(
@@ -505,6 +538,7 @@ async def _handle_relay(request: Request, db: AsyncSession):
                 upstream_url=upstream_url,
                 api_key=meta.api_key,
                 stream=stream,
+                request_headers=upstream_headers,
                 output_format=output_format,
                 on_stream_usage=stream_usage_cb,
             )
@@ -528,17 +562,17 @@ async def _handle_relay(request: Request, db: AsyncSession):
                         model_name = fallback_model
                         model_config = adaptor.get_supported_models().get(model_name)
                         if model_config:
-                            body["model"] = model_name
-                            upstream_body = body
-                            upstream_url = adaptor.get_request_url(meta, relay_mode)
-                            upstream_headers = adaptor.setup_request_headers(
-                                _get_channel_api_key(channel_type)
-                            )
+                            failed_channel_id = _channel_id
+                            prepared = await _prepare_fallback_request(model_name, fallback_channel)
+                            if prepared is None:
+                                break
+                            upstream_body, upstream_url, upstream_headers = prepared
+                            _channel_id = fallback_channel.id
                             logger.info(
                                 "FALLBACK | %d -> model=%s | channel_type=%d",
                                 status, model_name, channel_type,
                             )
-                            await _record_channel_failure(_channel_id, db)
+                            await _record_channel_failure(failed_channel_id, db)
                             continue  # retry with fallback
 
             # Fallback failed or not available — refund and raise
@@ -570,14 +604,14 @@ async def _handle_relay(request: Request, db: AsyncSession):
                         model_name = fallback_model
                         model_config = adaptor.get_supported_models().get(model_name)
                         if model_config:
-                            body["model"] = model_name
-                            upstream_body = body
-                            upstream_url = adaptor.get_request_url(meta, relay_mode)
-                            upstream_headers = adaptor.setup_request_headers(
-                                _get_channel_api_key(channel_type)
-                            )
+                            failed_channel_id = _channel_id
+                            prepared = await _prepare_fallback_request(model_name, fallback_channel)
+                            if prepared is None:
+                                break
+                            upstream_body, upstream_url, upstream_headers = prepared
+                            _channel_id = fallback_channel.id
                             logger.info("FALLBACK | error -> model=%s", model_name)
-                            await _record_channel_failure(_channel_id, db)
+                            await _record_channel_failure(failed_channel_id, db)
                             continue
 
             # Refund on failure
@@ -607,8 +641,8 @@ async def _handle_relay(request: Request, db: AsyncSession):
     usage = upstream_response.get("usage", {})
 
     # Parse cache tokens — support both DeepSeek and OpenAI formats
-    prompt_tokens = usage.get("prompt_tokens", 0)
-    completion_tokens = usage.get("completion_tokens", 0)
+    prompt_tokens = usage.get("prompt_tokens") or usage.get("input_tokens") or 0
+    completion_tokens = usage.get("completion_tokens") or usage.get("output_tokens") or 0
 
     # DeepSeek format: prompt_cache_hit_tokens / prompt_cache_miss_tokens
     cache_hit = usage.get("prompt_cache_hit_tokens") or 0
@@ -705,16 +739,6 @@ async def list_models(request: Request, db: AsyncSession = Depends(get_db)):
     for adp in registry.all_adaptors():
         for m in adp.get_supported_models():
             models.append({"id": m, "object": "model", "created": now, "owned_by": adp.provider_name})
-    return {"object": "list", "data": models}
-async def list_models(request: Request, db: AsyncSession = Depends(get_db)):
-    await token_auth(request, db)
-    now = int(time.time())
-    models = []
-    for ct in [39, 41, 50, 25, 27]:
-        adaptor = _get_adaptor(ct)
-        if adaptor:
-            for m in adaptor.get_supported_models():
-                models.append({"id": m, "object": "model", "created": now, "owned_by": adaptor.provider_name})
     return {"object": "list", "data": models}
 
 

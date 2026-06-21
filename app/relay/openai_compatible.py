@@ -29,7 +29,7 @@ async def _capture_stream_usage(
     async for line in raw_stream:
         if line.startswith("data: ") and '"usage"' in line:
             try:
-                data = json.loads(line[6:])
+                data = json.loads(line[6:].strip())
                 choices = data.get("choices") or []
                 # Only the final chunk carries usage + finish_reason
                 if choices and choices[0].get("finish_reason"):
@@ -38,7 +38,7 @@ async def _capture_stream_usage(
                 pass
         yield line
     if last_usage is not None:
-        on_usage(last_usage)
+        await on_usage(last_usage)
 
 
 def make_chat_completion_response(
@@ -102,6 +102,7 @@ async def relay_chat_completion(
     upstream_url: str,
     api_key: str,
     stream: bool = False,
+    request_headers: Optional[dict[str, str]] = None,
     output_format: str = "chat",
     on_stream_usage: Optional[Callable[[dict[str, Any]], None]] = None,
 ) -> dict | StreamingResponse:
@@ -115,7 +116,7 @@ async def relay_chat_completion(
         Called with usage dict after a streaming SSE stream ends.
         Only used when ``stream=True``.
     """
-    headers = {
+    headers = request_headers or {
         "Authorization": f"Bearer {api_key}",
         "Content-Type": "application/json",
     }

@@ -20,7 +20,8 @@ ANTHROPIC_BASE_URL = "https://open.bigmodel.cn/api/anthropic"
 
 class GLMAdaptor(BaseAdaptor):
     provider_name = "glm"
-    NATIVE_FORMATS = {"chat_completions", "claude_messages"}
+    # Keep Claude Messages on conversion path for compatibility.
+    NATIVE_FORMATS = {"chat_completions"}
     DEFAULT_BASE_URL = DEFAULT_BASE_URL
 
     def get_request_url(self, meta: RelayMeta, relay_mode: int = 1) -> str:

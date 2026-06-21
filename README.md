@@ -21,12 +21,12 @@
 
 ### 已接入供应商（5 家）
 
-> 所有 5 家供应商均支持 OpenAI Chat 和 Anthropic Claude Messages 双协议直通。
+> DeepSeek/Qwen/Kimi/MiniMax 支持 OpenAI Chat 和 Anthropic Claude Messages 双协议直通；GLM（智谱）Claude Messages 走转换路径。
 
 | Provider | NATIVE_FORMATS | 模型数 |
 |----------|---------------|--------|
 | **DeepSeek** | `chat_completions`, `claude_messages` | 2 |
-| **GLM (智谱)** | `chat_completions`, `claude_messages` | 7 |
+| **GLM (智谱)** | `chat_completions` | 7 |
 | **Qwen (百炼)** | `chat_completions`, `claude_messages` | 9 |
 | **Kimi (Moonshot)** | `chat_completions`, `claude_messages` | 5 |
 | **MiniMax** | `chat_completions`, `claude_messages` | 16 |
@@ -90,11 +90,11 @@ class DeepSeekAdaptor(BaseAdaptor):
         return "/v1/chat/completions"
 
 class GLMAdaptor(BaseAdaptor):
-    NATIVE_FORMATS = {"chat_completions", "claude_messages"}
+    NATIVE_FORMATS = {"chat_completions"}
 
     def _get_path_for_mode(self, relay_mode: int) -> str:
         if relay_mode == CLAUDE_MESSAGES:
-            return "https://open.bigmodel.cn/api/anthropic"
+            return "https://open.bigmodel.cn/api/anthropic/v1/messages"
         return f"{BASE}/api/paas/v4/chat/completions"
 ```
 
@@ -339,7 +339,7 @@ uniapi-py/
 
 ## 测试
 
-### 单元测试 (82 tests)
+### 单元测试 (245 tests)
 
 ```bash
 pytest tests/ -v
@@ -402,7 +402,7 @@ registry.register(MY_CHANNEL_TYPE, MyProviderAdaptor)
 
 ## 技术栈
 
-- **Python 3.12+** / **FastAPI** — Web framework
+- **Python 3.11+** / **FastAPI** — Web framework
 - **SQLAlchemy 2.0** (async) — ORM
 - **Alembic** — Database migrations
 - **Pydantic v2** — Validation

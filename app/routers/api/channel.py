@@ -478,9 +478,11 @@ async def channel_metadata(
     _=Depends(admin_auth),
 ):
     """Return metadata (supported params, capabilities) for a channel type."""
+    adaptor = registry.get(type)
+    caps = list(adaptor.NATIVE_FORMATS) if adaptor else []
     return GenericApiResponse(data={
         "type": type,
-        "capabilities": ["chat_completions", "claude_messages"],
+        "capabilities": caps,
     })
 
 
@@ -496,13 +498,18 @@ async def test_channel(
     if not channel:
         raise HTTPException(status_code=404, detail="Channel not found")
 
+    from app.relay.registry import registry
+
+    adaptor = registry.get(channel.type)
+    if not adaptor:
+        return GenericApiResponse(
+            data={"channel_id": channel_id, "status": "skipped", "detail": f"No adaptor for channel type {channel.type}"}
+        )
+
     # Resolve base URL: channel setting → adaptor default
     base_url = channel.base_url
     if not base_url:
-        from app.relay.registry import registry
-        adaptor = registry.get(channel.type)
-        if adaptor:
-            base_url = adaptor.DEFAULT_BASE_URL
+        base_url = adaptor.DEFAULT_BASE_URL
 
     if not base_url:
         return GenericApiResponse(data={"channel_id": channel_id, "status": "skipped", "detail": "No base_url"})
@@ -525,7 +532,7 @@ async def test_channel(
         test_start = int(time.time() * 1000)
         test_url = f"{base_url.rstrip('/')}/models"
         async with httpx.AsyncClient(timeout=10) as client:
-            headers = {"Authorization": f"Bearer {api_key}"} if api_key else {}
+            headers = adaptor.setup_request_headers(api_key) if api_key else {}
             resp = await client.get(test_url, headers=headers)
             channel.test_time = test_start
             status = "ok" if resp.is_success else "error"
