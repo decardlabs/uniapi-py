@@ -53,6 +53,7 @@ rsync -avz --delete --ignore-errors \
   --exclude 'logs' \
   --exclude 'backups' \
   --exclude 'deploy.sh' \
+  --exclude '.user.ini' \
   ./ "$SSH_USER@$SSH_HOST:$REMOTE_DIR/"
 echo "  ✓ 代码同步完成"
 
@@ -106,8 +107,12 @@ ssh "$SSH_USER@$SSH_HOST" "test -d $REMOTE_DIR/.venv || python3 -m venv $REMOTE_
 ssh "$SSH_USER@$SSH_HOST" "cd $REMOTE_DIR && source .venv/bin/activate && pip install -e . -q"
 echo "  ✓ Python 依赖安装完成"
 
-# 目录权限：运行用户 root，www 可读（宝塔静态资源）
-ssh "$SSH_USER@$SSH_HOST" "chown -R root:www $REMOTE_DIR && chmod -R 750 $REMOTE_DIR && chmod -R 770 $REMOTE_DIR/logs $REMOTE_DIR/backups"
+# 权限设置：跳过宝塔面板的 .user.ini（带 immutable 属性）
+ssh "$SSH_USER@$SSH_HOST" "
+		find $REMOTE_DIR -not -name '.user.ini' -exec chown root:www {} + 2>/dev/null
+		find $REMOTE_DIR -not -name '.user.ini' -exec chmod 750 {} + 2>/dev/null
+		chmod -R 770 $REMOTE_DIR/logs $REMOTE_DIR/backups 2>/dev/null
+	"
 echo "  ✓ 权限设置完成"
 
 # ── 4. Nginx SSE 性能优化（堡塔 extension 目录，面板不覆盖） ──
