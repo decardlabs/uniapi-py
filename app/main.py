@@ -27,6 +27,7 @@ import app.models.user  # noqa: F401
 import app.models.token  # noqa: F401
 import app.models.log  # noqa: F401
 import app.models.option  # noqa: F401
+import app.models.passkey  # noqa: F401
 import app.models.channel  # noqa: F401
 import app.models.ability  # noqa: F401
 import app.models.budget  # noqa: F401
@@ -143,17 +144,66 @@ async def _seed_defaults():
         from app.models.token import Token
 
         default_options = {
+            # 品牌
             "SystemName": "UniAPI",
             "Logo": "",
             "Footer": "",
             "Notice": "",
             "About": "",
             "HomePageContent": "",
+            "Theme": "modern",
+            "TopUpLink": "",
+            "ChatLink": "",
             "ServerAddress": "",
+            # 登录/注册
             "PasswordLoginEnabled": "true",
             "PasswordRegisterEnabled": "true",
             "RegisterEnabled": "true",
             "EmailVerificationEnabled": "false",
+            "EmailDomainRestrictionEnabled": "false",
+            "EmailDomainWhitelist": "",
+            # Turnstile（非密钥部分）
+            "TurnstileCheckEnabled": "false",
+            "TurnstileSiteKey": "",
+            # GitHub OAuth（非密钥部分）
+            "GitHubOAuthEnabled": "false",
+            "GitHubClientId": "",
+            # SMTP（非密钥部分）
+            "SMTPServer": "",
+            "SMTPPort": "587",
+            "SMTPAccount": "",
+            "SMTPFrom": "",
+            # 其他 OAuth / SSO（非密钥部分）
+            "LarkClientId": "",
+            "OidcEnabled": "false",
+            "OidcWellKnown": "",
+            "OidcClientId": "",
+            "OidcAuthorizationEndpoint": "",
+            "OidcTokenEndpoint": "",
+            "OidcUserinfoEndpoint": "",
+            "WeChatAuthEnabled": "false",
+            "WeChatServerAddress": "",
+            "WeChatAccountQRCodeImageURL": "",
+            # 额度与计费
+            "QuotaForNewUser": "1000000",
+            "QuotaForInviter": "50000",
+            "QuotaForInvitee": "50000",
+            "QuotaRemindThreshold": "10000",
+            "PreConsumedQuota": "5000",
+            "GroupRatio": "1",
+            "QuotaPerUnit": "500000",
+            "DisplayInCurrencyEnabled": "false",
+            "DisplayTokenStatEnabled": "true",
+            "ApproximateTokenEnabled": "true",
+            "DefaultQuota": "1000000",
+            # 渠道与可靠性
+            "AutomaticDisableChannelEnabled": "false",
+            "AutomaticEnableChannelEnabled": "false",
+            "ChannelDisableThreshold": "10",
+            "RetryTimes": "3",
+            # 日志与集成
+            "LogConsumeEnabled": "true",
+            "MessagePusherAddress": "",
         }
         for key, value in default_options.items():
             result = await db.execute(select(Option).where(Option.key == key))
@@ -231,6 +281,10 @@ def create_app() -> FastAPI:
     from app.routers.api.admin_budget import router as admin_budget_router
     from app.routers.api.cache_analytics import router as cache_analytics_router
     from app.routers.api.mcp_servers import router as mcp_servers_router
+    from app.routers.api.verification import router as verification_router
+    from app.routers.api.oauth import router as oauth_router
+    from app.routers.api.totp import router as totp_router
+    from app.routers.api.passkey import router as passkey_router
     from app.routers.v1.relay import router as relay_router
 
     app.include_router(status_router)
@@ -239,6 +293,8 @@ def create_app() -> FastAPI:
     app.include_router(dashboard_router)
     app.include_router(topup_router)
     app.include_router(redemption_router)
+    app.include_router(passkey_router)  # must be before admin_user_router (/api/user/{user_id})
+    app.include_router(totp_router)    # must be before admin_user_router (/api/user/{user_id})
     app.include_router(admin_user_router)
     app.include_router(token_router)
     app.include_router(log_router)
@@ -249,6 +305,8 @@ def create_app() -> FastAPI:
     app.include_router(admin_budget_router)
     app.include_router(cache_analytics_router)
     app.include_router(mcp_servers_router)
+    app.include_router(verification_router)
+    app.include_router(oauth_router)
     app.include_router(relay_router)
     app.include_router(web_router)
 

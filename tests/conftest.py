@@ -96,6 +96,15 @@ async def client():
                 "PasswordLoginEnabled": "true",
                 "PasswordRegisterEnabled": "true",
                 "RegisterEnabled": "true",
+                "EmailVerificationEnabled": "false",
+                "TurnstileCheckEnabled": "false",
+                "TurnstileSiteKey": "",
+                "GitHubOAuthEnabled": "false",
+                "GitHubClientId": "",
+                "QuotaPerUnit": "500000",
+                "DisplayInCurrencyEnabled": "false",
+                "Theme": "modern",
+                "LogConsumeEnabled": "true",
             }.items():
                 result = await db.execute(select(Option).where(Option.key == key))
                 if not result.scalar_one_or_none():

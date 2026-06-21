@@ -7,6 +7,9 @@ __pycache__/
 
 # Database
 *.db
+*.db-shm
+*.db-wal
+uniapi/
 
 # IDE
 .idea/
@@ -26,3 +29,9 @@ dist/
 build/
 webui/
 web/node_modules/
+
+# Code analysis
+.codegraph/
+
+# Test data
+DeepSeek-Reasonix/

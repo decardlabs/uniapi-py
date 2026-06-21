@@ -168,6 +168,8 @@
       "password": {
         "confirm_password": "Confirm Password",
         "confirm_password_placeholder": "Re-enter new password",
+        "current_password": "Current Password",
+        "current_password_placeholder": "Enter current password",
         "description": "Use a strong, unique password as a fallback sign-in method.",
         "failed": "Failed to update password",
         "mismatch": "Passwords do not match",

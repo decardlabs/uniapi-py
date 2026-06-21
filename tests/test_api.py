@@ -13,6 +13,17 @@ async def test_status_endpoint(client: AsyncClient):
     assert data["data"]["version"] is not None
     assert isinstance(data["data"]["version"], str)
     assert data["data"]["system_name"] == "UniAPI"
+    # Registration/security flags should be booleans matching seed values
+    assert data["data"]["register_enabled"] is True
+    assert data["data"]["password_login_enabled"] is True
+    assert data["data"]["password_register_enabled"] is True
+    assert data["data"]["email_verification_enabled"] is False
+    assert data["data"]["turnstile_check"] is False
+    assert isinstance(data["data"]["turnstile_site_key"], str)
+    assert data["data"]["github_oauth"] is False
+    assert isinstance(data["data"]["github_client_id"], str)
+    assert isinstance(data["data"]["theme"], str)
+    assert isinstance(data["data"]["quota_per_unit"], int)
 
 
 @pytest.mark.asyncio

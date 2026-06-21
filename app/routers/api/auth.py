@@ -19,7 +19,8 @@ from app.schemas.user import (
     SelfResponse,
 )
 from app.services.auth import create_session, get_session_user
-from app.services.user import login_user, register_user
+from app.services.totp import verify_totp_code
+from app.services.user import login_user, register_user, verify_turnstile
 
 router = APIRouter(tags=["auth"])
 
@@ -27,6 +28,21 @@ router = APIRouter(tags=["auth"])
 @router.post("/api/user/login")
 async def login(body: LoginRequest, db: AsyncSession = Depends(get_db)):
     user = await login_user(db, body.username, body.password)
+
+    # TOTP check
+    totp_required = bool(user.totp_secret)
+    if totp_required:
+        totp_code = body.totp_code or ""
+        if not totp_code:
+            return GenericApiResponse(
+                success=False,
+                data={"totp_required": True},
+            )
+        if not verify_totp_code(user.totp_secret, totp_code):
+            return GenericApiResponse(
+                success=False, message="Invalid TOTP code"
+            )
+
     session_token = create_session(user)
     response = JSONResponse(
         content=GenericApiResponse(
@@ -39,6 +55,7 @@ async def login(body: LoginRequest, db: AsyncSession = Depends(get_db)):
                 quota=user.quota,
                 group=user.group,
                 access_token=user.access_token,
+                totp_required=totp_required,
             ).model_dump()
         ).model_dump()
     )
@@ -54,13 +71,34 @@ async def login(body: LoginRequest, db: AsyncSession = Depends(get_db)):
 
 
 @router.post("/api/user/register")
-async def register(body: RegisterRequest, db: AsyncSession = Depends(get_db)):
+async def register(
+    body: RegisterRequest,
+    request: Request,
+    db: AsyncSession = Depends(get_db),
+):
+    # Turnstile validation
+    turnstile_token = request.query_params.get("turnstile", "")
+    turnstile_enabled_result = await db.execute(
+        select(Option).where(Option.key == "TurnstileCheckEnabled")
+    )
+    turnstile_enabled = turnstile_enabled_result.scalar_one_or_none()
+    if turnstile_enabled and turnstile_enabled.value.lower() == "true":
+        if not await verify_turnstile(turnstile_token):
+            return JSONResponse(
+                status_code=400,
+                content=GenericApiResponse(
+                    success=False, message="Turnstile verification failed"
+                ).model_dump(),
+            )
+
     user = await register_user(
         db,
         username=body.username,
         password=body.password,
         display_name=body.display_name,
         email=body.email,
+        verification_code=body.verification_code,
+        aff_code=body.aff_code,
     )
     session_token = create_session(user)
     response = JSONResponse(

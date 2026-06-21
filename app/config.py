@@ -46,6 +46,15 @@ class Settings(BaseSettings):
     budget_enabled: bool = True
     default_monthly_budget: float = 800.0
 
+    # Turnstile (Cloudflare anti-bot)
+    turnstile_secret_key: str = ""
+
+    # SMTP (email verification)
+    smtp_token: str = ""
+
+    # GitHub OAuth
+    github_client_secret: str = ""
+
     model_config = {"env_file": ".env", "env_file_encoding": "utf-8", "extra": "ignore"}
 
     @property

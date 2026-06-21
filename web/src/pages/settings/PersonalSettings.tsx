@@ -65,6 +65,7 @@ export function PersonalSettings() {
 
   // Password change state
   const [newPassword, setNewPassword] = useState('');
+  const [currentPassword, setCurrentPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [passwordLoading, setPasswordLoading] = useState(false);
   const [passwordError, setPasswordError] = useState('');
@@ -368,9 +369,10 @@ export function PersonalSettings() {
 
     setPasswordLoading(true);
     try {
-      const response = await api.put('/api/user/self', { password: newPassword });
+      const response = await api.put('/api/user/self', { password: newPassword, old_password: currentPassword });
       const { success, message } = response.data;
       if (success) {
+        setCurrentPassword('');
         setNewPassword('');
         setConfirmPassword('');
         notify({
@@ -845,6 +847,19 @@ export function PersonalSettings() {
 
             {passwordError && <div className="text-sm text-destructive font-medium">{passwordError}</div>}
 
+            <div className="space-y-3">
+              <div className="space-y-1">
+                <FormLabel>{t('personal_settings.security.password.current_password')}</FormLabel>
+                <Input
+                  type="password"
+                  placeholder={t('personal_settings.security.password.current_password_placeholder')}
+                  value={currentPassword}
+                  onChange={(e) => {
+                    setCurrentPassword(e.target.value);
+                    if (passwordError) setPasswordError('');
+                  }}
+                />
+              </div>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div className="space-y-1">
                 <FormLabel>{t('personal_settings.security.password.new_password')}</FormLabel>
@@ -871,7 +886,8 @@ export function PersonalSettings() {
                 />
               </div>
             </div>
-            <Button onClick={updatePassword} disabled={passwordLoading || !newPassword} className="w-full md:w-auto">
+            </div>
+            <Button onClick={updatePassword} disabled={passwordLoading || !newPassword || !currentPassword} className="w-full md:w-auto">
               {passwordLoading ? t('personal_settings.security.password.updating') : t('personal_settings.security.password.update_button')}
             </Button>
           </div>

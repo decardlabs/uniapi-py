@@ -1,13 +1,16 @@
 from __future__ import annotations
 
+import secrets
 import time
 import uuid
 from typing import Optional
 
+import httpx
 from fastapi import HTTPException
 from sqlalchemy import select, func, or_
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.config import settings
 from app.models.option import Option
 from app.models.token import Token
 from app.models.user import User
@@ -18,12 +21,35 @@ def _uuid4() -> str:
     return uuid.uuid4().hex
 
 
+async def verify_turnstile(token: str) -> bool:
+    """Validate a Cloudflare Turnstile token.
+
+    Returns True if validation passes or if Turnstile is not configured.
+    Returns False if token is missing/invalid when Turnstile is configured.
+    """
+    secret_key = settings.turnstile_secret_key
+    if not secret_key or not token:
+        return False
+    try:
+        async with httpx.AsyncClient(timeout=10) as client:
+            resp = await client.post(
+                "https://challenges.cloudflare.com/turnstile/v0/siteverify",
+                data={"secret": secret_key, "response": token},
+            )
+            result = resp.json()
+            return result.get("success", False)
+    except httpx.RequestError:
+        return False
+
+
 async def register_user(
     db: AsyncSession,
     username: str,
     password: str,
     display_name: Optional[str] = None,
     email: Optional[str] = None,
+    verification_code: Optional[str] = None,
+    aff_code: Optional[str] = None,
 ) -> User:
     existing = await db.execute(select(User).where(User.username == username))
     if existing.scalar_one_or_none():
@@ -33,6 +59,9 @@ async def register_user(
         raise HTTPException(status_code=400, detail="Password must be at least 8 characters")
 
     now = int(time.time() * 1000)
+    # Auto-generate a unique affiliate code for the new user
+    user_aff_code = secrets.token_hex(8)
+
     user = User(
         username=username,
         password=hash_password(password),
@@ -44,9 +73,19 @@ async def register_user(
         used_quota=0,
         group="default",
         access_token=_uuid4(),
+        aff_code=user_aff_code,
         created_at=now,
         updated_at=now,
     )
+
+    # Process affiliate invitation
+    if aff_code:
+        inviter_result = await db.execute(
+            select(User).where(User.aff_code == aff_code)
+        )
+        inviter = inviter_result.scalar_one_or_none()
+        if inviter:
+            user.inviter_id = inviter.id
     db.add(user)
     await db.flush()
     await create_default_token(db, user.id)
@@ -221,18 +260,20 @@ async def get_system_status(db: AsyncSession, version: str = "") -> dict:
         "logo": options.get("Logo", ""),
         "footer_html": options.get("Footer", ""),
         "home_page_content": options.get("HomePageContent", ""),
-        "theme": "modern",
+        "theme": options.get("Theme", "modern"),
         "server_address": options.get("ServerAddress", ""),
-        "quota_per_unit": 500000,
-        "display_in_currency": False,
+        "quota_per_unit": int(options.get("QuotaPerUnit", "500000")),
+        "display_in_currency": options.get("DisplayInCurrencyEnabled", "false").lower() == "true",
         "display_unit": "token",
-        "turnstile_check": False,
-        "password_login_enabled": True,
-        "password_register_enabled": True,
-        "email_verification_enabled": False,
-        "github_oauth": False,
+        "register_enabled": options.get("RegisterEnabled", "true").lower() == "true",
+        "password_login_enabled": options.get("PasswordLoginEnabled", "true").lower() == "true",
+        "password_register_enabled": options.get("PasswordRegisterEnabled", "true").lower() == "true",
+        "email_verification_enabled": options.get("EmailVerificationEnabled", "false").lower() == "true",
+        "turnstile_check": options.get("TurnstileCheckEnabled", "false").lower() == "true",
+        "turnstile_site_key": options.get("TurnstileSiteKey", ""),
+        "github_oauth": options.get("GitHubOAuthEnabled", "false").lower() == "true",
+        "github_client_id": options.get("GitHubClientId", ""),
         "top_up_link": options.get("TopUpLink", ""),
         "chat_link": options.get("ChatLink", ""),
-        "register_enabled": True,
-        "group": "",
+        "group": options.get("Group", ""),
     }

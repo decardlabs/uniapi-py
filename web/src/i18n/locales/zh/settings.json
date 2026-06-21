@@ -168,6 +168,8 @@
       "password": {
         "confirm_password": "确认密码",
         "confirm_password_placeholder": "再次输入新密码",
+        "current_password": "当前密码",
+        "current_password_placeholder": "输入当前密码",
         "description": "使用强且唯一的密码作为备用登录方式。",
         "failed": "密码更新失败",
         "mismatch": "两次输入的密码不一致",
