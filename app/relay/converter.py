@@ -209,6 +209,46 @@ def _convert_chat_tool(tool: dict) -> dict:
     }
 
 
+def chat_response_to_anthropic(response: dict, request_id: str = "") -> dict:
+    """Convert an OpenAI Chat Completions **response** to Anthropic Messages format.
+
+    Used when a non-native Claude Messages adaptor returns a Chat response
+    that must be sent back to an Anthropic client.
+    """
+    choices = response.get("choices", [])
+    choice = choices[0] if choices else {}
+    msg = choice.get("message", {}) or choice.get("delta", {})
+    finish_reason = choice.get("finish_reason", "stop")
+
+    # Build content blocks
+    content_blocks: list[dict] = []
+    text = msg.get("content") or msg.get("reasoning_content") or ""
+    if text:
+        content_blocks.append({"type": "text", "text": text})
+
+    # Map finish_reason -> stop_reason
+    sr_map = {"stop": "end_turn", "length": "max_tokens", "tool_calls": "tool_use"}
+    stop_reason = sr_map.get(finish_reason, "end_turn")
+
+    # Map usage
+    usage = response.get("usage", {})
+    anthropic_usage = {
+        "input_tokens": usage.get("prompt_tokens") or usage.get("input_tokens") or 0,
+        "output_tokens": usage.get("completion_tokens") or usage.get("output_tokens") or 0,
+    }
+
+    return {
+        "id": request_id or response.get("id", ""),
+        "type": "message",
+        "role": "assistant",
+        "model": response.get("model", ""),
+        "content": content_blocks,
+        "stop_reason": stop_reason,
+        "stop_sequence": None,
+        "usage": anthropic_usage,
+    }
+
+
 # ---------------------------------------------------------------------------
 # OpenAI Responses API → OpenAI Chat Completions
 # ---------------------------------------------------------------------------

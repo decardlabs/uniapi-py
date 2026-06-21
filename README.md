@@ -8,16 +8,17 @@
 
 ## Status
 
-🚧 **Phases 1-6 已完成** — `245 tests, all GREEN`
+🚧 **Phases 1-6 已完成** — `485 tests, all GREEN`
 
-| Phase | 内容 | 状态 |
-|-------|------|------|
-| 1 | MVP: Auth, Status, DeepSeek Chat Completions, SSE | ✅ |
-| 2 | Management API: User/Token/Log/Options CRUD, Billing | ✅ |
-| 3 | Multi-format: NATIVE_FORMATS smart routing | ✅ |
-| 4 | Extensibility: BaseAdaptor ABC, Registry, Provider pattern | ✅ |
-| 5 | **Production**: Rate limiting, PII masking, Audit logging, Health check, Channel failover | ✅ |
-| 6 | **Fusion + Auto**: Multi-model ensemble, price-based auto routing, load balancing | ✅ |
+| Phase | 内容 | 状态 | 测试数 |
+|-------|------|------|--------|
+| 1 | MVP: Auth, Status, DeepSeek Chat Completions, SSE | ✅ | 28 |
+| 2 | Management API: User/Token/Log/Options CRUD, Billing | ✅ | 127 |
+| 3 | Multi-format: NATIVE_FORMATS smart routing | ✅ | 7 |
+| 4 | Extensibility: BaseAdaptor ABC, Registry, Provider pattern | ✅ | 46 |
+| 5 | **Production**: Rate limiting, PII masking, Audit logging, Health check, Channel failover | ✅ | — |
+| 6 | **Fusion + Auto**: Multi-model ensemble, price-based auto routing, load balancing | ✅ | — |
+| 7 | **Error Codes**: 统一错误码体系, 结构化异常, 上游错误映射 | ✅ | 240 |
 
 ### 已接入供应商（5 家）
 
@@ -29,7 +30,7 @@
 | **GLM (智谱)** | `chat_completions` | 7 |
 | **Qwen (百炼)** | `chat_completions`, `claude_messages` | 9 |
 | **Kimi (Moonshot)** | `chat_completions`, `claude_messages` | 5 |
-| **MiniMax** | `chat_completions`, `claude_messages` | 16 |
+| **MiniMax** | `chat_completions`, `claude_messages` | 8 |
 
 ## Quick Start
 
@@ -116,42 +117,60 @@ uniapi-py/
 │   ├── config.py            # Pydantic-Settings (env vars)
 │   ├── database.py          # SQLAlchemy async engine + session
 │   ├── dependencies.py      # DI (UserAuth, AdminAuth, RootAuth, TokenAuth)
-│   ├── middleware.py         # Request timing, ID middleware
-│   ├── exceptions.py        # 统一错误处理
+│   ├── exceptions.py        # 统一异常处理 + handler
+│   ├── error_codes.py       # 错误码定义 (UNIAPI_ 前缀)
+│   ├── middleware.py         # Audit, PIIMask, RateLimit, RequestTiming, RequestID
+│   ├── version.py           # 自动生成版本号 (git describe)
 │   ├── models/              # SQLAlchemy ORM
 │   │   ├── user.py, token.py, channel.py, ability.py
-│   │   ├── log.py, option.py
+│   │   ├── log.py, option.py, budget.py
 │   │   └── base.py
 │   ├── schemas/             # Pydantic v2 validation
-│   │   ├── common.py, user.py, relay.py
+│   │   ├── common.py, user.py, relay.py, error.py
 │   ├── services/            # 业务逻辑
 │   │   ├── auth.py, user.py, token.py
+│   ├── budget/              # 预算系统
+│   │   ├── arbiter.py, pricing.py, redis.py
 │   ├── routers/
 │   │   ├── api/             # 管理 API (/api/*)
 │   │   └── v1/              # 中继 API (/v1/*)
-│   └── relay/               # 上游供应商中继
-│       ├── adaptor.py       # BaseAdaptor ABC
-│       ├── registry.py      # 供应商注册表
-│       ├── mode.py          # RelayMode enum
-│       ├── openai_compatible.py  # SSE streaming + shared relay
-│       └── adaptors/
-│           ├── deepseek/    # DeepSeek adaptor
-│           │   ├── adaptor.py, request.py, pricing.py
-│           └── glm/         # GLM (Zhipu/智谱) adaptor
-│               ├── adaptor.py, auth.py (JWT), pricing.py
+│   ├── relay/               # 上游供应商中继
+│   │   ├── adaptor.py       # BaseAdaptor ABC
+│   │   ├── registry.py      # 供应商注册表
+│   │   ├── mode.py          # RelayMode enum
+│   │   ├── meta.py          # RelayMeta dataclass
+│   │   ├── converter.py     # anthropic_to_chat(), responses_to_chat()
+│   │   ├── sse_converter.py # SSE 格式转换
+│   │   ├── channeltype.py   # 渠道类型常量
+│   │   ├── upstream_errors.py # 上游错误映射
+│   │   ├── openai_compatible.py  # SSE streaming + shared relay
+│   │   └── adaptors/
+│   │       ├── deepseek/    # DeepSeek adaptor
+│   │       ├── glm/         # GLM (Zhipu/智谱) adaptor
+│   │       ├── qwen/        # Qwen (百炼) adaptor
+│   │       ├── kimi/        # Kimi (Moonshot) adaptor
+│   │       └── minimax/     # MiniMax adaptor
+│   └── fusion/              # 多模型融合引擎
+│       ├── schemas.py
+│       ├── adapters/        # Provider adapters (5 providers)
+│       └── core/            # FusionEngine, Judge, Synthesizer
 └── tests/
+    ├── conftest.py                  # 测试 fixtures + FakeRedisClient
     ├── test_api.py                  # Phase 1: API 集成 (5 tests)
-    ├── test_deepseek_normalize.py   # Phase 1: DeepSeek 归一化 (21 tests)
-    ├── conftest.py                  # 测试 fixtures
-    ├── phase2/                      # Phase 2: 管理 API (35 tests)
-    ├── phase3/                      # Phase 3: 多格式 (6 tests)
-    ├── phase4/                      # Phase 4: 可扩展性 (6 tests)
-    ├── glm/                         # GLM adaptor (9 tests)
+    ├── test_deepseek_normalize.py   # Phase 1: DeepSeek 归一化 (23 tests)
+    ├── test_channeltype.py          # 渠道类型测试 (15 tests)
+    ├── test_relay_comparison.py     # Relay 对比测试 (3 tests)
+    ├── phase2/                      # Phase 2: 管理 API (127 tests)
+    ├── phase3/                      # Phase 3: 多格式 (7 tests)
+    ├── phase4/                      # Phase 4: 可扩展性 (46 tests)
+    ├── phase5/                      # Phase 7: 错误码体系 (240 tests)
+    ├── glm/                         # GLM adaptor (11 tests)
     └── live/                        # 实时测试框架
         ├── live_test.py             # 入口
         ├── config.py                # 环境变量配置
         ├── client.py                # HTTP 客户端 (含重试+SSE流式)
         ├── runner.py                # 运行器 + 报告
+        ├── test_token_accuracy.py   # Token 精度测试
         └── scenarios/               # 测试场景
             ├── chat.py              # Chat Completion 测试
             ├── stream.py            # 流式测试

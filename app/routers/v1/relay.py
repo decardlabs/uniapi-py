@@ -8,12 +8,13 @@ from typing import Any
 
 import httpx
 
-from fastapi import APIRouter, Depends, HTTPException, Request
+from fastapi import APIRouter, Depends, Request
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.database import get_db
 from app.dependencies import token_auth
+from app.exceptions import RelayException, UpstreamException
 from app.models.channel import Channel
 from app.models.log import Log
 from app.relay.adaptor import BaseAdaptor
@@ -237,11 +238,40 @@ async def _handle_relay(request: Request, db: AsyncSession):
     model_name = body.get("model", "")
     stream = body.get("stream", False)
 
+    # Token model permissions check (early validation)
+    token_allowed_models = None
+    if hasattr(token, "models") and token.models:
+        token_allowed_models = [m.strip() for m in token.models.split(",") if m.strip()]
+    
+    # If model is specified, validate it against token permissions
+    if model_name and token_allowed_models and model_name not in token_allowed_models:
+        raise RelayException(
+            code="UNIAPI_TOKEN_MODEL_NOT_ALLOWED",
+            message=f"Token not allowed to use model '{model_name}'. "
+                    f"Allowed models: {', '.join(token_allowed_models)}. "
+                    f"Call GET /v1/models to list available models.",
+            details={"requested_model": model_name, "allowed_models": token_allowed_models},
+            suggestion="Call GET /v1/models to list available models.",
+        )
+
+    # If no model specified but token has restrictions, require explicit selection
+    if not model_name and token_allowed_models and model_name != "auto":
+        raise RelayException(
+            code="UNIAPI_MODEL_NOT_SPECIFIED",
+            message=f"Model not specified. Token is restricted to: {', '.join(token_allowed_models)}. "
+                    f"Please specify one of these models, use model='auto' for automatic selection, "
+                    f"or call GET /v1/models to list available models.",
+            suggestion="Specify a model in the request body, or use model='auto'.",
+        )
+
     # Fusion: multi-model ensemble from token-authorized models
     if model_name == "fusion":
         fusion_registry = getattr(request.app.state, "fusion_registry", None)
         if not fusion_registry:
-            raise HTTPException(status_code=400, detail="Fusion engine not available (no API keys configured)")
+            raise RelayException(
+                code="UNIAPI_SERVICE_DISABLED",
+                message="Fusion engine not available (no API keys configured)",
+            )
 
         # Select panel from token-authorized models that are in the fusion registry
         token_models: list[str] = []
@@ -255,7 +285,10 @@ async def _handle_relay(request: Request, db: AsyncSession):
             panel = available[:]
 
         if not panel:
-            raise HTTPException(status_code=403, detail="No fusion-authorized models available for this token")
+            raise RelayException(
+                code="UNIAPI_TOKEN_MODEL_NOT_ALLOWED",
+                message="No fusion-authorized models available for this token",
+            )
 
         if len(panel) < 2:
             # Fallback to single model passthrough
@@ -299,7 +332,10 @@ async def _handle_relay(request: Request, db: AsyncSession):
                 for u in [b]
             ) or 5000
             if not token.unlimited_quota and token.remain_quota < estimated:
-                raise HTTPException(status_code=400, detail="Insufficient token quota")
+                raise RelayException(
+                    code="UNIAPI_QUOTA_EXHAUSTED",
+                    message="Insufficient token quota for fusion request",
+                )
             if not token.unlimited_quota:
                 token.remain_quota -= estimated
             await db.commit()
@@ -322,7 +358,10 @@ async def _handle_relay(request: Request, db: AsyncSession):
         )
         channels = result.scalars().all()
         if not channels:
-            raise HTTPException(status_code=400, detail="No enabled channels available for auto selection")
+            raise RelayException(
+                code="UNIAPI_CHANNEL_UNAVAILABLE",
+                message="No enabled channels available for auto selection",
+            )
 
         # Build (price, model_name, channel) candidates
         candidates: list[tuple[float, str, Channel]] = []
@@ -345,11 +384,14 @@ async def _handle_relay(request: Request, db: AsyncSession):
 
         if not candidates:
             if allowed_models:
-                raise HTTPException(
-                    status_code=403,
-                    detail=f"Token has no authorized model for auto selection. Allowed: {', '.join(allowed_models)}"
+                raise RelayException(
+                    code="UNIAPI_TOKEN_MODEL_NOT_ALLOWED",
+                    message=f"Token has no authorized model for auto selection. Allowed: {', '.join(allowed_models)}",
                 )
-            raise HTTPException(status_code=400, detail="No suitable model found for auto selection")
+            raise RelayException(
+                code="UNIAPI_MODEL_NOT_SUPPORTED",
+                message="No suitable model found for auto selection",
+            )
 
         # Pick the cheapest
         candidates.sort(key=lambda x: x[0])
@@ -361,7 +403,11 @@ async def _handle_relay(request: Request, db: AsyncSession):
     if channel_type is None:
         channel_type = registry.resolve_channel_type(model_name)
         if channel_type is None:
-            raise HTTPException(status_code=400, detail=f"Model '{model_name}' not supported by any configured provider")
+            raise RelayException(
+                code="UNIAPI_MODEL_NOT_SUPPORTED",
+                message=f"Model '{model_name}' not supported by any configured provider",
+                details={"model": model_name},
+            )
 
         # Resolve model name to canonical form (handles case-insensitive aliases)
         adaptor = _get_adaptor(channel_type)
@@ -373,7 +419,11 @@ async def _handle_relay(request: Request, db: AsyncSession):
         # Select target channel via weighted random distribution
         channel = await _select_channel(db, model_name, channel_type)
         if channel is None:
-            raise HTTPException(status_code=400, detail=f"No enabled channels available for model '{model_name}'")
+            raise RelayException(
+                code="UNIAPI_CHANNEL_UNAVAILABLE",
+                message=f"No enabled channels available for model '{model_name}'",
+                details={"model": model_name},
+            )
 
     _channel_id = channel.id if channel else 1
     _channel_api_key = channel.key or _get_channel_api_key(channel_type)
@@ -381,21 +431,33 @@ async def _handle_relay(request: Request, db: AsyncSession):
 
     adaptor = _get_adaptor(channel_type)
     if adaptor is None:
-        raise HTTPException(status_code=500, detail=f"No adaptor configured for channel type {channel_type}")
+        raise RelayException(
+            code="UNIAPI_INTERNAL_ERROR",
+            message=f"No adaptor configured for channel type {channel_type}",
+        )
     supported = adaptor.get_supported_models()
     model_config = supported[model_name]
 
-    # Token model permissions
-    if hasattr(token, "models") and token.models:
-        allowed = [m.strip() for m in token.models.split(",")]
-        if model_name not in allowed:
-            raise HTTPException(status_code=403, detail=f"Token not allowed to use model '{model_name}'")
+    # Token model permissions (final check after any model resolution/selection)
+    if token_allowed_models and model_name not in token_allowed_models:
+        raise RelayException(
+            code="UNIAPI_TOKEN_MODEL_NOT_ALLOWED",
+            message=f"Token not allowed to use model '{model_name}'. "
+                    f"Allowed models: {', '.join(token_allowed_models)}. "
+                    f"Call GET /v1/models to list available models.",
+            details={"requested_model": model_name, "allowed_models": token_allowed_models},
+            suggestion="Call GET /v1/models to list available models.",
+        )
 
     # Channel group access control
     if channel and channel.group and channel.group != "default":
         user_group = user.group or "default"
         if user_group != channel.group:
-            raise HTTPException(status_code=403, detail=f"User group '{user_group}' not allowed to access channel group '{channel.group}'")
+            raise RelayException(
+                code="UNIAPI_GROUP_ACCESS_DENIED",
+                message=f"User group '{user_group}' not allowed to access channel group '{channel.group}'",
+                details={"user_group": user_group, "channel_group": channel.group},
+            )
 
     # Budget arbitration pre-check
     budget_arbiter: BudgetArbiter | None = getattr(request.app.state, "budget_arbiter", None)
@@ -411,7 +473,10 @@ async def _handle_relay(request: Request, db: AsyncSession):
             estimated_output_tokens=min(int(estimated_output), 4096),
         )
         if decision.status == "rejected":
-            raise HTTPException(status_code=402, detail=decision.error_message)
+            raise RelayException(
+                code="UNIAPI_QUOTA_EXHAUSTED",
+                message=decision.error_message or "Budget exceeded",
+            )
         request.state.budget_info = {
             "period": budget_arbiter._compute_period(),
             "frozen_amount": decision.estimated_cost,
@@ -420,9 +485,15 @@ async def _handle_relay(request: Request, db: AsyncSession):
     # Pre-consume quota
     estimated = _estimate_cost(body, model_config)
     if not token.unlimited_quota and token.remain_quota < estimated:
-        raise HTTPException(status_code=400, detail="Insufficient token quota")
+        raise RelayException(
+            code="UNIAPI_QUOTA_EXHAUSTED",
+            message="Insufficient token quota",
+        )
     if user.quota < estimated:
-        raise HTTPException(status_code=400, detail="Insufficient user quota")
+        raise RelayException(
+            code="UNIAPI_QUOTA_EXHAUSTED",
+            message="Insufficient user quota",
+        )
 
     now_ms = int(time.time() * 1000)
     provisional_log = Log(
@@ -483,6 +554,16 @@ async def _handle_relay(request: Request, db: AsyncSession):
     needs_sse_conversion = stream and relay_mode == RelayMode.CLAUDE_MESSAGES and not adaptor.supports_native_format(relay_mode)
     output_format = "anthropic" if needs_sse_conversion else "chat"
 
+    # Native Claude Messages streaming: use raw byte-level passthrough to
+    # preserve upstream Anthropic SSE format (event: / data: lines) intact.
+    # The chat-oriented stream_chat_completion() would mangle event: lines
+    # by wrapping them in data: prefixes, which breaks Claude Code clients.
+    native_claude_stream = (
+        stream
+        and relay_mode == RelayMode.CLAUDE_MESSAGES
+        and adaptor.supports_native_format(relay_mode)
+    )
+
     # Relay upstream with fallback support
     fallback_channel = None
     fallback_model = None
@@ -541,6 +622,7 @@ async def _handle_relay(request: Request, db: AsyncSession):
                 request_headers=upstream_headers,
                 output_format=output_format,
                 on_stream_usage=stream_usage_cb,
+                raw_passthrough=native_claude_stream,
             )
             _reset_channel_failures(_channel_id)  # reset failure count on success
             break  # success, exit retry loop
@@ -584,11 +666,24 @@ async def _handle_relay(request: Request, db: AsyncSession):
             user.quota += estimated
             user.used_quota -= estimated
             await db.commit()
+
+            # Map upstream HTTP error to UniAPI code
+            from app.relay.upstream_errors import map_upstream_http_error
+
             try:
                 err_body = exc.response.json()
             except Exception:
-                err_body = {"error": {"message": str(exc)}}
-            raise HTTPException(status_code=status, detail=err_body)
+                err_body = str(exc)
+            provider_name = adaptor.provider_name if adaptor else "unknown"
+            uni_code, upstream = map_upstream_http_error(provider_name, status, err_body)
+            raise UpstreamException(
+                message=f"Upstream returned {status}",
+                code=uni_code,
+                upstream_provider=upstream["provider"],
+                upstream_status=upstream["status_code"],
+                upstream_code=upstream.get("code"),
+                upstream_message=upstream.get("message"),
+            )
 
         except Exception:
             # Non-HTTP error (timeout, connection error, etc.)
@@ -628,7 +723,19 @@ async def _handle_relay(request: Request, db: AsyncSession):
                     db_session=db,
                 )
             await db.commit()
-            raise HTTPException(status_code=502, detail="Upstream request failed")
+
+            # Map connection error to UniAPI code
+            from app.relay.upstream_errors import map_upstream_connection_error
+
+            error_type = "timeout" if "timeout" in str(exc).lower() else "unknown"
+            provider_name = adaptor.provider_name if adaptor else "unknown"
+            uni_code, upstream = map_upstream_connection_error(provider_name, error_type)
+            raise UpstreamException(
+                message=f"Upstream request failed: {exc}",
+                code=uni_code,
+                upstream_provider=upstream["provider"],
+                upstream_status=upstream["status_code"],
+            )
 
     if stream:
         provisional_log.type = 2
@@ -701,6 +808,12 @@ async def _handle_relay(request: Request, db: AsyncSession):
         )
 
     await db.commit()
+
+    # Convert Chat response → Anthropic format for non-native Claude Messages adaptors
+    if relay_mode == RelayMode.CLAUDE_MESSAGES and not adaptor.supports_native_format(relay_mode):
+        from app.relay.converter import chat_response_to_anthropic
+        upstream_response = chat_response_to_anthropic(upstream_response, provisional_log.request_id)
+
     return upstream_response
 
 
@@ -734,10 +847,31 @@ async def response_api(request: Request, db: AsyncSession = Depends(get_db)):
 @router.get("/v1/models")
 async def list_models(request: Request, db: AsyncSession = Depends(get_db)):
     await token_auth(request, db)
+    token = request.state.token
     now = int(time.time())
+
+    # Build token allowlist (if token restricts models)
+    allowed_models: set[str] | None = None
+    if hasattr(token, "models") and token.models:
+        allowed_models = {m.strip() for m in token.models.split(",")}
+
+    # Find which channel types have at least one enabled channel
+    result = await db.execute(
+        select(Channel).where(Channel.status == 1)
+    )
+    enabled_channels = result.scalars().all()
+    enabled_types = {ch.type for ch in enabled_channels}
+
     models = []
     for adp in registry.all_adaptors():
+        ch_type = adp.get_channel_type()
+        # Skip adaptors with no enabled channels
+        if ch_type not in enabled_types:
+            continue
         for m in adp.get_supported_models():
+            # Respect token model allowlist
+            if allowed_models is not None and m not in allowed_models:
+                continue
             models.append({"id": m, "object": "model", "created": now, "owned_by": adp.provider_name})
     return {"object": "list", "data": models}
 
@@ -754,4 +888,8 @@ async def retrieve_model(model_id: str, request: Request, db: AsyncSession = Dep
                 "created": now,
                 "owned_by": adp.provider_name,
             }
-    raise HTTPException(status_code=404, detail="Model not found")
+    raise RelayException(
+        code="UNIAPI_RESOURCE_NOT_FOUND",
+        message=f"Model '{model_id}' not found",
+        details={"model_id": model_id},
+    )

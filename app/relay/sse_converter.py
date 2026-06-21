@@ -8,84 +8,91 @@ import json
 from typing import Any, Generator, Iterator
 
 
-def chat_to_anthropic_sse(
-    chat_chunks: Iterator[str],
-) -> Generator[dict[str, Any], None, None]:
-    """Convert OpenAI Chat Completions SSE chunks to Anthropic SSE event dicts.
+class ChatToAnthropicSSE:
+    """Stateful converter: feed SSE lines one at a time, get Anthropic events back.
 
-    Yields dicts with keys: event (str), data (dict).
+    Use ``feed(line)`` for each SSE line and ``flush()`` at stream end.
+    This preserves real-time streaming behavior (no buffering).
     """
-    chat_id = ""
-    text_buffer = ""
-    tool_buffers: dict[int, dict] = {}  # index -> {id, name, arguments}
-    text_index = 0
-    tool_index = 1
-    text_block_started = False
-    tool_block_started: dict[int, bool] = {}
-    has_content = False
 
-    for line in chat_chunks:
+    def __init__(self):
+        self.chat_id = ""
+        self.text_buffer = ""
+        self.tool_buffers: dict[int, dict[str, str]] = {}
+        self.text_index = 0
+        self.tool_index = 1
+        self.text_block_started = False
+        self.tool_block_started: dict[int, bool] = {}
+        self.has_content = False
+        self._done = False
+
+    def feed(self, line: str) -> list[dict[str, Any]]:
+        """Process one SSE line. Returns list of Anthropic event dicts."""
+        events: list[dict[str, Any]] = []
+
         line = line.strip()
         if not line.startswith("data: "):
-            continue
+            return events
 
         payload = line[6:]
         if payload == "[DONE]":
-            # Emit remaining content blocks
-            if text_buffer and text_block_started:
-                yield _make_event("content_block_stop", {"type": "content_block_stop", "index": text_index})
-            for ti in sorted(tool_buffers.keys()):
-                if tool_block_started.get(ti):
-                    yield _make_event("content_block_stop", {"type": "content_block_stop", "index": ti})
-            yield _make_event("message_stop", {"type": "message_stop"})
-            return
+            self._done = True
+            if self.text_buffer and self.text_block_started:
+                events.append(_make_event("content_block_stop", {"type": "content_block_stop", "index": self.text_index}))
+            for ti in sorted(self.tool_buffers.keys()):
+                if self.tool_block_started.get(ti):
+                    events.append(_make_event("content_block_stop", {"type": "content_block_stop", "index": ti}))
+            events.append(_make_event("message_stop", {"type": "message_stop"}))
+            return events
 
         try:
             chunk = json.loads(payload)
         except json.JSONDecodeError:
-            continue
+            return events
 
-        if not chat_id:
-            chat_id = chunk.get("id", "")
+        if not self.chat_id:
+            self.chat_id = chunk.get("id", "")
 
         choices = chunk.get("choices", [])
         if not choices:
-            continue
+            return events
 
         delta = choices[0].get("delta", {})
         finish_reason = choices[0].get("finish_reason")
         usage = chunk.get("usage")
 
         # --- message_start on first chunk with role ---
-        if delta.get("role") == "assistant" and not has_content:
-            has_content = True
-            yield _make_event("message_start", {
+        if delta.get("role") == "assistant" and not self.has_content:
+            self.has_content = True
+            events.append(_make_event("message_start", {
                 "type": "message_start",
                 "message": {
-                    "id": chat_id or f"msg_{chat_id}",
+                    "id": self.chat_id or f"msg_{self.chat_id}",
                     "type": "message",
                     "role": "assistant",
                     "content": [],
                     "model": chunk.get("model", ""),
                 },
-            })
+            }))
 
         # --- Text delta ---
-        text = delta.get("content")
+        # GLM-5.2 sends content in ``reasoning_content`` with empty ``content``.
+        # Merge reasoning_content into text so the Anthropic stream has actual output.
+        text = delta.get("content") or delta.get("reasoning_content")
         if text:
-            text_buffer += text
-            if not text_block_started:
-                text_block_started = True
-                yield _make_event("content_block_start", {
+            self.text_buffer += text
+            if not self.text_block_started:
+                self.text_block_started = True
+                events.append(_make_event("content_block_start", {
                     "type": "content_block_start",
-                    "index": text_index,
+                    "index": self.text_index,
                     "content_block": {"type": "text", "text": ""},
-                })
-            yield _make_event("content_block_delta", {
+                }))
+            events.append(_make_event("content_block_delta", {
                 "type": "content_block_delta",
-                "index": text_index,
+                "index": self.text_index,
                 "delta": {"type": "text_delta", "text": text},
-            })
+            }))
 
         # --- Tool call deltas ---
         tool_calls = delta.get("tool_calls")
@@ -93,49 +100,46 @@ def chat_to_anthropic_sse(
             for tc in tool_calls:
                 idx = tc.get("index", 0)
                 fn = tc.get("function", {})
-                if idx not in tool_buffers:
-                    tool_buffers[idx] = {"id": tc.get("id", ""), "name": fn.get("name", ""), "arguments": ""}
+                if idx not in self.tool_buffers:
+                    self.tool_buffers[idx] = {"id": tc.get("id", ""), "name": fn.get("name", ""), "arguments": ""}
                 if fn.get("name"):
-                    tool_buffers[idx]["name"] = fn["name"]
+                    self.tool_buffers[idx]["name"] = fn["name"]
                 if tc.get("id"):
-                    tool_buffers[idx]["id"] = tc["id"]
+                    self.tool_buffers[idx]["id"] = tc["id"]
                 if fn.get("arguments"):
-                    tool_buffers[idx]["arguments"] += fn["arguments"]
-                    if not tool_block_started.get(idx):
-                        tool_block_started[idx] = True
-                        yield _make_event("content_block_start", {
+                    self.tool_buffers[idx]["arguments"] += fn["arguments"]
+                    if not self.tool_block_started.get(idx):
+                        self.tool_block_started[idx] = True
+                        events.append(_make_event("content_block_start", {
                             "type": "content_block_start",
-                            "index": idx + tool_index,
+                            "index": idx + self.tool_index,
                             "content_block": {
                                 "type": "tool_use",
-                                "id": tool_buffers[idx]["id"],
-                                "name": tool_buffers[idx]["name"],
+                                "id": self.tool_buffers[idx]["id"],
+                                "name": self.tool_buffers[idx]["name"],
                                 "input": {},
                             },
-                        })
-                    yield _make_event("content_block_delta", {
+                        }))
+                    events.append(_make_event("content_block_delta", {
                         "type": "content_block_delta",
-                        "index": idx + tool_index,
+                        "index": idx + self.tool_index,
                         "delta": {"type": "input_json_delta", "partial_json": fn["arguments"]},
-                    })
+                    }))
 
         # --- message_delta on finish_reason ---
-        if finish_reason and has_content:
-            # Close text block if open
-            if text_block_started:
-                yield _make_event("content_block_stop", {"type": "content_block_stop", "index": text_index})
-                text_block_started = False
-            # Close tool blocks
-            for ti in sorted(tool_buffers.keys()):
-                if tool_block_started.get(ti):
-                    yield _make_event("content_block_stop", {"type": "content_block_stop", "index": ti + tool_index})
-                    tool_block_started[ti] = False
+        if finish_reason and self.has_content:
+            if self.text_block_started:
+                events.append(_make_event("content_block_stop", {"type": "content_block_stop", "index": self.text_index}))
+                self.text_block_started = False
+            for ti in sorted(self.tool_buffers.keys()):
+                if self.tool_block_started.get(ti):
+                    events.append(_make_event("content_block_stop", {"type": "content_block_stop", "index": ti + self.tool_index}))
+                    self.tool_block_started[ti] = False
 
-            # Map finish_reason
             sr_map = {"stop": "end_turn", "length": "max_tokens", "tool_calls": "tool_use", "content_filter": "end_turn"}
             stop_reason = sr_map.get(finish_reason, "end_turn")
 
-            md = {
+            md: dict[str, Any] = {
                 "type": "message_delta",
                 "delta": {"stop_reason": stop_reason, "stop_sequence": None},
             }
@@ -144,16 +148,41 @@ def chat_to_anthropic_sse(
                     "input_tokens": usage.get("prompt_tokens", 0),
                     "output_tokens": usage.get("completion_tokens", 0),
                 }
-            yield _make_event("message_delta", md)
+            events.append(_make_event("message_delta", md))
 
-    # Fallback: close if stream ended without [DONE]
-    if has_content:
-        if text_block_started:
-            yield _make_event("content_block_stop", {"type": "content_block_stop", "index": text_index})
-        for ti in sorted(tool_buffers.keys()):
-            if tool_block_started.get(ti):
-                yield _make_event("content_block_stop", {"type": "content_block_stop", "index": ti + tool_index})
-        yield _make_event("message_stop", {"type": "message_stop"})
+        return events
+
+    def flush(self) -> list[dict[str, Any]]:
+        """Return remaining events if the stream ended without [DONE]."""
+        if self._done:
+            return []
+        events: list[dict[str, Any]] = []
+        if self.has_content:
+            if self.text_block_started:
+                events.append(_make_event("content_block_stop", {"type": "content_block_stop", "index": self.text_index}))
+            for ti in sorted(self.tool_buffers.keys()):
+                if self.tool_block_started.get(ti):
+                    events.append(_make_event("content_block_stop", {"type": "content_block_stop", "index": ti + self.tool_index}))
+            events.append(_make_event("message_stop", {"type": "message_stop"}))
+        self._done = True
+        return events
+
+
+def chat_to_anthropic_sse(
+    chat_chunks: Iterator[str],
+) -> Generator[dict[str, Any], None, None]:
+    """Convert OpenAI Chat Completions SSE chunks to Anthropic SSE event dicts.
+
+    Yields dicts with keys: event (str), data (dict).
+
+    Convenience wrapper around ``ChatToAnthropicSSE`` for batch use.
+    """
+    converter = ChatToAnthropicSSE()
+    for line in chat_chunks:
+        for event in converter.feed(line):
+            yield event
+    for event in converter.flush():
+        yield event
 
 
 def anthropic_to_chat_sse(

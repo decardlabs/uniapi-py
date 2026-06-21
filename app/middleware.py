@@ -25,10 +25,16 @@ class RequestTimingMiddleware(BaseHTTPMiddleware):
 
 
 class RequestIDMiddleware(BaseHTTPMiddleware):
-    """Add request ID to every response."""
+    """Add request ID to every response and store it in request.state.
+
+    The request ID is made available to exception handlers via
+    ``request.state.request_id`` so error responses always carry a trace ID.
+    """
 
     async def dispatch(self, request: Request, call_next: RequestResponseEndpoint) -> Response:
         request_id = request.headers.get("X-Request-Id", uuid.uuid4().hex)
+        # Store in request.state for exception handlers and downstream code
+        request.state.request_id = request_id
         response = await call_next(request)
         response.headers["X-Request-Id"] = request_id
         return response
@@ -54,8 +60,16 @@ class RateLimitMiddleware(BaseHTTPMiddleware):
         self._hits[client_ip] = [t for t in self._hits.get(client_ip, []) if now - t < 60]
 
         if len(self._hits[client_ip]) >= rpm:
+            request_id = getattr(request.state, "request_id", None)
+            from app.schemas.error import build_error_response
+
+            error_resp = build_error_response(
+                code="UNIAPI_RATE_LIMITED",
+                message="Rate limit exceeded",
+                request_id=request_id,
+            )
             return Response(
-                content=json.dumps({"success": False, "message": "Rate limit exceeded"}),
+                content=json.dumps(error_resp),
                 status_code=429,
                 media_type="application/json",
                 headers={"Retry-After": "60"},

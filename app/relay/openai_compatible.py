@@ -87,7 +87,13 @@ async def stream_chat_completion(
     body: dict,
     headers: dict[str, str],
 ) -> AsyncGenerator[str, None]:
-    """Stream SSE events from upstream, transparently proxying to client."""
+    """Stream SSE events from upstream, transparently proxying to client.
+
+    Designed for OpenAI Chat Completions SSE format (``data:`` lines only).
+    For Anthropic SSE format (with ``event:`` lines), use
+    ``stream_raw_passthrough`` instead — this function would mangle
+    ``event:`` lines by wrapping them in ``data:`` prefixes.
+    """
     async with client.stream(
         "POST", url, json=body, headers=headers, timeout=300
     ) as resp:
@@ -100,6 +106,26 @@ async def stream_chat_completion(
                 yield f"data: {line}\n\n"
 
 
+async def stream_raw_passthrough(
+    client: httpx.AsyncClient,
+    url: str,
+    body: dict,
+    headers: dict[str, str],
+) -> AsyncGenerator[bytes, None]:
+    """Raw byte-level SSE passthrough — preserves original wire format.
+
+    Use this for upstreams that already return the exact SSE format the
+    downstream client expects (e.g. native Anthropic SSE from DeepSeek's
+    ``/anthropic/v1/messages`` endpoint).  No line processing, no wrapping —
+    the upstream bytes are yielded as-is.
+    """
+    async with client.stream(
+        "POST", url, json=body, headers=headers, timeout=300
+    ) as resp:
+        async for chunk in resp.aiter_bytes(chunk_size=4096):
+            yield chunk
+
+
 async def relay_chat_completion(
     body: dict,
     upstream_url: str,
@@ -108,6 +134,7 @@ async def relay_chat_completion(
     request_headers: Optional[dict[str, str]] = None,
     output_format: str = "chat",
     on_stream_usage: Optional[Callable[[dict[str, Any]], None]] = None,
+    raw_passthrough: bool = False,
 ) -> dict | StreamingResponse:
     """Handle both streaming and non-streaming chat completion requests.
 
@@ -115,9 +142,16 @@ async def relay_chat_completion(
     ----------
     output_format : str
         "chat" (default, OpenAI format) or "anthropic" (convert SSE to Anthropic format).
+        Ignored when ``raw_passthrough=True``.
     on_stream_usage : callable, optional
         Called with usage dict after a streaming SSE stream ends.
-        Only used when ``stream=True``.
+        Only used when ``stream=True``. Not used when ``raw_passthrough=True``
+        (usage capture would require parsing the upstream SSE format).
+    raw_passthrough : bool
+        When True and ``stream=True``, raw upstream bytes are yielded as-is
+        without any line processing or format conversion.  Use this for
+        upstreams that already return the exact SSE format the downstream
+        client expects (e.g. native Anthropic SSE passthrough).
     """
     headers = request_headers or {
         "Authorization": f"Bearer {api_key}",
@@ -126,6 +160,22 @@ async def relay_chat_completion(
 
     if stream:
         client = httpx.AsyncClient()
+
+        if raw_passthrough:
+            # Raw byte-level passthrough — preserves original SSE wire format.
+            # Usage capture is NOT attempted because parsing would require
+            # format-specific knowledge of the upstream SSE protocol.
+            raw_stream = stream_raw_passthrough(client, upstream_url, body, headers)
+            return StreamingResponse(
+                raw_stream,
+                media_type="text/event-stream",
+                headers={
+                    "Cache-Control": "no-cache",
+                    "Connection": "keep-alive",
+                    "X-Accel-Buffering": "no",
+                },
+            )
+
         raw_stream = stream_chat_completion(client, upstream_url, body, headers)
 
         # Wrap with usage capture when a callback is provided
@@ -133,18 +183,15 @@ async def relay_chat_completion(
             raw_stream = _capture_stream_usage(raw_stream, on_stream_usage)
 
         if output_format == "anthropic":
-            from app.relay.sse_converter import chat_to_anthropic_sse, _format_anthropic_sse
+            from app.relay.sse_converter import ChatToAnthropicSSE, _format_anthropic_sse
 
             async def converted_stream():
-                lines: list[str] = []
+                converter = ChatToAnthropicSSE()
                 async for line in raw_stream:
-                    if line.startswith("data: "):
-                        lines.append(line.strip())
-                    elif line.strip() == "data: [DONE]":
-                        lines.append("data: [DONE]")
-
-                # Yield events one at a time as the generator produces them
-                for event in chat_to_anthropic_sse(iter(lines)):
+                    for event in converter.feed(line):
+                        yield _format_anthropic_sse(event["event"], event["data"])
+                # Flush remaining events (stream ended without [DONE] or buffered content)
+                for event in converter.flush():
                     yield _format_anthropic_sse(event["event"], event["data"])
 
             return StreamingResponse(

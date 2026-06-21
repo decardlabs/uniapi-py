@@ -12,7 +12,7 @@ from sqlalchemy import select, text
 
 from app.config import settings
 from app.database import async_session_factory, engine
-from app.exceptions import AppException, app_exception_handler
+from app.exceptions import AppException, app_exception_handler, http_exception_handler
 from app.middleware import (
     AuditMiddleware,
     PIIMaskMiddleware,
@@ -192,6 +192,7 @@ def create_app() -> FastAPI:
 
     # Exception handlers
     app.add_exception_handler(AppException, app_exception_handler)
+    app.add_exception_handler(HTTPException, http_exception_handler)
 
     # Health check (before web router to avoid catch-all interception)
     @app.get("/health")

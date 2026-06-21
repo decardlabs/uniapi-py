@@ -2,11 +2,12 @@ from __future__ import annotations
 
 from typing import Optional
 
-from fastapi import Depends, HTTPException, Request
+from fastapi import Depends, Request
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.database import get_db
+from app.exceptions import ForbiddenException, QuotaExceededException, UnauthorizedException
 from app.models.token import Token
 from app.models.user import User
 from app.services.auth import get_session_user
@@ -30,9 +31,9 @@ async def user_auth(
     """Require a logged-in user (role >= 1)."""
     user = await get_session_user(request, db)
     if not user:
-        raise HTTPException(status_code=401, detail="Not logged in")
+        raise UnauthorizedException(message="Not logged in")
     if user.role < 1:
-        raise HTTPException(status_code=403, detail="Access denied")
+        raise ForbiddenException(message="Access denied")
     request.state.user = user
     return user
 
@@ -44,7 +45,7 @@ async def admin_auth(
     """Require admin role (role >= 10)."""
     user = await user_auth(request, db)
     if user.role < 10:
-        raise HTTPException(status_code=403, detail="Admin access required")
+        raise ForbiddenException(message="Admin access required")
     return user
 
 
@@ -55,7 +56,7 @@ async def root_auth(
     """Require root role (role >= 100)."""
     user = await user_auth(request, db)
     if user.role < 100:
-        raise HTTPException(status_code=403, detail="Root access required")
+        raise ForbiddenException(message="Root access required")
     return user
 
 
@@ -66,7 +67,7 @@ async def token_auth(
     """Authenticate via Bearer token for relay endpoints."""
     auth_header = request.headers.get("Authorization", "")
     if not auth_header.startswith("Bearer "):
-        raise HTTPException(status_code=401, detail="No token provided")
+        raise UnauthorizedException(message="No token provided")
 
     raw_key = auth_header[7:]
     # Support admin channel pinning: token_key:channel_id
@@ -83,21 +84,21 @@ async def token_auth(
     result = await db.execute(select(Token).where(Token.key == token_key))
     token = result.scalar_one_or_none()
     if not token:
-        raise HTTPException(status_code=401, detail="Invalid token")
+        raise UnauthorizedException(message="Invalid token")
 
     if token.status != 1:
-        raise HTTPException(status_code=401, detail="Token is disabled or expired")
+        raise UnauthorizedException(message="Token is disabled or expired")
 
     if token.expired_time > 0 and token.expired_time < __import__("time").time():
-        raise HTTPException(status_code=401, detail="Token has expired")
+        raise UnauthorizedException(message="Token has expired")
 
     if not token.unlimited_quota and token.remain_quota <= 0:
-        raise HTTPException(status_code=401, detail="Token quota exhausted")
+        raise QuotaExceededException(message="Token quota exhausted")
 
     result = await db.execute(select(User).where(User.id == token.user_id))
     user = result.scalar_one_or_none()
     if not user or user.status != 1:
-        raise HTTPException(status_code=401, detail="User is disabled")
+        raise UnauthorizedException(message="User is disabled")
 
     request.state.user = user
     request.state.token = token
