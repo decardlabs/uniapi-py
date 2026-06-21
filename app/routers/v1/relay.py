@@ -65,6 +65,78 @@ def _estimate_cost(body: dict, model_config: Any) -> int:
     return int(prompt_tokens + completion_tokens)  # fallback 1:1
 
 
+def _normalize_deepseek_body(body: dict) -> dict:
+    """Remove reasoning_content from non-tool-call assistant messages.
+
+    Re-sent reasoning content is billable prompt input that never hits
+    the prefix cache.  Stripping it on plain assistant turns keeps the
+    request prefix byte-stable across turns so DeepSeek's automatic
+    prefix cache stays warm.
+
+    Tool-call assistant turns are exempted because DeepSeek requires
+    ``reasoning_content`` to be passed back on a cache-miss replay.
+    """
+    import copy
+
+    body = copy.deepcopy(body)
+    messages = body.get("messages", [])
+    for msg in messages:
+        if msg.get("role") != "assistant":
+            continue
+        if msg.get("tool_calls"):
+            continue  # tool-call turn: must keep reasoning_content
+        msg.pop("reasoning_content", None)
+        msg.pop("reasoning", None)
+    return body
+
+
+def _make_stream_usage_callback(
+    log_id: int,
+    model_config: Any,
+) -> Any:
+    """Return a callback that patches the provisional log after a stream ends.
+
+    The callback runs in a *new* database session because the original
+    request's session is already closed by the time the SSE stream finishes.
+    """
+    from app.database import async_session_factory
+    from app.models.log import Log as LogModel
+
+    async def _on_usage(usage: dict[str, Any]) -> None:
+        prompt_tokens = usage.get("prompt_tokens", 0) or 0
+        completion_tokens = usage.get("completion_tokens", 0) or 0
+
+        # Parse cache tokens -- support DeepSeek and OpenAI formats
+        cache_hit = (
+            usage.get("prompt_cache_hit_tokens")
+            or (usage.get("prompt_tokens_details") or {}).get("cached_tokens")
+            or usage.get("cached_tokens")
+            or 0
+        )
+        cache_miss = max(0, prompt_tokens - cache_hit)
+
+        if model_config:
+            actual = int(
+                cache_hit * model_config.cached_input_ratio
+                + cache_miss * model_config.input_ratio
+                + completion_tokens * model_config.output_ratio
+            )
+        else:
+            actual = int(cache_hit * 0.1 + cache_miss + completion_tokens)
+
+        async with async_session_factory() as session:
+            log_entry = await session.get(LogModel, log_id)
+            if log_entry is None:
+                return
+            log_entry.quota = actual
+            log_entry.prompt_tokens = prompt_tokens
+            log_entry.completion_tokens = completion_tokens
+            log_entry.cached_prompt_tokens = cache_hit
+            await session.commit()
+
+    return _on_usage
+
+
 def _get_channel_api_key(channel_type: int = 39) -> str:
     """Get API key for the given channel type."""
     from app.config import settings
@@ -409,7 +481,10 @@ async def _handle_relay(request: Request, db: AsyncSession):
 
     if adaptor.supports_native_format(relay_mode):
         # ✅ NATIVE: proxy directly, no conversion
-        upstream_body = body
+        if adaptor.provider_name == "deepseek":
+            upstream_body = _normalize_deepseek_body(body)
+        else:
+            upstream_body = body
         upstream_url = adaptor.get_request_url(meta, relay_mode)
     else:
         # 🔄 CONVERT: transform to Chat format
@@ -433,6 +508,16 @@ async def _handle_relay(request: Request, db: AsyncSession):
     fallback_model = None
     upstream_response = None
 
+    # Pre-create stream usage callback (before relay_chat_completion call)
+    stream_usage_cb = None
+    if stream:
+        # Capture provisional_log.id from the already-flushed object
+        stream_log_id = provisional_log.id
+        stream_usage_cb = _make_stream_usage_callback(
+            log_id=stream_log_id,
+            model_config=model_config,
+        )
+
     for attempt in range(2):  # primary + 1 fallback
         try:
             upstream_response = await relay_chat_completion(
@@ -441,6 +526,7 @@ async def _handle_relay(request: Request, db: AsyncSession):
                 api_key=meta.api_key,
                 stream=stream,
                 output_format=output_format,
+                on_stream_usage=stream_usage_cb,
             )
             _reset_channel_failures(_channel_id)  # reset failure count on success
             break  # success, exit retry loop

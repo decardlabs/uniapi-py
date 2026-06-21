@@ -9,10 +9,36 @@ OpenAI-compatible providers (including DeepSeek).
 import json
 import time
 import uuid
-from typing import Any, AsyncGenerator, Optional
+from collections.abc import AsyncGenerator
+from typing import Any, Callable, Optional
 
 import httpx
 from fastapi.responses import StreamingResponse
+
+
+async def _capture_stream_usage(
+    raw_stream: AsyncGenerator[str, None],
+    on_usage: Callable[[dict[str, Any]], None],
+) -> AsyncGenerator[str, None]:
+    """Wrap an SSE stream to capture the final usage chunk.
+
+    The last SSE event before [DONE] may carry token usage. This wrapper
+    captures that usage and calls ``on_usage`` after the stream ends.
+    """
+    last_usage: dict[str, Any] | None = None
+    async for line in raw_stream:
+        if line.startswith("data: ") and '"usage"' in line:
+            try:
+                data = json.loads(line[6:])
+                choices = data.get("choices") or []
+                # Only the final chunk carries usage + finish_reason
+                if choices and choices[0].get("finish_reason"):
+                    last_usage = data.get("usage")
+            except json.JSONDecodeError:
+                pass
+        yield line
+    if last_usage is not None:
+        on_usage(last_usage)
 
 
 def make_chat_completion_response(
@@ -77,6 +103,7 @@ async def relay_chat_completion(
     api_key: str,
     stream: bool = False,
     output_format: str = "chat",
+    on_stream_usage: Optional[Callable[[dict[str, Any]], None]] = None,
 ) -> dict | StreamingResponse:
     """Handle both streaming and non-streaming chat completion requests.
 
@@ -84,6 +111,9 @@ async def relay_chat_completion(
     ----------
     output_format : str
         "chat" (default, OpenAI format) or "anthropic" (convert SSE to Anthropic format).
+    on_stream_usage : callable, optional
+        Called with usage dict after a streaming SSE stream ends.
+        Only used when ``stream=True``.
     """
     headers = {
         "Authorization": f"Bearer {api_key}",
@@ -93,6 +123,10 @@ async def relay_chat_completion(
     if stream:
         client = httpx.AsyncClient()
         raw_stream = stream_chat_completion(client, upstream_url, body, headers)
+
+        # Wrap with usage capture when a callback is provided
+        if on_stream_usage is not None:
+            raw_stream = _capture_stream_usage(raw_stream, on_stream_usage)
 
         if output_format == "anthropic":
             from app.relay.sse_converter import chat_to_anthropic_sse, _format_anthropic_sse

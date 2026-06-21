@@ -40,27 +40,28 @@ def normalize_thinking_type(thinking: Optional[dict]) -> Optional[dict]:
 def inject_reasoning_content(
     messages: list[dict[str, Any]],
 ) -> list[dict[str, Any]]:
-    """Ensure every assistant message carries reasoning_content.
+    """Ensure reasoning_content is present on tool-call assistant messages.
 
-    DeepSeek in thinking mode requires reasoning_content on all
-    assistant messages in the conversation history. Missing it
-    causes API errors.
+    DeepSeek in thinking mode requires ``reasoning_content`` on assistant
+    messages that also carry ``tool_calls`` (it returns a 400 otherwise).
+    Plain assistant turns are left alone so the upstream request prefix
+    stays byte-stable and the automatic prefix cache stays warm.
     """
     for msg in messages:
         if msg.get("role") != "assistant":
             continue
+        if not msg.get("tool_calls"):
+            continue  # plain assistant turn — keep prefix stable
+        # Tool-call turn: DeepSeek needs reasoning_content
         if msg.get("reasoning_content") is not None:
-            message_has_reasoning = True
             continue
         if msg.get("reasoning") is not None:
             msg["reasoning_content"] = msg.pop("reasoning")
-            if msg.get("thinking") is not None:
-                msg.pop("thinking")
-            return messages
+            msg.pop("thinking", None)
+            continue
         if msg.get("thinking") is not None:
             msg["reasoning_content"] = msg.pop("thinking")
-            return messages
-        # Inject empty string to prevent DeepSeek error
+            continue
         msg["reasoning_content"] = ""
     return messages
 
