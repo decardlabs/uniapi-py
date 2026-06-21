@@ -400,6 +400,42 @@ registry.register(MY_CHANNEL_TYPE, MyProviderAdaptor)
 
 参考 [DeepSeek](app/relay/adaptors/deepseek/adaptor.py) 或 [GLM](app/relay/adaptors/glm/adaptor.py) 实现。
 
+## 发布流程
+
+版本号由 Git tag 驱动，`deploy.sh` 自动烘焙到 `app/version.py`。
+
+```bash
+# 1. 提交代码
+git add ... && git commit -m "fix: description"
+
+# 2. 打 tag（版本号唯一来源）
+git tag -a v0.10.x -m "v0.10.x — release notes"
+
+# 3. 推送
+git push origin main && git push origin v0.10.x
+
+# 4. 部署（自动读取 tag 生成版本号）
+bash deploy.sh
+```
+
+**不需要手动改 `main.py` 或 `pyproject.toml` 的版本号。** `deploy.sh` 执行 `git describe --tags` 写入 `app/version.py`，`/health` 和 `/api/status` 均从此读取。
+
+### 版本检查
+
+```bash
+curl https://api.ccbot.chat/health      # → {"version":"0.10.x"}
+curl https://api.ccbot.chat/api/status  # → {"version":"0.10.x"}
+```
+
+### 部署文件
+
+| 文件 | 说明 |
+|------|------|
+| `deploy.sh` | 一键部署：构建前端 → 生成版本号 → rsync 代码 → 重启服务 |
+| `app/version.py` | 自动生成（gitignore），`VERSION = "0.10.x"` |
+| `/etc/systemd/system/uniapi-py.service` | systemd 服务定义 |
+| `/www/server/panel/vhost/nginx/extension/api.ccbot.chat/proxy_sse.conf` | Nginx SSE 优化参数 |
+
 ## 技术栈
 
 - **Python 3.11+** / **FastAPI** — Web framework
