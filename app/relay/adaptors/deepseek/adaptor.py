@@ -8,6 +8,8 @@ DeepSeek natively supports:
   - claude_messages (Anthropic Claude format)
 """
 
+import copy
+
 from app.relay.adaptor import BaseAdaptor, ModelConfig
 from app.relay.adaptors.deepseek import pricing
 from app.relay.adaptors.deepseek.request import normalize_request
@@ -42,6 +44,27 @@ class DeepSeekAdaptor(BaseAdaptor):
             "Authorization": f"Bearer {api_key}",
             "Content-Type": "application/json",
         }
+
+    def normalize_request_body(self, body: dict) -> dict:
+        """Strip reasoning_content from non-tool assistant turns.
+
+        Re-sent reasoning content is billable prompt input that never hits
+        the prefix cache. Stripping it keeps the request prefix byte-stable
+        so DeepSeek's automatic prefix cache stays warm.
+
+        Tool-call assistant turns are exempted because DeepSeek requires
+        reasoning_content to be passed back on a cache-miss replay.
+        """
+        body = copy.deepcopy(body)
+        messages = body.get("messages", [])
+        for msg in messages:
+            if msg.get("role") != "assistant":
+                continue
+            if msg.get("tool_calls"):
+                continue  # tool-call turn: must keep reasoning_content
+            msg.pop("reasoning_content", None)
+            msg.pop("reasoning", None)
+        return body
 
     async def convert_request(self, body: dict, meta: RelayMeta) -> dict:
         return normalize_request(body)

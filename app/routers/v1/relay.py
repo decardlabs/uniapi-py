@@ -65,30 +65,6 @@ def _estimate_cost(body: dict, model_config: Any) -> int:
     return int(prompt_tokens + completion_tokens)  # fallback 1:1
 
 
-def _normalize_deepseek_body(body: dict) -> dict:
-    """Remove reasoning_content from non-tool-call assistant messages.
-
-    Re-sent reasoning content is billable prompt input that never hits
-    the prefix cache.  Stripping it on plain assistant turns keeps the
-    request prefix byte-stable across turns so DeepSeek's automatic
-    prefix cache stays warm.
-
-    Tool-call assistant turns are exempted because DeepSeek requires
-    ``reasoning_content`` to be passed back on a cache-miss replay.
-    """
-    import copy
-
-    body = copy.deepcopy(body)
-    messages = body.get("messages", [])
-    for msg in messages:
-        if msg.get("role") != "assistant":
-            continue
-        if msg.get("tool_calls"):
-            continue  # tool-call turn: must keep reasoning_content
-        msg.pop("reasoning_content", None)
-        msg.pop("reasoning", None)
-    return body
-
 
 def _make_stream_usage_callback(
     log_id: int,
@@ -488,10 +464,7 @@ async def _handle_relay(request: Request, db: AsyncSession):
 
     if adaptor.supports_native_format(relay_mode):
         # ✅ NATIVE: proxy directly, no conversion
-        if adaptor.provider_name == "deepseek":
-            upstream_body = _normalize_deepseek_body(body)
-        else:
-            upstream_body = body
+        upstream_body = adaptor.normalize_request_body(body)
         upstream_url = adaptor.get_request_url(meta, relay_mode)
     else:
         # 🔄 CONVERT: transform to Chat format
@@ -729,6 +702,14 @@ async def list_models(request: Request, db: AsyncSession = Depends(get_db)):
     await token_auth(request, db)
     now = int(time.time())
     models = []
+    for adp in registry.all_adaptors():
+        for m in adp.get_supported_models():
+            models.append({"id": m, "object": "model", "created": now, "owned_by": adp.provider_name})
+    return {"object": "list", "data": models}
+async def list_models(request: Request, db: AsyncSession = Depends(get_db)):
+    await token_auth(request, db)
+    now = int(time.time())
+    models = []
     for ct in [39, 41, 50, 25, 27]:
         adaptor = _get_adaptor(ct)
         if adaptor:
@@ -740,14 +721,13 @@ async def list_models(request: Request, db: AsyncSession = Depends(get_db)):
 @router.get("/v1/models/{model_id}")
 async def retrieve_model(model_id: str, request: Request, db: AsyncSession = Depends(get_db)):
     await token_auth(request, db)
-    adaptor = _get_adaptor(39)
-    if adaptor is None:
-        raise HTTPException(status_code=500, detail="No adaptor configured")
-    if model_id not in adaptor.get_supported_models():
-        raise HTTPException(status_code=404, detail="Model not found")
-    return {
-        "id": model_id,
-        "object": "model",
-        "created": int(time.time()),
-        "owned_by": "deepseek",
-    }
+    now = int(time.time())
+    for adp in registry.all_adaptors():
+        if adp.resolve_model_name(model_id):
+            return {
+                "id": model_id,
+                "object": "model",
+                "created": now,
+                "owned_by": adp.provider_name,
+            }
+    raise HTTPException(status_code=404, detail="Model not found")

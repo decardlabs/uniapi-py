@@ -107,5 +107,14 @@ class BaseAdaptor(ABC):
         from app.relay.converter import anthropic_to_chat
         return anthropic_to_chat(body)
 
+    def normalize_request_body(self, body: dict) -> dict:
+        """Normalize the request body before upstream relay.
+
+        Override to apply provider-specific pre-processing (e.g. stripping
+        fields that break prefix caching). Called only in the native-format
+        (non-conversion) relay path.
+        """
+        return body
+
     def convert_image_request(self, body: dict) -> dict:
         raise NotImplementedError("Image generation not supported")

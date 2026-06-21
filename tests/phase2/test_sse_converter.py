@@ -1,9 +1,23 @@
-"""Tests for SSE stream conversion (OpenAI Chat ↔ Anthropic Messages)."""
+"""Tests for SSE stream conversion (OpenAI Chat <-> Anthropic Messages)."""
+from __future__ import annotations
+
+import json
+
 import pytest
 
 
+def _parse_chat_chunk(sse_line: str) -> dict:
+    """Extract JSON from a 'data: {...}\\n\\n' SSE line."""
+    s = sse_line.strip()
+    if s == "data: [DONE]":
+        return {"_done": True}
+    if s.startswith("data: "):
+        return json.loads(s[6:])
+    return {}
+
+
 class TestChatToAnthropicSSE:
-    """OpenAI Chat SSE chunks → Anthropic SSE events."""
+    """OpenAI Chat SSE chunks -> Anthropic SSE events."""
 
     def test_text_content_stream(self):
         """Simple text stream should produce content_block events."""
@@ -156,7 +170,6 @@ class TestEdgeCases:
             'data: [DONE]',
         ]
         events = list(chat_to_anthropic_sse(iter(chunks)))
-        # Should have no message_start since no content
         msg_starts = [e for e in events if e["event"] == "message_start"]
         assert len(msg_starts) == 0
 
@@ -199,3 +212,130 @@ class TestEdgeCases:
         assert "event: message_delta" in full_output
         assert "event: message_stop" in full_output
         assert "text_delta" in full_output
+
+
+class TestAnthropicToChatSSE:
+    """Anthropic SSE events -> OpenAI Chat chunks (reverse direction)."""
+
+    def _text_chunks(self, chunks):
+        """Yield non-done chunks that have text content."""
+        return (
+            c for c in chunks
+            if not c.get("_done") and c["choices"][0]["delta"].get("content")
+        )
+
+    def _non_done(self, chunks):
+        """Yield chunks that are not [DONE] markers."""
+        return [c for c in chunks if not c.get("_done")]
+
+    def test_text_content_stream(self):
+        """Basic text stream should produce Chat SSE chunks."""
+        from app.relay.sse_converter import anthropic_to_chat_sse
+        events = [
+            {"event": "message_start", "data": {"type": "message_start", "message": {"id": "msg_1", "type": "message", "role": "assistant", "content": [], "model": "claude-opus-4"}}},
+            {"event": "content_block_start", "data": {"type": "content_block_start", "index": 0, "content_block": {"type": "text", "text": ""}}},
+            {"event": "content_block_delta", "data": {"type": "content_block_delta", "index": 0, "delta": {"type": "text_delta", "text": "Hello"}}},
+            {"event": "content_block_delta", "data": {"type": "content_block_delta", "index": 0, "delta": {"type": "text_delta", "text": " world"}}},
+            {"event": "content_block_stop", "data": {"type": "content_block_stop", "index": 0}},
+            {"event": "message_delta", "data": {"type": "message_delta", "delta": {"stop_reason": "end_turn", "stop_sequence": None}, "usage": {"input_tokens": 5, "output_tokens": 3}}},
+            {"event": "message_stop", "data": {"type": "message_stop"}},
+        ]
+        chunks = [_parse_chat_chunk(c) for c in anthropic_to_chat_sse(iter(events))]
+        assert len(chunks) >= 4
+
+        # First chunk should contain role: assistant
+        assert chunks[0]["choices"][0]["delta"].get("role") == "assistant"
+
+        # Text should appear in content chunks
+        text = "".join(c["choices"][0]["delta"].get("content", "") for c in self._text_chunks(chunks))
+        assert text == "Hello world"
+
+        # Last meaningful chunk should have finish_reason and usage
+        final = self._non_done(chunks)[-1]
+        assert "finish_reason" in final["choices"][0]
+        assert "usage" in final
+
+    def test_tool_use_stream(self):
+        """Tool use events should produce tool_calls in Chat format."""
+        from app.relay.sse_converter import anthropic_to_chat_sse
+        events = [
+            {"event": "message_start", "data": {"type": "message_start", "message": {"id": "msg_t1", "type": "message", "role": "assistant", "content": [], "model": "claude-opus-4"}}},
+            {"event": "content_block_start", "data": {"type": "content_block_start", "index": 0, "content_block": {"type": "tool_use", "id": "toolu_1", "name": "get_weather", "input": {}}}},
+            {"event": "content_block_delta", "data": {"type": "content_block_delta", "index": 0, "delta": {"type": "input_json_delta", "partial_json": '{"city": "Bei'}}},
+            {"event": "content_block_delta", "data": {"type": "content_block_delta", "index": 0, "delta": {"type": "input_json_delta", "partial_json": 'jing"}'}}},
+            {"event": "content_block_stop", "data": {"type": "content_block_stop", "index": 0}},
+            {"event": "message_delta", "data": {"type": "message_delta", "delta": {"stop_reason": "tool_use", "stop_sequence": None}, "usage": {"input_tokens": 50, "output_tokens": 20}}},
+            {"event": "message_stop", "data": {"type": "message_stop"}},
+        ]
+        chunks = [_parse_chat_chunk(c) for c in anthropic_to_chat_sse(iter(events))]
+
+        # Should have tool_calls in one of the chunks
+        tool_chunks = [
+            c for c in self._non_done(chunks)
+            if c["choices"][0]["delta"].get("tool_calls")
+        ]
+        assert len(tool_chunks) >= 1
+        assert tool_chunks[0]["choices"][0]["delta"]["tool_calls"][0]["function"]["name"] == "get_weather"
+
+    def test_usage_mapping(self):
+        """Anthropic input/output tokens should map to prompt/completion tokens."""
+        from app.relay.sse_converter import anthropic_to_chat_sse
+        events = [
+            {"event": "message_start", "data": {"type": "message_start", "message": {"id": "msg_u1", "type": "message", "role": "assistant", "content": [], "model": "claude-opus-4"}}},
+            {"event": "content_block_start", "data": {"type": "content_block_start", "index": 0, "content_block": {"type": "text", "text": ""}}},
+            {"event": "content_block_delta", "data": {"type": "content_block_delta", "index": 0, "delta": {"type": "text_delta", "text": "hi"}}},
+            {"event": "content_block_stop", "data": {"type": "content_block_stop", "index": 0}},
+            {"event": "message_delta", "data": {"type": "message_delta", "delta": {"stop_reason": "end_turn", "stop_sequence": None}, "usage": {"input_tokens": 10, "output_tokens": 5}}},
+            {"event": "message_stop", "data": {"type": "message_stop"}},
+        ]
+        chunks = [_parse_chat_chunk(c) for c in anthropic_to_chat_sse(iter(events))]
+        usage_chunk = next(c for c in chunks if not c.get("_done") and "usage" in c)
+        assert usage_chunk["usage"]["prompt_tokens"] == 10
+        assert usage_chunk["usage"]["completion_tokens"] == 5
+        assert usage_chunk["usage"]["total_tokens"] == 15
+
+    def test_stop_reason_mapping(self):
+        """Anthropic stop_reasons should map to Chat finish_reasons."""
+        from app.relay.sse_converter import anthropic_to_chat_sse
+
+        cases = [("end_turn", "stop"), ("max_tokens", "length"), ("tool_use", "tool_calls")]
+        for anthropic_reason, expected_chat_reason in cases:
+            events = [
+                {"event": "message_start", "data": {"type": "message_start", "message": {"id": "msg_sr", "type": "message", "role": "assistant", "content": [], "model": "claude"}}},
+                {"event": "content_block_start", "data": {"type": "content_block_start", "index": 0, "content_block": {"type": "text", "text": ""}}},
+                {"event": "content_block_delta", "data": {"type": "content_block_delta", "index": 0, "delta": {"type": "text_delta", "text": "ok"}}},
+                {"event": "content_block_stop", "data": {"type": "content_block_stop", "index": 0}},
+                {"event": "message_delta", "data": {"type": "message_delta", "delta": {"stop_reason": anthropic_reason, "stop_sequence": None}, "usage": {"input_tokens": 1, "output_tokens": 1}}},
+                {"event": "message_stop", "data": {"type": "message_stop"}},
+            ]
+            chunks = [_parse_chat_chunk(c) for c in anthropic_to_chat_sse(iter(events))]
+            final = self._non_done(chunks)[-1]
+            assert final["choices"][0].get("finish_reason") == expected_chat_reason, (
+                f"For Anthropic '{anthropic_reason}', expected finish_reason '{expected_chat_reason}'"
+            )
+
+    def test_round_trip(self):
+        """chat -> anthropic -> chat round-trip should preserve content."""
+        from app.relay.sse_converter import chat_to_anthropic_sse, anthropic_to_chat_sse
+        original_chunks = [
+            'data: {"id":"x","object":"chat.completion.chunk","choices":[{"index":0,"delta":{"role":"assistant"},"finish_reason":null}]}',
+            'data: {"id":"x","choices":[{"index":0,"delta":{"content":"Hello"},"finish_reason":null}]}',
+            'data: {"id":"x","choices":[{"index":0,"delta":{"content":" world"},"finish_reason":null}]}',
+            'data: {"id":"x","choices":[{"index":0,"delta":{},"finish_reason":"stop"}],"usage":{"prompt_tokens":5,"completion_tokens":3,"total_tokens":8}}',
+            'data: [DONE]',
+        ]
+        # Forward: Chat -> Anthropic events
+        anthropic_events = list(chat_to_anthropic_sse(iter(original_chunks)))
+        # Reverse: Anthropic events -> Chat chunks
+        chat_chunks = [_parse_chat_chunk(c) for c in anthropic_to_chat_sse(iter(anthropic_events))]
+
+        # Content should be preserved
+        text = "".join(
+            c["choices"][0]["delta"].get("content", "") for c in self._text_chunks(chat_chunks)
+        )
+        assert text == "Hello world"
+
+        # Usage should match
+        usage_chunk = next(c for c in chat_chunks if not c.get("_done") and "usage" in c)
+        assert usage_chunk["usage"]["prompt_tokens"] == 5
+        assert usage_chunk["usage"]["completion_tokens"] == 3
