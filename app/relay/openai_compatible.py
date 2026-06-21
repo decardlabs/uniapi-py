@@ -31,8 +31,11 @@ async def _capture_stream_usage(
             try:
                 data = json.loads(line[6:].strip())
                 choices = data.get("choices") or []
-                # Only the final chunk carries usage + finish_reason
+                # OpenAI Chat format: final chunk has choices[0].finish_reason
                 if choices and choices[0].get("finish_reason"):
+                    last_usage = data.get("usage")
+                # Anthropic SSE format: message_delta carries usage at stream end
+                elif data.get("type") == "message_delta" and data.get("usage"):
                     last_usage = data.get("usage")
             except json.JSONDecodeError:
                 pass
