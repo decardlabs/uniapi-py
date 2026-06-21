@@ -400,6 +400,59 @@ registry.register(MY_CHANNEL_TYPE, MyProviderAdaptor)
 
 参考 [DeepSeek](app/relay/adaptors/deepseek/adaptor.py) 或 [GLM](app/relay/adaptors/glm/adaptor.py) 实现。
 
+## 版本历史
+
+### v0.10.x — Token 记录精准化
+
+| 版本 | 日期 | 变更 |
+|------|------|------|
+| **v0.10.9** | 2026-06-21 | 修复 MiniMax/Kimi/Qwen Claude Messages URL 缺少 `/v1/messages` 路径 |
+| **v0.10.8** | 2026-06-21 | 修复流式 callback 未读取 `input_tokens`/`output_tokens` |
+| **v0.10.7** | 2026-06-21 | SQLite WAL 模式 + 30s busy timeout，解决并发写锁 |
+| **v0.10.6** | 2026-06-21 | 捕获 Anthropic SSE `message_delta` 中的 usage |
+| **v0.10.5** | 2026-06-21 | Claude Messages `input_tokens`/`output_tokens` 兼容；channel metadata 动态读取；版本号统一为 `app.version`；Git tag 驱动版本 |
+
+### v0.10.0 — 渠道修复
+
+| 版本 | 日期 | 变更 |
+|------|------|------|
+| **v0.10.3** | 2026-06-20 | 模型名称归一化（创建/更新渠道时去别名） |
+| **v0.10.0** | 2026-06-19 | Token 创建时间修复；MiniMax 模型名小写化；渠道自动禁用；模型别名 |
+
+### v0.9.x — 流式与中间件
+
+| 版本 | 日期 | 变更 |
+|------|------|------|
+| **v0.9.6** | 2026-06-18 | 流式 usage 录制；reasoning_content 缓存优化；前端超时 300s |
+| **v0.9.4** | 2026-06-17 | 缓存感知成本计算（DeepSeek）；Python >=3.11 |
+
+### v0.8.x — 前端独立
+
+| 版本 | 日期 | 变更 |
+|------|------|------|
+| **v0.8.0** | 2026-06-16 | 前端 Fork 原 Go 仓库，自包含项目 |
+
+### v0.7.x — 渠道管理
+
+| 版本 | 日期 | 变更 |
+|------|------|------|
+| **v0.7.0** | 2026-06-15 | Channel CRUD API，前端兼容 |
+
+### v0.5.x–v0.6.x — 协议转换与预算
+
+| 版本 | 日期 | 变更 |
+|------|------|------|
+| **v0.6.0** | 2026-06-15 | Admin 预算管理 API |
+| **v0.5.0** | 2026-06-14 | SSE 流式格式转换（Chat→Anthropic） |
+| **v0.4.0** | 2026-06-13 | Anthropic ↔ Chat 协议互转 |
+
+### v0.2.x–v0.3.x — 基础设施
+
+| 版本 | 日期 | 变更 |
+|------|------|------|
+| **v0.3.0** | 2026-06-12 | Redis 预算验证 + 月度自动重置 |
+| **v0.2.0** | 2026-06-11 | Phase 1 预算系统，5 供应商接入，对比测试 |
+
 ## 发布流程
 
 版本号由 Git tag 驱动，`deploy.sh` 自动烘焙到 `app/version.py`。
