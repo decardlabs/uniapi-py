@@ -387,6 +387,13 @@ async def _handle_relay(request: Request, db: AsyncSession):
         if channel_type is None:
             raise HTTPException(status_code=400, detail=f"Model '{model_name}' not supported by any configured provider")
 
+        # Resolve model name to canonical form (handles case-insensitive aliases)
+        adaptor = _get_adaptor(channel_type)
+        canonical = adaptor.resolve_model_name(model_name) if adaptor else None
+        if canonical is not None:
+            model_name = canonical
+            body["model"] = canonical
+
         # Select target channel via weighted random distribution
         channel = await _select_channel(db, model_name, channel_type)
         if channel is None:

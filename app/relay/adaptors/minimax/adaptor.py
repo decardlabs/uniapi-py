@@ -44,5 +44,15 @@ class MiniMaxAdaptor(BaseAdaptor):
     def get_supported_models(self) -> dict[str, ModelConfig]:
         return dict(pricing.MODEL_PRICING)
 
+    def resolve_model_name(self, name: str) -> str | None:
+        """Case-insensitive model name resolution.
+
+        Returns the canonical (PascalCase) name if found, or None.
+        """
+        if name in pricing.MODEL_PRICING:
+            return name
+        canonical = pricing.MODEL_ALIASES.get(name.lower())
+        return canonical
+
     def get_channel_type(self) -> int:
         return MINIMAX_CHANNEL_TYPE

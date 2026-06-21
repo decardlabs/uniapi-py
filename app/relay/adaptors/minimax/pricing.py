@@ -54,10 +54,9 @@ MODEL_PRICING: dict[str, ModelConfig] = {
     ),
 }
 
-# Backwards-compatible lowercase aliases
-_MODEL_ALIASES: dict[str, ModelConfig] = {}
+# Backwards-compatible lowercase aliases (used for model resolution, not for listing)
+MODEL_ALIASES: dict[str, str] = {}
 for _name in list(MODEL_PRICING.keys()):
     _lower = _name.lower()
     if _lower != _name:
-        _MODEL_ALIASES[_lower] = MODEL_PRICING[_name]
-MODEL_PRICING.update(_MODEL_ALIASES)
+        MODEL_ALIASES[_lower] = _name

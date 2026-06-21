@@ -88,6 +88,16 @@ class BaseAdaptor(ABC):
         """Return dict of model_name -> ModelConfig."""
         ...
 
+    def resolve_model_name(self, name: str) -> str | None:
+        """Resolve a model name to its canonical form.
+
+        Override to support case-insensitive or aliased lookups.
+        Returns None when the model is not recognised.
+        """
+        if name in self.get_supported_models():
+            return name
+        return None
+
     def convert_claude_request(self, body: dict) -> dict:
         """Convert Claude Messages request to OpenAI Chat format.
 

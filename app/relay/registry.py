@@ -30,7 +30,7 @@ class AdaptorRegistry:
         """
         for channel_type, adaptor_cls in self._registry.items():
             adaptor = adaptor_cls()
-            if model_name in adaptor.get_supported_models():
+            if adaptor.resolve_model_name(model_name) is not None:
                 return channel_type
         return None
 
