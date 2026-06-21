@@ -5,6 +5,7 @@ from contextlib import asynccontextmanager
 from typing import AsyncGenerator
 
 from fastapi import FastAPI, HTTPException, Request
+from app.version import VERSION
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 from sqlalchemy import select, text
@@ -165,7 +166,7 @@ async def _seed_defaults():
 def create_app() -> FastAPI:
     app = FastAPI(
         title="UniAPI Python Backend",
-        version="0.10.5",
+        version=VERSION,
         lifespan=lifespan,
     )
 

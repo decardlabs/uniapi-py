@@ -18,6 +18,9 @@ __pycache__/
 .DS_Store
 Thumbs.db
 
+# Auto-generated version file
+app/version.py
+
 # Build artifacts
 dist/
 build/
