@@ -7,6 +7,7 @@ import { Badge } from '@/components/ui/badge';
 import { ResponsivePageContainer } from '@/components/ui/responsive-container';
 import { useNotifications } from '@/components/ui/notifications';
 import { api } from '@/lib/api';
+import { getSelfRechargeRequests, createRechargeRequest } from '@/lib/services/recharge';
 import { useAuthStore } from '@/lib/stores/auth';
 import { useDisplayUnit } from '@/hooks/useDisplayUnit'; // for balance display only
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -88,7 +89,7 @@ export function TopUpPage() {
 
   const loadMyRequests = async () => {
     try {
-      const res = await api.get('/api/recharge/self?p=1&size=10');
+      const res = await getSelfRechargeRequests({ p: 1, size: 10 });
       if (res.data?.success) {
         setMyRequests(res.data.data || []);
       }
@@ -137,10 +138,7 @@ export function TopUpPage() {
     try {
       // Convert display unit value → internal quota before sending to server
       const quotaAmount = getQuotaFromInput(data.amount);
-      const res = await api.post('/api/recharge/', {
-        amount: quotaAmount,
-        remark: data.remark || '',
-      });
+      const res = await createRechargeRequest({ amount: quotaAmount, remark: data.remark || '' });
       if (res.data?.success) {
         notify({ type: 'success', message: tr('request.success', 'Recharge request submitted successfully! Awaiting admin approval.') });
         form.reset();

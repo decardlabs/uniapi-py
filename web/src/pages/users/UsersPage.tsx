@@ -14,6 +14,7 @@ import { TimestampDisplay } from '@/components/ui/timestamp';
 import { STORAGE_KEYS, usePageSize } from '@/hooks/usePersistentState';
 import { useResponsive } from '@/hooks/useResponsive';
 import { api } from '@/lib/api';
+import { adminTopup } from '@/lib/services/recharge';
 import { cn, renderQuota, renderQuotaWithUsd } from '@/lib/utils';
 import { zodResolver } from '@hookform/resolvers/zod';
 import type { ColumnDef } from '@tanstack/react-table';
@@ -638,8 +639,7 @@ function TopUpDialog({
             className="space-y-3"
             onSubmit={form.handleSubmit(async (values) => {
               if (!userId) return;
-              // Unified API call - complete URL with /api prefix
-              const res = await api.post('/api/topup', {
+              const res = await adminTopup({
                 user_id: userId,
                 quota: values.quota,
                 remark: values.remark,

@@ -33,6 +33,8 @@ const EditTokenPage = lazy(() => import('@/pages/tokens/EditTokenPage'));
 const TokensPage = lazy(() => import('@/pages/tokens/TokensPage'));
 const ToolsPage = lazy(() => import('@/pages/tools/ToolsPage'));
 const TopUpPage = lazy(() => import('@/pages/topup/TopUpPage'));
+const RedemptionsPage = lazy(() => import('@/pages/redemptions/RedemptionsPage'));
+const EditRedemptionPage = lazy(() => import('@/pages/redemptions/EditRedemptionPage'));
 const EditUserPage = lazy(() => import('@/pages/users/EditUserPage'));
 const UsersPage = lazy(() => import('@/pages/users/UsersPage').then((m) => ({ default: m.UsersPage })));
 const PlaygroundPage = lazy(() => import('@/pages/chat/PlaygroundPage'));
@@ -119,6 +121,10 @@ function App() {
                     <Route path="mcps/edit/:id" element={<EditMCPServerPage />} />
                     {/* Recharge management (replaces redemption system) */}
                     <Route path="recharges" element={<RechargesPage />} />
+                    {/* Redemption code management (legacy — being replaced by recharge system) */}
+                    <Route path="redemptions" element={<RedemptionsPage />} />
+                    <Route path="redemptions/edit/:id" element={<EditRedemptionPage />} />
+                    <Route path="redemptions/add" element={<EditRedemptionPage />} />
                     {/* Budget pool management */}
                     <Route path="pools" element={<BudgetPoolsPage />} />
                     <Route path="about" element={<AboutPage />} />

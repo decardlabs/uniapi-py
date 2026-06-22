@@ -35,26 +35,49 @@ export interface ApiResult<T = unknown> {
   data?: T;
 }
 
-// ── Endpoints ───────────────────────────────────────────
+// ── Admin Queries ───────────────────────────────────────
 
 export async function getRechargeRequests(params?: {
   p?: number;
   size?: number;
 }): Promise<AxiosResponse<PaginatedRechargeResponse>> {
-  const query = params ? `?p=${params.p || 0}&size=${params.size || 10}` : '';
-  return api.get(`/api/topup/${query}`);
+  const p = params?.p ?? 0;
+  const size = params?.size ?? 10;
+  return api.get(`/api/recharge/?p=${p}&size=${size}`);
 }
 
 export async function createRechargeRequest(
   data: CreateRechargeRequest
 ): Promise<AxiosResponse<ApiResult<TopUpRequest>>> {
-  return api.post('/api/topup/', data);
+  return api.post('/api/recharge/', data);
 }
 
-export async function reviewRecharge(
-  id: number,
-  action: 'approve' | 'reject',
-  adminRemark = ''
+export async function getSelfRechargeRequests(params?: {
+  p?: number;
+  size?: number;
+}): Promise<AxiosResponse<PaginatedRechargeResponse>> {
+  const p = params?.p ?? 0;
+  const size = params?.size ?? 10;
+  return api.get(`/api/recharge/self?p=${p}&size=${size}`);
+}
+
+// ── Admin Actions ───────────────────────────────────────
+
+export async function approveRecharge(
+  rechargeId: number
 ): Promise<AxiosResponse<ApiResult>> {
-  return api.put('/api/topup/', { id, action, admin_remark: adminRemark });
+  return api.post(`/api/recharge/${rechargeId}/approve`);
+}
+
+export async function rejectRecharge(
+  rechargeId: number,
+  adminRemark: string
+): Promise<AxiosResponse<ApiResult>> {
+  return api.post(`/api/recharge/${rechargeId}/reject`, { admin_remark: adminRemark });
+}
+
+export async function adminTopup(
+  data: { user_id: number; quota: number; remark?: string; pool_id?: number }
+): Promise<AxiosResponse<ApiResult>> {
+  return api.post('/api/topup/', data);
 }

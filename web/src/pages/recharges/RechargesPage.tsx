@@ -5,7 +5,7 @@ import { EnhancedDataTable } from '@/components/ui/enhanced-data-table';
 import { useNotifications } from '@/components/ui/notifications';
 import { ResponsivePageContainer } from '@/components/ui/responsive-container';
 import { STORAGE_KEYS, usePageSize } from '@/hooks/usePersistentState';
-import { api } from '@/lib/api';
+import { getRechargeRequests, approveRecharge, rejectRecharge } from '@/lib/services/recharge';
 import { renderQuotaWithUsd } from '@/lib/utils';
 import type { ColumnDef } from '@tanstack/react-table';
 import {
@@ -56,7 +56,7 @@ export function RechargesPage() {
   const load = async (p = 0, size = pageSize) => {
     setLoading(true);
     try {
-      const res = await api.get(`/api/recharge/?p=${p + 1}&size=${size}`);
+      const res = await getRechargeRequests({ p: p + 1, size });
       if (res.data?.success) {
         setData(res.data.data || []);
         setTotal(res.data.total || 0);
@@ -83,7 +83,7 @@ export function RechargesPage() {
   const handleApprove = async (id: number) => {
     setSubmittingId(id);
     try {
-      const res = await api.post(`/api/recharge/${id}/approve`, {});
+      const res = await approveRecharge(id);
       if (res.data?.success) {
         notify({ type: 'success', message: tr('notifications.approved', '✅ Request approved! User balance updated.') });
         setReviewingId(null);
@@ -107,7 +107,7 @@ export function RechargesPage() {
     }
     setSubmittingId(id);
     try {
-      const res = await api.post(`/api/recharge/${id}/reject`, { admin_remark: reason });
+      const res = await rejectRecharge(id, reason);
       if (res.data?.success) {
         notify({ type: 'success', message: tr('notifications.rejected', '❌ Request rejected') });
         setReviewingId(null);
