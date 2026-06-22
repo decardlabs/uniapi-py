@@ -113,6 +113,11 @@ class ChatToAnthropicSSE:
                     "role": "assistant",
                     "content": [],
                     "model": chunk.get("model", ""),
+                    # Anthropic API requires usage in message_start
+                    # (input_tokens=0 as placeholder; real tokens
+                    # come in message_delta when GLM returns usage
+                    # in a separate chunk after finish_reason).
+                    "usage": {"input_tokens": 0, "output_tokens": 0},
                 },
             }))
 
