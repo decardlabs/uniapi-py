@@ -668,6 +668,8 @@ async def _handle_relay(request: Request, db: AsyncSession):
                                     )
                                     await _record_channel_failure(failed_channel_id, db)
                                     continue  # retry with fallback
+                    else:
+                        logger.info("FALLBACK skip | model=%s not allowed by token", fallback_model)
                 # Fall through to refund/raise code below
 
             # ── Path C: 5xx recoverable, first attempt → try fallback (existing logic, keep not stream) ──
@@ -693,6 +695,8 @@ async def _handle_relay(request: Request, db: AsyncSession):
                                     )
                                     await _record_channel_failure(failed_channel_id, db)
                                     continue
+                    else:
+                        logger.info("FALLBACK skip | model=%s not allowed by token", fallback_model)
 
             # ── All retries and fallbacks exhausted → record failure, refund, raise ──
             if is_recoverable or status == 429:
@@ -756,6 +760,8 @@ async def _handle_relay(request: Request, db: AsyncSession):
                                     logger.info("FALLBACK | error -> model=%s", model_name)
                                     await _record_channel_failure(failed_channel_id, db)
                                     continue
+                    else:
+                        logger.info("FALLBACK skip | model=%s not allowed by token", fallback_model)
             # Fall through to refund/raise code below
 
             # Refund on failure
