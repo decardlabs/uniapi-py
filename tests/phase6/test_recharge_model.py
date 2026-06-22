@@ -24,6 +24,14 @@ class TestRechargeRequestModel:
         assert RechargeRequest.__table__.columns["status"].default.arg == 1
 
 
+class TestRechargeStatus:
+    def test_recharge_status_values(self):
+        from app.schemas.recharge import RechargeStatus
+        assert RechargeStatus.PENDING == 1
+        assert RechargeStatus.APPROVED == 2
+        assert RechargeStatus.REJECTED == 3
+
+
 class TestRechargeSchema:
     def test_recharge_create_valid(self):
         data = RechargeCreate(amount=1000000, remark="test top-up")

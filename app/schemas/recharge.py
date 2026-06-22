@@ -1,9 +1,16 @@
 """Recharge-related Pydantic schemas."""
 from __future__ import annotations
 
+import enum
 from typing import Optional
 
 from pydantic import BaseModel, Field
+
+
+class RechargeStatus(enum.IntEnum):
+    PENDING = 1
+    APPROVED = 2
+    REJECTED = 3
 
 
 class RechargeCreate(BaseModel):
@@ -15,7 +22,7 @@ class RechargeResponse(BaseModel):
     id: int
     user_id: int
     amount: int
-    status: int
+    status: RechargeStatus
     remark: Optional[str] = None
     admin_remark: Optional[str] = None
     reviewer_id: Optional[int] = None
