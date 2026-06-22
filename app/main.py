@@ -303,7 +303,6 @@ def create_app() -> FastAPI:
     app.include_router(channel_router)
     app.include_router(budget_router)
     app.include_router(admin_budget_router)
-    app.include_router(cache_analytics_router)
     app.include_router(mcp_servers_router)
     app.include_router(verification_router)
     app.include_router(oauth_router)
