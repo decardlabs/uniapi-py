@@ -217,15 +217,57 @@ async def relay_chat_completion(
         client = httpx.AsyncClient()
 
         if raw_passthrough:
-            # Raw byte-level passthrough — preserves original SSE wire format.
-            # Light-scans the byte stream for Anthropic SSE message_delta
-            # events to capture actual token usage.
-            raw_stream = stream_raw_passthrough(
-                client, upstream_url, body, headers,
-                on_usage=on_stream_usage,
-            )
+            # Eagerly check upstream status so 4xx/5xx errors propagate
+            # to _handle_relay()'s try/except.
+            req = client.build_request("POST", upstream_url, json=body, headers=headers)
+            resp = await client.send(req, stream=True)
+            if resp.status_code >= 400:
+                await resp.aclose()
+                await client.aclose()
+                resp.raise_for_status()
+
+            async def _eager_raw_stream():
+                """Raw byte-level SSE passthrough — preserves original wire format.
+
+                Light-scans the byte stream for Anthropic SSE message_delta
+                events to capture actual token usage.
+                """
+                try:
+                    last_usage: dict[str, Any] | None = None
+                    scanner = b""
+
+                    async with resp:
+                        async for chunk in resp.aiter_bytes(chunk_size=4096):
+                            yield chunk
+
+                            if not last_usage:
+                                scanner += chunk
+                                if b"event: message_delta" in scanner and b'"usage"' in scanner:
+                                    idx = scanner.rfind(b"event: message_delta")
+                                    data_prefix = b"data: "
+                                    data_start = scanner.find(data_prefix, idx)
+                                    if data_start >= 0:
+                                        data_end = scanner.find(b"\n", data_start)
+                                        if data_end >= 0:
+                                            try:
+                                                data_line = scanner[data_start + len(data_prefix):data_end]
+                                                event_data = json.loads(data_line.decode("utf-8"))
+                                                usage = event_data.get("usage")
+                                                if usage:
+                                                    last_usage = usage
+                                            except (json.JSONDecodeError, UnicodeDecodeError):
+                                                pass
+
+                                if len(scanner) > 16384:
+                                    scanner = scanner[-8192:]
+
+                    if last_usage is not None and on_stream_usage is not None:
+                        await on_stream_usage(last_usage)
+                finally:
+                    await client.aclose()
+
             return StreamingResponse(
-                raw_stream,
+                _eager_raw_stream(),
                 media_type="text/event-stream",
                 headers={
                     "Cache-Control": "no-cache",
@@ -234,7 +276,35 @@ async def relay_chat_completion(
                 },
             )
 
-        raw_stream = stream_chat_completion(client, upstream_url, body, headers)
+        # ── Eagerly establish upstream connection ────────────────────────
+        # Use client.send() with stream=True to get response headers
+        # WITHOUT consuming the body.  This way 4xx/5xx errors are raised
+        # HERE — inside relay_chat_completion() — so _handle_relay()'s
+        # try/except catches them and can record channel failures,
+        # refund quota, and attempt failover.
+        req = client.build_request("POST", upstream_url, json=body, headers=headers)
+        resp = await client.send(req, stream=True)
+        if resp.status_code >= 400:
+            await resp.aclose()
+            await client.aclose()
+            resp.raise_for_status()
+
+        # ── Stream from the established connection ──────────────────────
+        async def _eager_sse_stream():
+            """Read SSE lines from the already-validated upstream response."""
+            try:
+                async with resp:
+                    async for line in resp.aiter_lines():
+                        if line.startswith("data: "):
+                            yield line + "\n\n"
+                            if line.strip() == "data: [DONE]":
+                                break
+                        elif line.strip():
+                            yield f"data: {line}\n\n"
+            finally:
+                await client.aclose()
+
+        raw_stream = _eager_sse_stream()
 
         # Wrap with usage capture when a callback is provided
         if on_stream_usage is not None:
