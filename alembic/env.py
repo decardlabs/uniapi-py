@@ -14,6 +14,7 @@ import app.models.option  # noqa: F401
 import app.models.channel  # noqa: F401
 import app.models.ability  # noqa: F401
 import app.models.budget  # noqa: F401
+import app.models.recharge  # noqa: F401
 
 config = context.config
 if config.config_file_name is not None:
