@@ -98,6 +98,10 @@ def _make_stream_usage_callback(
             or usage.get("cached_tokens")                    # legacy fallback
             or 0
         )
+        # MiniMax quirk: when prompt_tokens=0 but cached_tokens>0,
+        # the cached_tokens IS the total prompt tokens (all were cached)
+        if prompt_tokens == 0 and cache_hit > 0:
+            prompt_tokens = cache_hit
         cache_miss = max(0, prompt_tokens - cache_hit)
 
         if model_config:
@@ -839,11 +843,18 @@ async def _handle_relay(request: Request, db: AsyncSession):
     if not cache_hit and not cache_miss:
         details = usage.get("prompt_tokens_details") or {}
         cache_hit = details.get("cached_tokens") or 0
+        # MiniMax quirk: when prompt_tokens=0 but cached_tokens>0,
+        # the cached_tokens IS the total prompt tokens (all were cached)
+        if prompt_tokens == 0 and cache_hit > 0:
+            prompt_tokens = cache_hit
         cache_miss = max(0, prompt_tokens - cache_hit)
 
     # Fallback: legacy cached_tokens field
     if not cache_hit and not cache_miss:
         cache_hit = usage.get("cached_tokens") or 0
+        # Same MiniMax quirk
+        if prompt_tokens == 0 and cache_hit > 0:
+            prompt_tokens = cache_hit
         cache_miss = max(0, prompt_tokens - cache_hit)
 
     # Cost: cached tokens at cached_input_ratio, miss tokens at input_ratio
