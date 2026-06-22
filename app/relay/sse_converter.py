@@ -13,6 +13,10 @@ class ChatToAnthropicSSE:
 
     Use ``feed(line)`` for each SSE line and ``flush()`` at stream end.
     This preserves real-time streaming behavior (no buffering).
+
+    Some upstream Chat APIs (e.g. GLM) may send ``usage`` in a separate
+    SSE chunk with ``choices: []``.  This converter stores such usage
+    and includes it in the ``message_delta`` event.
     """
 
     def __init__(self):
@@ -25,6 +29,22 @@ class ChatToAnthropicSSE:
         self.tool_block_started: dict[int, bool] = {}
         self.has_content = False
         self._done = False
+        self._pending_usage: dict[str, Any] | None = None  # usage from separate chunk
+
+    def _normalize_usage(self, usage: dict[str, Any] | None) -> dict[str, int] | None:
+        """Normalize upstream usage to Anthropic format.
+
+        Supports both OpenAI keys (prompt_tokens/completion_tokens) and
+        Anthropic keys (input_tokens/output_tokens). Returns None when
+        usage is empty or all-zero.
+        """
+        if not usage:
+            return None
+        inp = usage.get("prompt_tokens") or usage.get("input_tokens") or 0
+        out = usage.get("completion_tokens") or usage.get("output_tokens") or 0
+        if inp == 0 and out == 0:
+            return None
+        return {"input_tokens": inp, "output_tokens": out}
 
     def feed(self, line: str) -> list[dict[str, Any]]:
         """Process one SSE line. Returns list of Anthropic event dicts."""
@@ -42,6 +62,15 @@ class ChatToAnthropicSSE:
             for ti in sorted(self.tool_buffers.keys()):
                 if self.tool_block_started.get(ti):
                     events.append(_make_event("content_block_stop", {"type": "content_block_stop", "index": ti}))
+            # Emit message_delta with pending usage if the finish_reason
+            # chunk arrived before the usage-only chunk (e.g. GLM).
+            if self._pending_usage and self.has_content:
+                events.append(_make_event("message_delta", {
+                    "type": "message_delta",
+                    "delta": {"stop_reason": "end_turn", "stop_sequence": None},
+                    "usage": self._pending_usage,
+                }))
+                self._pending_usage = None
             events.append(_make_event("message_stop", {"type": "message_stop"}))
             return events
 
@@ -54,12 +83,24 @@ class ChatToAnthropicSSE:
             self.chat_id = chunk.get("id", "")
 
         choices = chunk.get("choices", [])
+
+        # Handle usage-only chunks (upstream may send usage in a separate
+        # chunk with empty choices).  Store for later ``message_delta``.
         if not choices:
+            usage = chunk.get("usage")
+            if usage:
+                normalized = self._normalize_usage(usage)
+                if normalized:
+                    self._pending_usage = normalized
             return events
 
         delta = choices[0].get("delta", {})
         finish_reason = choices[0].get("finish_reason")
-        usage = chunk.get("usage")
+
+        # Prefer usage from this chunk; fall back to pending usage from
+        # a prior usage-only chunk; discard pending once consumed.
+        usage = self._normalize_usage(chunk.get("usage")) or self._pending_usage
+        self._pending_usage = None
 
         # --- message_start on first chunk with role ---
         if delta.get("role") == "assistant" and not self.has_content:
@@ -144,10 +185,7 @@ class ChatToAnthropicSSE:
                 "delta": {"stop_reason": stop_reason, "stop_sequence": None},
             }
             if usage:
-                md["usage"] = {
-                    "input_tokens": usage.get("prompt_tokens", 0),
-                    "output_tokens": usage.get("completion_tokens", 0),
-                }
+                md["usage"] = usage  # already normalized to Anthropic format
             events.append(_make_event("message_delta", md))
 
         return events

@@ -213,6 +213,34 @@ class TestEdgeCases:
         assert "event: message_stop" in full_output
         assert "text_delta" in full_output
 
+    def test_usage_only_chunk_after_finish(self):
+        """Usage-only chunk (choices=[]) after finish_reason should still produce usage in message_delta.
+
+        Some Chat APIs (e.g. GLM) may send usage in a separate SSE chunk
+        with empty choices array. The converter must capture it and include
+        in the message_delta event.
+        """
+        from app.relay.sse_converter import chat_to_anthropic_sse
+        chunks = [
+            'data: {"id":"x","object":"chat.completion.chunk","choices":[{"index":0,"delta":{"role":"assistant"},"finish_reason":null}]}',
+            'data: {"id":"x","choices":[{"index":0,"delta":{"content":"Hello"},"finish_reason":null}]}',
+            # Chunk with finish_reason but NO usage
+            'data: {"id":"x","choices":[{"index":0,"delta":{},"finish_reason":"stop"}]}',
+            # Separate usage-only chunk (empty choices)
+            'data: {"id":"x","choices":[],"usage":{"prompt_tokens":5,"completion_tokens":3,"total_tokens":8}}',
+            'data: [DONE]',
+        ]
+        events = list(chat_to_anthropic_sse(iter(chunks)))
+        msg_deltas = [e for e in events if e["event"] == "message_delta"]
+        # Two possible: one from finish_reason chunk, one from pending usage on [DONE].
+        # At least one must carry the usage.
+        assert len(msg_deltas) >= 1
+        last_delta = msg_deltas[-1]
+        usage = last_delta["data"].get("usage")
+        assert usage is not None, f"Last message_delta should have usage, got: {last_delta['data']}"
+        assert usage["input_tokens"] == 5
+        assert usage["output_tokens"] == 3
+
 
 class TestAnthropicToChatSSE:
     """Anthropic SSE events -> OpenAI Chat chunks (reverse direction)."""

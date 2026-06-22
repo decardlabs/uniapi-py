@@ -24,6 +24,11 @@ async def _capture_stream_usage(
 
     The last SSE event before [DONE] may carry token usage. This wrapper
     captures that usage and calls ``on_usage`` after the stream ends.
+
+    Supports three SSE usage patterns:
+    1. OpenAI Chat format: ``choices[0].finish_reason`` present
+    2. Anthropic SSE format: ``type == "message_delta"``
+    3. Usage-only chunk: ``choices`` is empty but ``usage`` present (GLM)
     """
     last_usage: dict[str, Any] | None = None
     async for line in raw_stream:
@@ -31,12 +36,17 @@ async def _capture_stream_usage(
             try:
                 data = json.loads(line[6:].strip())
                 choices = data.get("choices") or []
+                usage = data.get("usage")
                 # OpenAI Chat format: final chunk has choices[0].finish_reason
                 if choices and choices[0].get("finish_reason"):
-                    last_usage = data.get("usage")
+                    if usage:
+                        last_usage = usage
                 # Anthropic SSE format: message_delta carries usage at stream end
-                elif data.get("type") == "message_delta" and data.get("usage"):
-                    last_usage = data.get("usage")
+                elif data.get("type") == "message_delta" and usage:
+                    last_usage = usage
+                # Usage-only chunk: empty choices but usage present (e.g. GLM)
+                elif usage:
+                    last_usage = usage
             except json.JSONDecodeError:
                 pass
         yield line
