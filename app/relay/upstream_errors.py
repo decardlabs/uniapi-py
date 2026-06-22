@@ -54,6 +54,19 @@ def map_upstream_http_error(
         uni_api_code = f"PROVIDER_{provider.upper()}_SAFETY_BLOCKED"
         return uni_api_code, _build_upstream(provider, status_code, upstream_code, upstream_message), "请求内容被上游安全/内容过滤拦截"
 
+    # GLM Coding Plan special case: rate_limit_error with "Coding Plan" message
+    # indicates the Anthropic endpoint requires a paid Coding Plan subscription.
+    # Claude Code interprets this as a login failure, so we return a distinct
+    # error code that clients can handle specially.
+    if provider == "glm" and upstream_code == "rate_limit_error":
+        if upstream_message and "Coding Plan" in upstream_message:
+            uni_api_code = "PROVIDER_GLM_CODING_PLAN_EXPIRED"
+            return (
+                uni_api_code,
+                _build_upstream(provider, status_code, upstream_code, upstream_message),
+                "GLM Coding Plan 已到期或未订阅。Anthropic 端点（Claude Messages）需要单独的编程套餐订阅。"
+            )
+
     # Map by status code
     uni_api_code = _http_status_to_upstream_code(status_code)
 
