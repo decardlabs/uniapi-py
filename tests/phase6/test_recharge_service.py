@@ -5,6 +5,7 @@ import pytest
 from sqlalchemy import select
 
 from app.database import async_session_factory
+from app.models.log import Log
 from app.models.recharge import RechargeRequest
 from app.models.user import User
 from app.services import recharge as recharge_service
@@ -89,3 +90,110 @@ async def test_get_recharge_by_id_not_found():
     async with async_session_factory() as db:
         req = await recharge_service.get_recharge_by_id(db, 9999)
         assert req is None
+
+
+@pytest.mark.asyncio
+async def test_approve_recharge_adds_quota():
+    """Approving a recharge adds the amount to user's quota."""
+    async with async_session_factory() as db:
+        user = User(username="approve_user", password=hash_password("p"), role=1, quota=1000)
+        admin = User(username="admin", password=hash_password("p"), role=10, quota=0)
+        db.add_all([user, admin])
+        await db.flush()
+        now = int(time.time() * 1000)
+        user.created_time = now
+        user.updated_time = now
+        admin.created_time = now
+        admin.updated_time = now
+
+        req = await recharge_service.create_recharge(db, user.id, 500000, "please approve")
+        assert req.status == 1
+
+        approved = await recharge_service.approve_recharge(db, req.id, admin.id)
+        assert approved.status == 2
+        assert approved.reviewer_id == admin.id
+        assert approved.reviewed_time is not None
+
+        # Verify user quota increased
+        result = await db.execute(select(User).where(User.id == user.id))
+        updated_user = result.scalar_one()
+        assert updated_user.quota == 501000  # 1000 + 500000
+
+
+@pytest.mark.asyncio
+async def test_reject_recharge():
+    """Rejecting a recharge sets status=3 and does not change quota."""
+    async with async_session_factory() as db:
+        user = User(username="reject_user", password=hash_password("p"), role=1, quota=1000)
+        admin = User(username="admin2", password=hash_password("p"), role=10, quota=0)
+        db.add_all([user, admin])
+        await db.flush()
+        now = int(time.time() * 1000)
+        user.created_time = now
+        user.updated_time = now
+        admin.created_time = now
+        admin.updated_time = now
+
+        req = await recharge_service.create_recharge(db, user.id, 300000)
+        rejected = await recharge_service.reject_recharge(db, req.id, admin.id, "Invalid request")
+        assert rejected.status == 3
+        assert rejected.admin_remark == "Invalid request"
+
+        result = await db.execute(select(User).where(User.id == user.id))
+        u = result.scalar_one()
+        assert u.quota == 1000  # unchanged
+
+
+@pytest.mark.asyncio
+async def test_approve_already_approved_rejected():
+    """Approving an already handled request should raise ValueError."""
+    async with async_session_factory() as db:
+        user = User(username="double_user", password=hash_password("p"), role=1, quota=0)
+        admin = User(username="admin3", password=hash_password("p"), role=10, quota=0)
+        db.add_all([user, admin])
+        await db.flush()
+        now = int(time.time() * 1000)
+        user.created_time = now
+        user.updated_time = now
+        admin.created_time = now
+        admin.updated_time = now
+
+        req = await recharge_service.create_recharge(db, user.id, 100000)
+        await recharge_service.approve_recharge(db, req.id, admin.id)
+        with pytest.raises(ValueError, match="not pending"):
+            await recharge_service.approve_recharge(db, req.id, admin.id)
+
+
+@pytest.mark.asyncio
+async def test_admin_topup():
+    """Admin direct top-up adds quota immediately."""
+    async with async_session_factory() as db:
+        user = User(username="topup_user", password=hash_password("p"), role=1, quota=500)
+        admin = User(username="admin4", password=hash_password("p"), role=10, quota=0)
+        db.add_all([user, admin])
+        await db.flush()
+        now = int(time.time() * 1000)
+        user.created_time = now
+        user.updated_time = now
+        admin.created_time = now
+        admin.updated_time = now
+
+        result = await recharge_service.admin_topup(db, admin.id, user.id, 1000000)
+        assert result["quota"] == 1000500  # 500 + 1000000
+
+        # Verify log was created
+        log_result = await db.execute(select(Log).where(Log.type == 1).where(Log.user_id == user.id))
+        logs = log_result.scalars().all()
+        assert len(logs) == 1
+        assert logs[0].quota == 1000000
+
+
+@pytest.mark.asyncio
+async def test_admin_topup_nonexistent_user():
+    """Top-up on non-existent user raises ValueError."""
+    async with async_session_factory() as db:
+        admin = User(username="admin5", password=hash_password("p"), role=10, quota=0)
+        db.add(admin)
+        await db.flush()
+        with pytest.raises(ValueError, match="not found"):
+            await recharge_service.admin_topup(db, admin.id, 9999, 100000)

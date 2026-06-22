@@ -7,6 +7,7 @@ from typing import Optional
 from sqlalchemy import select, func
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.models.log import Log
 from app.models.recharge import RechargeRequest
 from app.models.user import User
 
@@ -116,3 +117,100 @@ async def list_self_recharges(
 async def get_recharge_by_id(db: AsyncSession, recharge_id: int) -> RechargeRequest | None:
     result = await db.execute(select(RechargeRequest).where(RechargeRequest.id == recharge_id))
     return result.scalar_one_or_none()
+
+
+async def approve_recharge(
+    db: AsyncSession,
+    recharge_id: int,
+    admin_id: int,
+) -> RechargeRequest:
+    req = await get_recharge_by_id(db, recharge_id)
+    if req is None:
+        raise ValueError(f"Recharge request {recharge_id} not found")
+    if req.status != 1:
+        raise ValueError(f"Recharge request {recharge_id} is not pending")
+
+    now = int(time.time() * 1000)
+    req.status = 2
+    req.reviewer_id = admin_id
+    req.reviewed_time = now
+
+    # Add quota to user
+    result = await db.execute(select(User).where(User.id == req.user_id))
+    user = result.scalar_one_or_none()
+    if user is None:
+        raise ValueError(f"User {req.user_id} not found")
+    user.quota = (user.quota or 0) + req.amount
+
+    # Create log entry
+    log = Log(
+        user_id=req.user_id,
+        created_at=now,
+        type=1,  # TOPUP
+        content=f"Recharge approved: +{req.amount} quota (request #{recharge_id})",
+        quota=req.amount,
+    )
+    db.add(log)
+    await db.flush()
+    await db.refresh(req)
+    await db.commit()
+    return req
+
+
+async def reject_recharge(
+    db: AsyncSession,
+    recharge_id: int,
+    admin_id: int,
+    admin_remark: str,
+) -> RechargeRequest:
+    req = await get_recharge_by_id(db, recharge_id)
+    if req is None:
+        raise ValueError(f"Recharge request {recharge_id} not found")
+    if req.status != 1:
+        raise ValueError(f"Recharge request {recharge_id} is not pending")
+
+    now = int(time.time() * 1000)
+    req.status = 3
+    req.reviewer_id = admin_id
+    req.reviewed_time = now
+    req.admin_remark = admin_remark
+
+    await db.flush()
+    await db.refresh(req)
+    await db.commit()
+    return req
+
+
+async def admin_topup(
+    db: AsyncSession,
+    admin_id: int,
+    user_id: int,
+    amount: int,
+    remark: Optional[str] = None,
+    pool_id: int = 0,
+) -> dict:
+    """Admin directly tops up a user's quota. Returns user info dict."""
+    result = await db.execute(select(User).where(User.id == user_id))
+    user = result.scalar_one_or_none()
+    if user is None:
+        raise ValueError(f"User {user_id} not found")
+
+    now = int(time.time() * 1000)
+    user.quota = (user.quota or 0) + amount
+
+    log = Log(
+        user_id=user_id,
+        created_at=now,
+        type=1,  # TOPUP
+        content=f"Admin top-up: +{amount} quota (by admin #{admin_id})" + (f" [{remark}]" if remark else ""),
+        quota=amount,
+    )
+    db.add(log)
+    await db.flush()
+    await db.commit()
+
+    return {
+        "id": user.id,
+        "username": user.username,
+        "quota": user.quota,
+    }
