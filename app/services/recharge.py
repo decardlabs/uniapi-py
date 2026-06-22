@@ -185,9 +185,9 @@ async def admin_topup(
     db: AsyncSession,
     admin_id: int,
     user_id: int,
-    amount: int,
+    quota: int,
+    pool_id: int,
     remark: Optional[str] = None,
-    pool_id: int = 0,
 ) -> dict:
     """Admin directly tops up a user's quota. Returns user info dict."""
     result = await db.execute(select(User).where(User.id == user_id))
@@ -196,14 +196,14 @@ async def admin_topup(
         raise ValueError(f"User {user_id} not found")
 
     now = int(time.time() * 1000)
-    user.quota = (user.quota or 0) + amount
+    user.quota = (user.quota or 0) + quota
 
     log = Log(
         user_id=user_id,
         created_at=now,
         type=1,  # TOPUP
-        content=f"Admin top-up: +{amount} quota (by admin #{admin_id})" + (f" [{remark}]" if remark else ""),
-        quota=amount,
+        content=f"Admin top-up: +{quota} quota (by admin #{admin_id})" + (f" [{remark}]" if remark else ""),
+        quota=quota,
     )
     db.add(log)
     await db.flush()

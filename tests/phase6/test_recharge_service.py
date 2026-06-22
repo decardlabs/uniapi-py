@@ -178,7 +178,7 @@ async def test_admin_topup():
         admin.created_time = now
         admin.updated_time = now
 
-        result = await recharge_service.admin_topup(db, admin.id, user.id, 1000000)
+        result = await recharge_service.admin_topup(db, admin.id, user.id, 1000000, pool_id=0)
         assert result["quota"] == 1000500  # 500 + 1000000
 
         # Verify log was created
@@ -196,4 +196,4 @@ async def test_admin_topup_nonexistent_user():
         db.add(admin)
         await db.flush()
         with pytest.raises(ValueError, match="not found"):
-            await recharge_service.admin_topup(db, admin.id, 9999, 100000)
+            await recharge_service.admin_topup(db, admin.id, 9999, 100000, pool_id=0)
