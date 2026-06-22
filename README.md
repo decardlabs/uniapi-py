@@ -8,17 +8,16 @@
 
 ## Status
 
-🚧 **Phases 1-6 已完成** — `485 tests, all GREEN`
+🚧 **All phases complete** — 502 tests, all GREEN
 
 | Phase | 内容 | 状态 | 测试数 |
 |-------|------|------|--------|
 | 1 | MVP: Auth, Status, DeepSeek Chat Completions, SSE | ✅ | 28 |
-| 2 | Management API: User/Token/Log/Options CRUD, Billing | ✅ | 127 |
+| 2 | Management API: User/Token/Log/Options CRUD, Billing | ✅ | 128 |
 | 3 | Multi-format: NATIVE_FORMATS smart routing | ✅ | 7 |
 | 4 | Extensibility: BaseAdaptor ABC, Registry, Provider pattern | ✅ | 46 |
-| 5 | **Production**: Rate limiting, PII masking, Audit logging, Health check, Channel failover | ✅ | — |
+| 5 | **Production**: 429重试与退路 | ✅ | 246 |
 | 6 | **Fusion + Auto**: Multi-model ensemble, price-based auto routing, load balancing | ✅ | — |
-| 7 | **Error Codes**: 统一错误码体系, 结构化异常, 上游错误映射 | ✅ | 240 |
 
 ### 已接入供应商（5 家）
 
@@ -160,11 +159,12 @@ uniapi-py/
     ├── test_deepseek_normalize.py   # Phase 1: DeepSeek 归一化 (23 tests)
     ├── test_channeltype.py          # 渠道类型测试 (15 tests)
     ├── test_relay_comparison.py     # Relay 对比测试 (3 tests)
-    ├── phase2/                      # Phase 2: 管理 API (127 tests)
+    ├── phase2/                      # Phase 2: 管理 API (128 tests)
     ├── phase3/                      # Phase 3: 多格式 (7 tests)
     ├── phase4/                      # Phase 4: 可扩展性 (46 tests)
-    ├── phase5/                      # Phase 7: 错误码体系 (240 tests)
-    ├── glm/                         # GLM adaptor (11 tests)
+    ├── phase5/                      # Phase 5: 429重试与退路 (246 tests)
+    ├── glm/                         # GLM adaptor (13 tests)
+    ├── test_cache_analytics.py     # Cache analytics (8 tests)
     └── live/                        # 实时测试框架
         ├── live_test.py             # 入口
         ├── config.py                # 环境变量配置
@@ -335,6 +335,40 @@ uniapi-py/
 - **中继 API**: Bearer token (`Authorization: Bearer <key>`)，支持 `token_key:channel_id` 格式锚定渠道
 - **响应格式**: `{"success": bool, "message"?: str, "data"?: T, "total"?: int}`
 
+#### 认证扩展
+
+| Endpoint | Auth | 描述 |
+|----------|------|------|
+| `GET /api/verification?email=x&turnstile=x` | Public | 发送邮箱验证码 |
+| `GET /api/reset_password?email=x&turnstile=x` | Public | 发送密码重置邮件 |
+| `POST /api/user/reset` | Public | 确认密码重置 |
+| `GET /api/oauth/state` | Public | OAuth CSRF state |
+| `GET /api/oauth/github` | Public | GitHub OAuth 回调 |
+| `GET /api/user/totp/status` | UserAuth | TOTP 状态查询 |
+| `GET /api/user/totp/setup` | UserAuth | TOTP 设置信息 |
+| `POST /api/user/totp/confirm` | UserAuth | 确认启用 TOTP |
+| `POST /api/user/totp/disable` | UserAuth | 禁用 TOTP |
+| `GET /api/user/passkey` | UserAuth | Passkey 列表 |
+| `POST /api/user/passkey/register/begin` | UserAuth | Passkey 注册开始 |
+| `POST /api/user/passkey/register/finish` | UserAuth | Passkey 注册完成 |
+| `POST /api/user/passkey/login/begin` | Public | Passkey 登录开始 |
+| `POST /api/user/passkey/login/finish` | Public | Passkey 登录完成 |
+| `DELETE /api/user/passkey/{passkey_id}` | UserAuth | 删除 Passkey |
+| `GET /api/user/cache-analytics` | UserAuth | 缓存命中分析 |
+
+#### MCP 服务器管理 (Admin)
+
+| Endpoint | Auth | 描述 |
+|----------|------|------|
+| `GET /api/mcp_servers/` | UserAuth | 列出 MCP 服务器 |
+| `GET /api/mcp_servers/{server_id}` | UserAuth | 获取 MCP 服务器详情 |
+| `POST /api/mcp_servers/` | UserAuth | 创建 MCP 服务器 |
+| `PUT /api/mcp_servers/{server_id}` | UserAuth | 更新 MCP 服务器 |
+| `DELETE /api/mcp_servers/{server_id}` | UserAuth | 删除 MCP 服务器 |
+| `POST /api/mcp_servers/{server_id}/sync` | UserAuth | 同步 MCP 工具 |
+| `POST /api/mcp_servers/{server_id}/test` | UserAuth | 测试 MCP 连接 |
+| `GET /api/mcp_servers/{server_id}/tools` | UserAuth | 获取 MCP 工具列表 |
+
 ## 配置
 
 | Env Var | 默认值 | 说明 |
@@ -343,7 +377,7 @@ uniapi-py/
 | `DEBUG` | false | 调试模式 |
 | `SQLITE_PATH` | uniapi.db | SQLite 数据库路径 |
 | `SQL_DSN` | — | MySQL/PostgreSQL DSN |
-| `SESSION_SECRET` | auto | Session cookie 签名密钥 |
+| `SESSION_SECRET` | auto (随机生成，重启后所有会话失效) | Session cookie 签名密钥 |
 | `TOKEN_KEY_PREFIX` | sk- | Token 密钥前缀 |
 | `API_RATE_LIMIT` | 480 | 管理 API 每分钟请求上限 |
 | `RELAY_RATE_LIMIT` | 480 | 中继 API 每分钟请求上限 |
@@ -352,13 +386,19 @@ uniapi-py/
 | `QWEN_API_KEY` | — | Qwen (百炼) API key |
 | `KIMI_API_KEY` | — | Kimi (Moonshot) API key |
 | `MINIMAX_API_KEY` | — | MiniMax API key |
+| `UPSTREAM_RETRY_MAX` | 4 | 上游重试次数（429/5xx） |
+| `UPSTREAM_RETRY_BACKOFF_BASE` | 1.0 | 重试退避基数（秒） |
+| `TURNSTILE_SECRET_KEY` | — | Cloudflare Turnstile Secret Key |
+| `SMTP_TOKEN` | — | SMTP 密码（邮箱验证） |
+| `GITHUB_CLIENT_SECRET` | — | GitHub OAuth Client Secret |
+| `COOKIE_MAX_AGE_HOURS` | 168 | Session Cookie 有效期（小时） |
 | `BUDGET_REDIS_URL` | — | Redis 地址 (留空且 BUDGET_ENABLED=false 禁用) |
-| `BUDGET_ENABLED` | false | 启用预算系统 |
+| `BUDGET_ENABLED` | true | 启用预算系统 |
 | `DEFAULT_MONTHLY_BUDGET` | 800.0 | 默认月预算 |
 
 ## 测试
 
-### 单元测试 (245 tests)
+### 单元测试 (491 tests, 11 skipped)
 
 ```bash
 pytest tests/ -v
@@ -425,6 +465,11 @@ registry.register(MY_CHANNEL_TYPE, MyProviderAdaptor)
 
 | 版本 | 日期 | 变更 |
 |------|------|------|
+| **v0.10.17** | 2026-06-22 | 修复流式日志 token 用量未写入（callback 中 `cache_hit` 引用前赋值错误、空 usage 对象误捕获、Raw passthrough 扫描器只认 `event:` 前缀）；文档全面同步修复 |
+| **v0.10.16** | 2026-06-22 | 429 exponential backoff retry（同渠道）；httpx `async with resp` 修复（`stream=True` 模式不能用 async with，需用 try/finally） |
+| **v0.10.15** | 2026-06-22 | 上游 429 错误自动重试（同一渠道，指数退避） |
+| **v0.10.14** | 2026-06-22 | 新增 `upstream_retry_max` / `upstream_retry_backoff_base` 配置项 |
+| **v0.10.13** | 2026-06-22 | 流式请求后根据实际 token 用量Refund配额；Provider 错误码（PROVIDER_*）映射到 502 |
 | **v0.10.12** | 2026-06-22 | 修复 Claude Code 中转 GLM 时 metadata 字段导致 400 错误返回登录状态 |
 | **v0.10.11** | 2026-06-22 | 修复原生 Claude 流式(raw_passthrough)不记录实际 token 用量；GLM 适配器注释说明 Coding Plan 限制 |
 | **v0.10.10** | 2026-06-21 | 错误码体系 + Claude Messages SSE 直通修复 + 文档对齐 |

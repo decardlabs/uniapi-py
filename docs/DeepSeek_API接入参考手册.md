@@ -8,7 +8,7 @@
 
 | 协议 | Base URL | 说明 |
 |------|----------|------|
-| **OpenAI 兼容** | `https://api.deepseek.com` | Chat Completions 端点 `/chat/completions` |
+| **OpenAI 兼容** | `https://api.deepseek.com/v1` | Chat Completions 端点 `/v1/chat/completions`（完整路径 `https://api.deepseek.com/v1/chat/completions`） |
 | **Anthropic 兼容** | `https://api.deepseek.com/anthropic` | Messages 端点 `/v1/messages` |
 
 ### 认证方式
@@ -140,7 +140,7 @@ export ANTHROPIC_API_KEY=<your_deepseek_api_key>
 ### 5.2 OpenAI 兼容端点
 
 ```bash
-export OPENAI_BASE_URL=https://api.deepseek.com
+export OPENAI_BASE_URL=https://api.deepseek.com/v1
 export OPENAI_API_KEY=<your_deepseek_api_key>
 ```
 
@@ -226,7 +226,7 @@ from openai import OpenAI
 
 client = OpenAI(
     api_key="<your_api_key>",
-    base_url="https://api.deepseek.com"
+    base_url="https://api.deepseek.com/v1"
 )
 
 response = client.chat.completions.create(
@@ -266,7 +266,7 @@ print(message.content[0].text)
 
 ```bash
 # OpenAI 格式
-curl https://api.deepseek.com/chat/completions \
+curl https://api.deepseek.com/v1/chat/completions \
   -H "Content-Type: application/json" \
   -H "Authorization: Bearer $DEEPSEEK_API_KEY" \
   -d '{

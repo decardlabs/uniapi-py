@@ -1,6 +1,6 @@
 # UniAPI 管理员配置手册
 
-> 版本：0.10.9 | 适用：uniapi-py Python 后端
+> 版本：0.10.16 | 适用：uniapi-py Python 后端
 
 ---
 
@@ -106,7 +106,7 @@ uvicorn app.main:app --reload --port 8000
 
 | 变量 | 默认值 | 说明 |
 |------|--------|------|
-| `BUDGET_ENABLED` | false | 启用预算管控 |
+| `BUDGET_ENABLED` | true | 启用预算管控 |
 | `BUDGET_REDIS_URL` | — | Redis 连接地址（预算管控需要 Redis） |
 | `DEFAULT_MONTHLY_BUDGET` | 800.0 | 每月默认预算（元） |
 
@@ -544,14 +544,14 @@ MODEL_PRICING: dict[str, ModelConfig] = {
 | | kimi-k2.6 | 6.50 | 27.00 | 1.10 |
 | | kimi-k2.5 | 4.00 | 21.00 | 0.70 |
 | | kimi-k2 | 2.00 | 10.00 | 0.40 |
-| **MiniMax** | M3 | 2.16 | 8.64 | 0.43 |
-| | M2.7 | 2.16 | 8.64 | 0.43 |
-| | M2.7-highspeed | 4.32 | 17.28 | 0.43 |
-| | M2.5 | 2.16 | 8.64 | 0.22 |
-| | M2.5-highspeed | 4.32 | 17.28 | 0.22 |
-| | M2.1 | 2.16 | 8.64 | 0.22 |
-| | M2.1-highspeed | 4.32 | 17.28 | 0.22 |
-| | M2 | 2.16 | 8.64 | 0.22 |
+| **MiniMax** | MiniMax-M3 | 2.16 | 8.64 | 0.43 |
+| | MiniMax-M2.7 | 2.16 | 8.64 | 0.43 |
+| | MiniMax-M2.7-highspeed | 4.32 | 17.28 | 0.43 |
+| | MiniMax-M2.5 | 2.16 | 8.64 | 0.22 |
+| | MiniMax-M2.5-highspeed | 4.32 | 17.28 | 0.22 |
+| | MiniMax-M2.1 | 2.16 | 8.64 | 0.22 |
+| | MiniMax-M2.1-highspeed | 4.32 | 17.28 | 0.22 |
+| | MiniMax-M2 | 2.16 | 8.64 | 0.22 |
 
 ---
 
@@ -672,7 +672,7 @@ Synthesis complete | model=deepseek-v4-pro | tokens=642
 ```bash
 # 健康检查
 curl http://localhost:8000/health
-# → {"status":"healthy","service":"uniapi-py","version":"0.8.0"}
+# → {"status":"healthy","service":"uniapi-py","version":"0.10.16"}
 
 # 管理统计
 curl http://localhost:8000/api/admin/stats

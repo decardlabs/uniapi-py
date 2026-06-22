@@ -1,5 +1,12 @@
 # HTTP 错误码系统详解
 
+> ⚠️ 本文档描述的代码状态已过时。当前代码（v0.10.16+）中：
+> - `relay.py` 已改用 `RelayException(code=UNIAPI_*)` 替代 `HTTPException`
+> - `dependencies.py` 已改用 `ForbiddenException`/`UnauthorizedException` 替代 `HTTPException`
+> - 异常响应格式为标准化的 `{error: {code, type, status_code, details, suggestion, request_id}}`
+>
+> 保留此文档作为历史参考，最新规范请参见 [`UNIAPI_ERROR_CODE_SPEC_DRAFT.md`](UNIAPI_ERROR_CODE_SPEC_DRAFT.md)。
+
 ## 概述
 
 系统中的 HTTP 错误码通过两种机制定义：
@@ -13,34 +20,43 @@
 
 ### 在代码中的位置
 
-#### 1️⃣ FastAPI HTTPException（最常用）
+#### 1️⃣ RelayException（当前代码使用）
 
-**文件：** `app/routers/v1/relay.py` 第 248 行
+**文件：** `app/relay/upstream_errors.py`
 
 ```python
-from fastapi import HTTPException
+from app.relay.upstream_errors import RelayException
 
-raise HTTPException(
-    status_code=403,
-    detail=f"Token not allowed to use model '{model_name}'. "
-           f"Allowed models: {', '.join(token_allowed_models)}. "
-           f"Call GET /v1/models to list available models."
+raise RelayException(
+    code="UNIAPI_TOKEN_MODEL_NOT_ALLOWED",
+    message=f"Token not allowed to use model '{model_name}'",
+    details={"allowed_models": token_allowed_models},
+    suggestion="Call GET /v1/models to list available models."
 )
 ```
 
 **工作原理：**
 ```
-HTTPException 被抛出
+RelayException 被抛出
     ↓
-FastAPI 框架捕获
+app_exception_handler 捕获
     ↓
-转换为 HTTP 403 响应
+转换为标准化 JSON 响应
     ↓
 返回给客户端：
 {
-  "detail": "Token not allowed to use model 'xxx'..."
+  "success": false,
+  "error": {
+    "code": "UNIAPI_TOKEN_MODEL_NOT_ALLOWED",
+    "type": "TokenModelNotAllowed",
+    "status_code": 403,
+    "details": {"allowed_models": [...]},
+    "suggestion": "Call GET /v1/models..."
+  }
 }
 ```
+
+> 注意：旧文档中的 HTTPException 示例已过时，当前代码使用 `RelayException` 体系。
 
 #### 2️⃣ 自定义 ForbiddenException（备选）
 
@@ -183,6 +199,8 @@ if token_allowed_models and model_name not in token_allowed_models:
 if user_group != channel.group:
     raise HTTPException(status_code=403, detail=f"User group '{user_group}' not allowed to access channel group '{channel.group}'")
 ```
+
+> 注意：上述 HTTPException 示例为历史文档，当前代码（v0.10.16+）已迁移至 `RelayException` 体系，统一使用 `UNIAPI_` 前缀的错误码。
 
 ### 2. 管理权限检查（Dependencies）
 

@@ -1,5 +1,13 @@
 # UniAPI-Py 错误代码系统全面审查报告
 
+> ⚠️ 本文档编写于错误码体系迁移之前，描述的代码状态已过时。
+> 当前代码（v0.10.16+）已完成迁移：
+> - `AppException` 体系已全面使用，非"零使用"
+> - `relay.py` 和 `dependencies.py` 已改用结构化异常类
+> - `RequestIDMiddleware` 已实现
+> 
+> 保留此文档作为历史参考。
+
 ## 📋 执行摘要
 
 UniAPI-Py 当前采用**混合异常系统**：
@@ -50,19 +58,19 @@ app/exceptions.py           → 5 个异常类定义
 #### 按异常类型统计
 
 ```
-HTTPException (FastAPI)    → 32 个 (86%) ← 直接使用
-AppException (自定义)      → 0 个  (0%) ← 未使用!
+HTTPException (FastAPI)    → 大部分已迁移
+AppException (自定义)      → 已全面使用 (RelayException/ForbiddenException/UnauthorizedException 等)
 ───────────────────────────────────────────
-总计                      → 32 个
+总计                      → 统一使用 AppException 体系
 ```
 
 ---
 
 ## 🚨 识别的问题
 
-### 问题 1️⃣ : 异常体系未充分利用
+### 问题 1️⃣ : 异常体系迁移已完成
 
-**症状：** 定义了 `AppException` 体系但从未使用过
+**现状：** `AppException` 体系已全面使用（`RelayException`/`ForbiddenException`/`UnauthorizedException` 等）
 
 **位置：** `app/exceptions.py` 定义了 5 个异常类：
 - `NotFoundException`

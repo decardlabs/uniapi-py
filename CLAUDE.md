@@ -96,7 +96,7 @@ Multi-model ensemble that sends the same prompt to multiple providers in paralle
 
 ### Cache-Aware Cost Calculation
 
-DeepSeek's prefix caching is handled via three fields in `ModelConfig`: `cached_input_ratio` (default 0.1), `input_ratio`, `output_ratio`. The relay normalizes cache-token formats from both DeepSeek (`prompt_cache_hit_tokens`) and OpenAI (`prompt_tokens_details.cached_tokens`) into a unified calculation. Body normalization (`_normalize_deepseek_body`) strips `reasoning_content` from non-tool assistant turns to keep prefix caching warm.
+DeepSeek's prefix caching is handled via three fields in `ModelConfig`: `cached_input_ratio` (default 0.1), `input_ratio`, `output_ratio`. The relay normalizes cache-token formats from both DeepSeek (`prompt_cache_hit_tokens`) and OpenAI (`prompt_tokens_details.cached_tokens`) into a unified calculation. Body normalization (`normalize_request_body`) strips `reasoning_content` from non-tool assistant turns to keep prefix caching warm.
 
 ### Model Name Normalization
 
@@ -104,11 +104,12 @@ Each adaptor can override `resolve_model_name()` for case-insensitive lookups or
 
 ### Middleware Stack (applied in order)
 
-1. `AuditMiddleware` — log all requests
-2. `RateLimitMiddleware` — per-route RPM (api=480, relay=480 default)
-3. `PIIMaskMiddleware` — mask sensitive fields in logs
-4. `RequestTimingMiddleware` — timing headers
-5. `RequestIDMiddleware` — unique request ID per request
+1. `CORSMiddleware` — CORS headers
+2. `AuditMiddleware` — log all requests
+3. `RateLimitMiddleware` — per-route RPM (api=480, relay=480 default)
+4. `PIIMaskMiddleware` — mask sensitive fields in logs
+5. `RequestTimingMiddleware` — timing headers
+6. `RequestIDMiddleware` — unique request ID per request
 
 ### Project Structure
 
@@ -120,12 +121,14 @@ app/
 ├── dependencies.py         # Auth DI: user_auth, admin_auth, root_auth, token_auth
 ├── exceptions.py           # AppException + handler
 ├── middleware.py            # Audit, PIIMask, RateLimit, RequestTiming, RequestID
-├── models/                 # SQLAlchemy ORM: user, token, channel, log, option, ability, budget
+├── models/                 # SQLAlchemy ORM: user, token, channel, log, option, ability, budget, passkey
 ├── schemas/                # Pydantic v2: common, user, relay, etc.
 ├── services/               # auth.py (session, password), user.py, token.py
 ├── routers/
 │   ├── api/                # Management: auth, status, user, token, log, channel,
-│   │                       #   options, topup, redemption, dashboard, budget, MCP, cache
+│   │                       #   options, topup, redemption, dashboard, budget, MCP, cache,
+│   │                       #   verification, oauth, totp, passkey, mcp_servers, cache_analytics,
+│   │                       #   admin_budget
 │   └── v1/                 # Relay: /v1/chat/completions, /v1/messages, /v1/responses, /v1/models
 ├── relay/                  # Provider relay system
 │   ├── adaptor.py          # BaseAdaptor ABC + ModelConfig
@@ -134,7 +137,10 @@ app/
 │   ├── meta.py             # RelayMeta dataclass (holds per-request channel/user context)
 │   ├── converter.py        # anthropic_to_chat(), responses_to_chat()
 │   ├── openai_compatible.py # relay_chat_completion(), SSE streaming, usage capture
+│   ├── upstream_errors.py  # Upstream error classification for retry/failover
+│   ├── sse_converter.py    # SSE format conversion for streaming
 │   └── adaptors/           # deepseek/, glm/, qwen/, kimi/, minimax/
+├── budget/                 # Budget arbiter and quota management
 └── fusion/                 # Multi-model ensemble engine
     ├── adapters/           # Provider adapters for fusion
     └── core/               # FusionEngine, FusionConfig, orchestration
@@ -142,11 +148,15 @@ app/
 tests/
 ├── conftest.py             # Fixtures + FakeRedisClient
 ├── test_api.py             # Phase 1 API integration (5 tests)
-├── test_deepseek_normalize.py  # DeepSeek normalization (21 tests)
-├── phase2/                 # Management API CRUD (35 tests)
-├── phase3/                 # Multi-format routing (6 tests)
-├── phase4/                 # Extensibility tests (6 tests)
-├── glm/                    # GLM adaptor tests (9 tests)
+├── test_deepseek_normalize.py  # DeepSeek normalization (23 tests)
+├── test_channeltype.py     # Channel type tests (15 tests)
+├── test_relay_comparison.py # Relay comparison tests (3 tests)
+├── test_cache_analytics.py # Cache analytics tests (8 tests)
+├── phase2/                 # Management API CRUD (128 tests)
+├── phase3/                 # Multi-format routing (7 tests)
+├── phase4/                 # Extensibility tests (46 tests)
+├── phase5/                 # Upstream 429 retry + failover (246 tests)
+├── glm/                    # GLM adaptor tests (13 tests)
 └── live/                   # Live probe framework (real API keys)
 ```
 
@@ -160,4 +170,4 @@ tests/
 
 ### Config
 
-All configuration via env vars ([app/config.py](app/config.py)): `SERVER_PORT`, `SQLITE_PATH`, `SQL_DSN` (for MySQL/PostgreSQL), `SESSION_SECRET`, provider API keys, `TOKEN_KEY_PREFIX`, `API_RATE_LIMIT`/`RELAY_RATE_LIMIT`, optional `BUDGET_REDIS_URL` + `BUDGET_ENABLED`.
+All configuration via env vars ([app/config.py](app/config.py)): `SERVER_PORT`, `SQLITE_PATH`, `SQL_DSN` (for MySQL/PostgreSQL), `SESSION_SECRET`, provider API keys, `TOKEN_KEY_PREFIX`, `API_RATE_LIMIT`/`RELAY_RATE_LIMIT`, optional `BUDGET_REDIS_URL` + `BUDGET_ENABLED`, `debug`, `cookie_max_age_hours`, `upstream_retry_max`, `upstream_retry_backoff_base`, `default_monthly_budget`, `turnstile_secret_key`, `smtp_token`, `github_client_secret`.

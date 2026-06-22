@@ -87,6 +87,11 @@ def _make_stream_usage_callback(
     from app.models.user import User
 
     async def _on_usage(usage: dict[str, Any]) -> None:
+        # Skip empty usage objects — some providers send `"usage": {}` in the
+        # final SSE chunk but populate tokens in a different event entirely.
+        if not usage or not any(usage.values()):
+            return
+
         prompt_tokens = usage.get("prompt_tokens") or usage.get("input_tokens") or 0
         completion_tokens = usage.get("completion_tokens") or usage.get("output_tokens") or 0
 

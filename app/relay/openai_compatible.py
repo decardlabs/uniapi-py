@@ -37,10 +37,13 @@ async def _capture_stream_usage(
                 data = json.loads(line[6:].strip())
                 choices = data.get("choices") or []
                 usage = data.get("usage")
+                # Skip empty usage dicts — some providers send usage={} early
+                # without overwriting a previously captured valid last_usage
+                if usage and not any(usage.values()):
+                    usage = None
                 # OpenAI Chat format: final chunk has choices[0].finish_reason
-                if choices and choices[0].get("finish_reason"):
-                    if usage:
-                        last_usage = usage
+                if choices and choices[0].get("finish_reason") and usage:
+                    last_usage = usage
                 # Anthropic SSE format: message_delta carries usage at stream end
                 elif data.get("type") == "message_delta" and usage:
                     last_usage = usage
@@ -158,21 +161,30 @@ async def relay_chat_completion(
 
                             if not last_usage:
                                 scanner += chunk
-                                if b"event: message_delta" in scanner and b'"usage"' in scanner:
-                                    idx = scanner.rfind(b"event: message_delta")
+                                # Also match `"type":"message_delta"` directly for
+                                # providers whose Anthropic emulation omits the
+                                # `event:` prefix line (e.g. MiniMax).
+                                if (
+                                    b'"usage"' in scanner
+                                    and b'type":"message_delta"' in scanner
+                                ):
+                                    # Find the data: line nearest to message_delta
+                                    idx = scanner.rfind(b'type":"message_delta"')
                                     data_prefix = b"data: "
-                                    data_start = scanner.find(data_prefix, idx)
+                                    data_start = scanner.rfind(data_prefix, 0, idx)
                                     if data_start >= 0:
+                                        data_start += len(data_prefix)
                                         data_end = scanner.find(b"\n", data_start)
-                                        if data_end >= 0:
-                                            try:
-                                                data_line = scanner[data_start + len(data_prefix):data_end]
-                                                event_data = json.loads(data_line.decode("utf-8"))
-                                                usage = event_data.get("usage")
-                                                if usage:
-                                                    last_usage = usage
-                                            except (json.JSONDecodeError, UnicodeDecodeError):
-                                                pass
+                                        if data_end < 0:
+                                            data_end = len(scanner)
+                                        try:
+                                            data_line = scanner[data_start:data_end]
+                                            event_data = json.loads(data_line.decode("utf-8"))
+                                            usage = event_data.get("usage")
+                                            if usage and any(usage.values()):
+                                                last_usage = usage
+                                        except (json.JSONDecodeError, UnicodeDecodeError):
+                                            pass
 
                                 if len(scanner) > 16384:
                                     scanner = scanner[-8192:]

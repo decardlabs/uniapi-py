@@ -104,6 +104,12 @@ export ANTHROPIC_SMALL_FAST_MODEL="qwen3.6-flash"
 | `qwen-turbo` | 128K | 旧版 Turbo |
 | `qwq-plus` | 128K | 推理专用 |
 
+> ⚠️ **模型可用性提示**：以下模型可能需要在 `pricing.py` 中添加定价配置后才能使用：
+> - `qwen3-coder-next`、`qwen3-max`、`qwen-plus`、`qwen-max`、`qwen-flash`、`qwq-plus`
+> - 第 3.3 节中列出的所有第三方托管模型（`deepseek-v4-pro`、`deepseek-v4-flash`、`glm-5.2`、`glm-5.1`、`glm-5`、`glm-4.7`、`kimi-k2.7-code`、`kimi-k2.5`、`MiniMax-M2.5`、`mimo-v2.5-pro`）
+>
+> 以上模型在配置定价前可能无法正常使用。
+
 ---
 
 ## 四、定价表（中国内地，元/百万 Tokens）
@@ -136,6 +142,8 @@ export ANTHROPIC_SMALL_FAST_MODEL="qwen3.6-flash"
 | `qwen3.6-flash` | ¥0.50 | ¥2.00 |
 | `qwen3.5-flash` | ¥0.35 | ¥1.40 |
 | `qwen-turbo` | ¥0.30 | ¥1.20 |
+
+> ⚠️ **实现说明**：当前 UniAPI 实现使用简化的固定比率（flat ratios），而非百炼官方的阶梯计费。长上下文请求使用简化后的统一价格，并非按 Token 区间分段计价。
 
 ### 4.4 上下文缓存折扣
 

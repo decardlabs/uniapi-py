@@ -111,6 +111,7 @@ export ANTHROPIC_SMALL_FAST_MODEL="kimi-k2.6"
 | `kimi-k2.7-code-highspeed` | ¥2.60 | ¥13.00 | ¥54.00 |
 | `kimi-k2.6` | ¥1.10 | ¥6.50 | ¥27.00 |
 | `kimi-k2.5` | ¥0.70 | ¥4.00 | ¥21.00 |
+| `kimi-k2` | ¥0.40 | ¥2.00 | ¥10.00 |
 
 ### 4.2 上下文缓存说明
 

@@ -1,7 +1,7 @@
 # UniAPI 前后端端点完成度对照表
 
-> 版本：0.9.3
-> 生成日期：2026-06-20
+> 版本：0.10.16
+> 生成日期：2026-06-22
 >
 > 图例：✅ 完整实现　⚠️ 空壳/Stub　❌ 未实现
 
@@ -47,21 +47,21 @@
 | GET | `/api/user/aff` | ✅ | UserAuth | 推广信息 | — |
 | GET | `/api/user/token` | ✅ | UserAuth | 获取 access token | — |
 | GET | `/api/user/available_models` | ✅ | UserAuth | 当前用户可用模型列表 | `usePlaygroundModels.ts` |
-| GET | `/api/user/passkey` | ❌ | UserAuth | Passkey/WebAuthn 凭据列表 | `PasskeyPromptBanner.tsx` |
-| POST | `/api/user/passkey/register/begin` | ❌ | UserAuth | WebAuthn 注册开始 | `PasskeyPromptBanner.tsx` |
-| POST | `/api/user/passkey/register/finish` | ❌ | UserAuth | WebAuthn 注册完成 | `PasskeyPromptBanner.tsx` |
-| POST | `/api/user/passkey/login/begin` | ❌ | Public | WebAuthn 登录开始 | `LoginPage` |
-| POST | `/api/user/passkey/login/finish` | ❌ | Public | WebAuthn 登录完成 | `LoginPage` |
-| GET | `/api/user/totp/status` | ❌ | UserAuth | TOTP 双因素状态查询 | `PersonalSettings` |
-| POST | `/api/user/totp/setup` | ❌ | UserAuth | TOTP 初始化（返回密钥和二维码） | `PersonalSettings` |
-| POST | `/api/user/totp/confirm` | ❌ | UserAuth | TOTP 验证码确认 | `PersonalSettings` |
-| POST | `/api/user/totp/disable` | ❌ | UserAuth | 用户自助关闭 TOTP（后端仅有 Admin 版） | `PersonalSettings` |
-| GET | `/api/user/reset` | ❌ | Public | 密码重置请求（发邮件） | `PasswordResetPage` |
-| POST | `/api/reset_password` | ❌ | Public | 密码重置确认（提交新密码） | `PasswordResetConfirmPage` |
+| GET | `/api/user/passkey` | ✅ | UserAuth | Passkey/WebAuthn 凭据列表 | `PasskeyPromptBanner.tsx` |
+| POST | `/api/user/passkey/register/begin` | ✅ | UserAuth | WebAuthn 注册开始 | `PasskeyPromptBanner.tsx` |
+| POST | `/api/user/passkey/register/finish` | ✅ | UserAuth | WebAuthn 注册完成 | `PasskeyPromptBanner.tsx` |
+| POST | `/api/user/passkey/login/begin` | ✅ | Public | WebAuthn 登录开始 | `LoginPage` |
+| POST | `/api/user/passkey/login/finish` | ✅ | Public | WebAuthn 登录完成 | `LoginPage` |
+| GET | `/api/user/totp/status` | ✅ | UserAuth | TOTP 双因素状态查询 | `PersonalSettings` |
+| POST | `/api/user/totp/setup` | ✅ | UserAuth | TOTP 初始化（返回密钥和二维码） | `PersonalSettings` |
+| POST | `/api/user/totp/confirm` | ✅ | UserAuth | TOTP 验证码确认 | `PersonalSettings` |
+| POST | `/api/user/totp/disable` | ✅ | UserAuth | 用户自助关闭 TOTP（后端仅有 Admin 版） | `PersonalSettings` |
+| GET | `/api/user/reset` | ✅ | Public | 密码重置请求（发邮件） | `PasswordResetPage` |
+| POST | `/api/reset_password` | ✅ | Public | 密码重置确认（提交新密码） | `PasswordResetConfirmPage` |
 | GET | `/api/oauth/state` | ❌ | Public | OAuth 状态（CSRF token） | `oauth.ts` |
 | GET | `/api/oauth/github` | ❌ | Public | GitHub OAuth 登录 | `GitHubOAuthPage` |
 | GET | `/api/oauth/lark` | ❌ | Public | 飞书 OAuth 登录 | `LarkOAuthPage` |
-| GET | `/api/verification` | ❌ | Public | 邮箱验证状态 | — |
+| GET | `/api/verification` | ✅ | Public | 邮箱验证状态 | — |
 
 ---
 
@@ -90,8 +90,8 @@
 | DELETE | `/api/token/{token_id}` | ✅ | UserAuth | 删除 Token | `TokensPage`, `token.ts` |
 | POST | `/api/token/consume` | ✅ | TokenAuth | 消耗 Token 配额（外部计费用） | — |
 | GET | `/api/token/balance` | ✅ | TokenAuth | 查询 Token 余额 | — |
-| GET | `/api/token/transactions` | ✅ | UserAuth | Token 交易记录 | — |
-| GET | `/api/token/logs` | ✅ | UserAuth | Token 使用日志 | — |
+| GET | `/api/token/transactions` | ⚠️ | UserAuth | Token 交易记录（返回空列表） | — |
+| GET | `/api/token/logs` | ⚠️ | UserAuth | Token 使用日志（返回空列表） | — |
 
 ---
 
@@ -143,7 +143,7 @@
 |------|------|------|------|----------|-------------|
 | GET | `/api/user/dashboard` | ✅ | UserAuth | 使用量仪表盘（按天/模型/用户聚合） | `useDashboardData.ts` |
 | GET | `/api/user/dashboard/users` | ✅ | AdminAuth | 用户列表（仪表盘筛选用） | `useDashboardFilters.ts` |
-| GET | `/api/user/cache-analytics` | ⚠️ | UserAuth | 缓存命中率分析（返回空结构，需 relay 路径采集缓存数据） | `CacheAnalyticsPage` |
+| GET | `/api/user/cache-analytics` | ✅ | UserAuth | 缓存命中率分析（含时序、对比、明细查询） | `CacheAnalyticsPage` |
 
 ---
 
@@ -214,7 +214,7 @@
 |------|------|--------|---------|---------|--------|
 | 中继 API | 5 | 5 | 0 | 0 | 100% |
 | 公共 API | 9 | 9 | 0 | 0 | 100% |
-| 用户认证 | 23 | 9 | 0 | 14 | 39% |
+| 用户认证 | 23 | 21 | 0 | 2 | 91% |
 | 用户管理 | 7 | 7 | 0 | 0 | 100% |
 | Token 管理 | 9 | 9 | 0 | 0 | 100% |
 | 频道管理 | 11 | 11 | 0 | 0 | 100% |
@@ -225,8 +225,8 @@
 | 预算 | 7 | 6 | 0 | 1 | 86% |
 | MCP 服务 | 8 | 0 | 8 | 0 | 0% |
 | 其他 | 2 | 2 | 0 | 0 | 100% |
-| **总计** | **108** | **69** | **22** | **17** | **64%** |
+| **总计** | **108** | **81** | **22** | **5** | **75%** |
 
 > **核心业务完成率**（排除认证/OAuth/Passkey/MCP）：**92%**
-> 缺失的 17 个端点中，14 个属于 WebAuthn / TOTP / OAuth 等认证方式，3 个属于辅助管理页面（日志追踪/缓存分析/预算池）。
+> 缺失的 5 个端点中，3 个属于 OAuth，2 个属于辅助管理页面（日志追踪/预算池）。
 > 所有核心中继和管理功能均以完整实现。

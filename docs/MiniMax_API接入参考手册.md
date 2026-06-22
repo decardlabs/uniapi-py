@@ -23,11 +23,11 @@
 
 ```bash
 # OpenAI 兼容端点
-export OPENAI_BASE_URL="https://api.minimax.io/v1"
+export OPENAI_BASE_URL="https://api.minimaxi.com/v1"
 export OPENAI_API_KEY="你的API_Key"
 
 # Anthropic 兼容端点
-export ANTHROPIC_BASE_URL="https://api.minimax.io/anthropic"
+export ANTHROPIC_BASE_URL="https://api.minimaxi.com/anthropic"
 export ANTHROPIC_API_KEY="你的API_Key"
 ```
 
@@ -35,16 +35,16 @@ export ANTHROPIC_API_KEY="你的API_Key"
 
 ```bash
 # Claude Code（Anthropic 协议）
-export ANTHROPIC_BASE_URL="https://api.minimax.io/anthropic"
+export ANTHROPIC_BASE_URL="https://api.minimaxi.com/anthropic"
 export ANTHROPIC_API_KEY="sk-xxx"
 
 # Cursor / Windsurf（OpenAI 协议）
 # 在 Cursor 设置中添加：
-# Base URL: https://api.minimax.io/v1
+# Base URL: https://api.minimaxi.com/v1
 # API Key: 你的API_Key
 
 # Codex CLI（OpenAI 协议）
-export OPENAI_BASE_URL="https://api.minimax.io/v1"
+export OPENAI_BASE_URL="https://api.minimaxi.com/v1"
 export OPENAI_API_KEY="你的API_Key"
 ```
 
@@ -185,7 +185,7 @@ MiniMax 使用**固定时间窗口**而非 OpenAI/Anthropic 的滚动窗口：
 ### 5.1 OpenAI 兼容端点
 
 ```
-Base URL:  https://api.minimax.io/v1
+Base URL:  https://api.minimaxi.com/v1
 认证方式:  Bearer Token（API Key）
 适用模型:  全部 M 系列
 ```
@@ -214,7 +214,7 @@ Base URL:  https://api.minimax.io/v1
 ### 5.2 Anthropic 兼容端点
 
 ```
-Base URL:  https://api.minimax.io/anthropic
+Base URL:  https://api.minimaxi.com/anthropic
 认证方式:  x-api-key Header
 适用模型:  全部 M 系列
 ```
@@ -327,7 +327,7 @@ print(f"将在 {reset_time.strftime('%H:%M')} 重置，等待 {wait_seconds:.0f}
 from openai import OpenAI
 
 client = OpenAI(
-    base_url="https://api.minimax.io/v1",
+    base_url="https://api.minimaxi.com/v1",
     api_key="你的API_Key"
 )
 
@@ -352,7 +352,7 @@ print(response.choices[0].message.content)
 import anthropic
 
 client = anthropic.Anthropic(
-    base_url="https://api.minimax.io/anthropic",
+    base_url="https://api.minimaxi.com/anthropic",
     api_key="你的API_Key"
 )
 
@@ -380,7 +380,7 @@ for block in message.content:
 # settings.json
 {
   "env": {
-    "ANTHROPIC_BASE_URL": "https://api.minimax.io/anthropic",
+    "ANTHROPIC_BASE_URL": "https://api.minimaxi.com/anthropic",
     "ANTHROPIC_API_KEY": "你的API_Key"
   }
 }

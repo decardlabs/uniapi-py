@@ -1,5 +1,7 @@
 # UniAPI-Py 错误代码系统审查 - 总结报告
 
+> ⚠️ 本文档编写于错误码体系迁移之前，描述的代码状态已过时（`AppException` 零使用的结论已不成立）。
+
 ## 📌 快速总结
 
 已完成对 UniAPI-Py 错误代码系统的全面审查，发现了 **6 个主要问题**和 **5 个改进建议**。
@@ -19,8 +21,8 @@
 ### 问题 1️⃣ : 异常体系未充分利用 (严重性: 🔴 高)
 
 **现状：** 
-- 定义了 `AppException` 体系但从未使用（0 处使用）
-- 所有 37 个错误都直接使用 `HTTPException`（32 处使用）
+- `AppException` 体系已全面使用（`RelayException`/`ForbiddenException`/`UnauthorizedException` 等）
+- 错误码统一使用 `UNIAPI_` 前缀
 
 **后果：**
 - 代码冗余：重复写 `status_code=403` 等
@@ -155,8 +157,10 @@ middleware.py     →   1 个错误 ( 3%)  [限流]
 
 ### 按异常类型统计
 ```
-HTTPException     → 32 个 (86%) ← 直接使用
-AppException      →  0 个 ( 0%) ← 未使用!
+RelayException    → 已迁移使用 (UNIAPI_ 前缀)
+ForbiddenException → 已迁移使用
+UnauthorizedException → 已迁移使用
+AppException      → 已全面使用
 ```
 
 ---
