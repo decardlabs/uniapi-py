@@ -21,7 +21,7 @@ async def test_create_single_code():
         assert len(codes) == 1
         assert codes[0].name == "test code"
         assert codes[0].quota == 500000
-        assert len(codes[0].code) >= 8  # generated code
+        assert len(codes[0].code) >= 12  # generated code
         assert codes[0].status == 1  # active
         assert codes[0].created_by == admin.id
 
@@ -83,3 +83,60 @@ async def test_delete_code():
         await redemption_service.delete_code(db, code_id)
         result = await db.execute(select(RedemptionCode).where(RedemptionCode.id == code_id))
         assert result.scalar_one_or_none() is None
+
+
+@pytest.mark.asyncio
+async def test_get_code_found():
+    """get_code returns the redemption code by id."""
+    async with async_session_factory() as db:
+        admin = User(username="get_admin", password=hash_password("p"), role=10, quota=0)
+        db.add(admin)
+        await db.flush()
+
+        codes = await redemption_service.create_redemption_codes(db, admin.id, "get_test", 500000, 1)
+        code_id = codes[0].id
+
+        found = await redemption_service.get_code(db, code_id)
+        assert found is not None
+        assert found.id == code_id
+        assert found.name == "get_test"
+        assert found.quota == 500000
+
+
+@pytest.mark.asyncio
+async def test_get_code_not_found():
+    """get_code returns None for non-existent id."""
+    async with async_session_factory() as db:
+        found = await redemption_service.get_code(db, 9999)
+        assert found is None
+
+
+@pytest.mark.asyncio
+async def test_update_code():
+    """update_code can change name and quota."""
+    async with async_session_factory() as db:
+        admin = User(username="upd_admin", password=hash_password("p"), role=10, quota=0)
+        db.add(admin)
+        await db.flush()
+
+        codes = await redemption_service.create_redemption_codes(db, admin.id, "old_name", 100000, 1)
+        code_id = codes[0].id
+
+        updated = await redemption_service.update_code(db, code_id, name="new_name", quota=200000)
+        assert updated.name == "new_name"
+        assert updated.quota == 200000
+
+
+@pytest.mark.asyncio
+async def test_update_code_status_only():
+    """update_code with status_only=True changes only the status."""
+    async with async_session_factory() as db:
+        admin = User(username="stat_admin", password=hash_password("p"), role=10, quota=0)
+        db.add(admin)
+        await db.flush()
+
+        codes = await redemption_service.create_redemption_codes(db, admin.id, "status_test", 100000, 1)
+        code_id = codes[0].id
+
+        updated = await redemption_service.update_code(db, code_id, status_only=True, status=2)
+        assert updated.status == 2
