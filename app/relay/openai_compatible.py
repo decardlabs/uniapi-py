@@ -91,96 +91,6 @@ def make_chat_completion_response(
     }
 
 
-async def stream_chat_completion(
-    client: httpx.AsyncClient,
-    url: str,
-    body: dict,
-    headers: dict[str, str],
-) -> AsyncGenerator[str, None]:
-    """Stream SSE events from upstream, transparently proxying to client.
-
-    Designed for OpenAI Chat Completions SSE format (``data:`` lines only).
-    For Anthropic SSE format (with ``event:`` lines), use
-    ``stream_raw_passthrough`` instead — this function would mangle
-    ``event:`` lines by wrapping them in ``data:`` prefixes.
-    """
-    async with client.stream(
-        "POST", url, json=body, headers=headers, timeout=300
-    ) as resp:
-        # Check status BEFORE consuming the body so error handlers can read it
-        if resp.status_code >= 400:
-            resp.raise_for_status()
-        async for line in resp.aiter_lines():
-            if line.startswith("data: "):
-                yield line + "\n\n"
-                if line.strip() == "data: [DONE]":
-                    break
-            elif line.strip():
-                yield f"data: {line}\n\n"
-
-
-async def stream_raw_passthrough(
-    client: httpx.AsyncClient,
-    url: str,
-    body: dict,
-    headers: dict[str, str],
-    on_usage: Optional[Callable[[dict[str, Any]], None]] = None,
-) -> AsyncGenerator[bytes, None]:
-    """Raw byte-level SSE passthrough — preserves original wire format.
-
-    Use this for upstreams that already return the exact SSE format the
-    downstream client expects (e.g. native Anthropic SSE from DeepSeek's
-    ``/anthropic/v1/messages`` endpoint).  No line processing, no wrapping —
-    the upstream bytes are yielded as-is.
-
-    When ``on_usage`` is provided, the byte stream is lightly scanned for
-    Anthropic SSE ``message_delta`` events carrying token usage. The
-    callback is invoked with the usage dict after the stream ends.
-
-    Raises ``httpx.HTTPStatusError`` when the upstream returns a non-2xx
-    status so the relay pipeline can handle the error properly instead of
-    silently streaming an error body as 200 OK.
-    """
-    async with client.stream(
-        "POST", url, json=body, headers=headers, timeout=300
-    ) as resp:
-        # Check status BEFORE consuming the body so the relay pipeline's
-        # HTTPStatusError handler can read the error response via exc.response
-        if resp.status_code >= 400:
-            resp.raise_for_status()
-
-        last_usage: dict[str, Any] | None = None
-        scanner = b""
-
-        async for chunk in resp.aiter_bytes(chunk_size=4096):
-            yield chunk
-
-            if not last_usage:
-                scanner += chunk
-                # Light scan for Anthropic SSE: event: message_delta + data with usage
-                if b"event: message_delta" in scanner and b'"usage"' in scanner:
-                    idx = scanner.rfind(b"event: message_delta")
-                    data_prefix = b"data: "
-                    data_start = scanner.find(data_prefix, idx)
-                    if data_start >= 0:
-                        data_end = scanner.find(b"\n", data_start)
-                        if data_end >= 0:
-                            try:
-                                data_line = scanner[data_start + len(data_prefix) : data_end]
-                                event_data = json.loads(data_line.decode("utf-8"))
-                                usage = event_data.get("usage")
-                                if usage:
-                                    last_usage = usage
-                            except (json.JSONDecodeError, UnicodeDecodeError):
-                                pass
-
-                # Prevent unbounded growth — keep last 16 KB
-                if len(scanner) > 16384:
-                    scanner = scanner[-8192:]
-
-        if last_usage is not None and on_usage is not None:
-            await on_usage(last_usage)
-
 
 async def relay_chat_completion(
     body: dict,
@@ -220,7 +130,11 @@ async def relay_chat_completion(
             # Eagerly check upstream status so 4xx/5xx errors propagate
             # to _handle_relay()'s try/except.
             req = client.build_request("POST", upstream_url, json=body, headers=headers)
-            resp = await client.send(req, stream=True)
+            try:
+                resp = await client.send(req, stream=True)
+            except Exception:
+                await client.aclose()
+                raise
             if resp.status_code >= 400:
                 await resp.aclose()
                 await client.aclose()
@@ -236,7 +150,9 @@ async def relay_chat_completion(
                     last_usage: dict[str, Any] | None = None
                     scanner = b""
 
-                    async with resp:
+                    # NOTE: httpx.Response does NOT support async with when using
+                    # client.send(stream=True). Use try/finally + aclose() instead.
+                    try:
                         async for chunk in resp.aiter_bytes(chunk_size=4096):
                             yield chunk
 
@@ -261,8 +177,10 @@ async def relay_chat_completion(
                                 if len(scanner) > 16384:
                                     scanner = scanner[-8192:]
 
-                    if last_usage is not None and on_stream_usage is not None:
-                        await on_stream_usage(last_usage)
+                        if last_usage is not None and on_stream_usage is not None:
+                            await on_stream_usage(last_usage)
+                    finally:
+                        await resp.aclose()
                 finally:
                     await client.aclose()
 
@@ -283,7 +201,11 @@ async def relay_chat_completion(
         # try/except catches them and can record channel failures,
         # refund quota, and attempt failover.
         req = client.build_request("POST", upstream_url, json=body, headers=headers)
-        resp = await client.send(req, stream=True)
+        try:
+            resp = await client.send(req, stream=True)
+        except Exception:
+            await client.aclose()
+            raise
         if resp.status_code >= 400:
             await resp.aclose()
             await client.aclose()
@@ -293,7 +215,9 @@ async def relay_chat_completion(
         async def _eager_sse_stream():
             """Read SSE lines from the already-validated upstream response."""
             try:
-                async with resp:
+                # NOTE: httpx.Response does NOT support async with when using
+                # client.send(stream=True). Use try/finally + aclose() instead.
+                try:
                     async for line in resp.aiter_lines():
                         if line.startswith("data: "):
                             yield line + "\n\n"
@@ -301,6 +225,8 @@ async def relay_chat_completion(
                                 break
                         elif line.strip():
                             yield f"data: {line}\n\n"
+                finally:
+                    await resp.aclose()
             finally:
                 await client.aclose()
 

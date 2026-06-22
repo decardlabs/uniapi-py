@@ -71,6 +71,10 @@ def _estimate_cost(body: dict, model_config: Any) -> int:
 def _make_stream_usage_callback(
     log_id: int,
     model_config: Any,
+    estimated: int,
+    token_id: int,
+    user_id: int,
+    token_unlimited_quota: bool,
 ) -> Any:
     """Return a callback that patches the provisional log after a stream ends.
 
@@ -79,6 +83,8 @@ def _make_stream_usage_callback(
     """
     from app.database import async_session_factory
     from app.models.log import Log as LogModel
+    from app.models.token import Token
+    from app.models.user import User
 
     async def _on_usage(usage: dict[str, Any]) -> None:
         prompt_tokens = usage.get("prompt_tokens") or usage.get("input_tokens") or 0
@@ -112,6 +118,19 @@ def _make_stream_usage_callback(
             log_entry.completion_tokens = completion_tokens
             log_entry.cached_prompt_tokens = cache_hit
             await session.commit()
+
+            # Refund the difference between estimated and actual cost
+            diff = estimated - actual
+            if diff > 0:
+                if not token_unlimited_quota:
+                    token = await session.get(Token, token_id)
+                    if token:
+                        token.remain_quota += diff
+                user = await session.get(User, user_id)
+                if user:
+                    user.quota += diff
+                    user.used_quota -= diff
+                await session.commit()
 
     return _on_usage
 
@@ -558,8 +577,8 @@ async def _handle_relay(request: Request, db: AsyncSession):
 
     # Native Claude Messages streaming: use raw byte-level passthrough to
     # preserve upstream Anthropic SSE format (event: / data: lines) intact.
-    # The chat-oriented stream_chat_completion() would mangle event: lines
-    # by wrapping them in data: prefixes, which breaks Claude Code clients.
+    # The chat-oriented SSE handler would mangle event: lines by wrapping
+    # them in data: prefixes, which breaks Claude Code clients.
     native_claude_stream = (
         stream
         and relay_mode == RelayMode.CLAUDE_MESSAGES
@@ -579,6 +598,10 @@ async def _handle_relay(request: Request, db: AsyncSession):
         stream_usage_cb = _make_stream_usage_callback(
             log_id=stream_log_id,
             model_config=model_config,
+            estimated=estimated,
+            token_id=token.id,
+            user_id=user.id,
+            token_unlimited_quota=token.unlimited_quota,
         )
 
     async def _prepare_fallback_request(next_model_name: str, next_channel: Channel) -> tuple[dict, str, dict[str, str]] | None:
@@ -718,7 +741,7 @@ async def _handle_relay(request: Request, db: AsyncSession):
                     actual_usage=ActualUsage(model=model_name, input_tokens=0, output_tokens=0),
                     db_session=db,
                 )
-            await db.commit()
+
 
             # Map upstream HTTP error to UniAPI code
             from app.relay.upstream_errors import map_upstream_http_error

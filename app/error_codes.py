@@ -99,5 +99,13 @@ def get_error_meta(code: str) -> Tuple[int, str]:
     """Return (status_code, type) for a given error code.
 
     Returns the default (500, "internal") for unrecognised codes.
+    Provider-specific codes (PROVIDER_*) are mapped to 502/upstream.
     """
-    return ERROR_CODE_MAP.get(code, _FALLBACK)
+    if code in ERROR_CODE_MAP:
+        return ERROR_CODE_MAP[code]
+
+    # Handle dynamically-generated PROVIDER_* codes (e.g. PROVIDER_DEEPSEEK_SAFETY_BLOCKED)
+    if code.startswith("PROVIDER_"):
+        return (502, ErrorType.UPSTREAM)
+
+    return _FALLBACK
