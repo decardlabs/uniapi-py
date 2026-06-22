@@ -65,7 +65,7 @@ echo "[3/6] 配置服务器环境..."
 ssh "$SSH_USER@$SSH_HOST" "mkdir -p $REMOTE_DIR/logs $REMOTE_DIR/backups"
 
 # 生成 version.py（服务器无 git tag，从 pyproject.toml 读取版本号）
-VERSION=$(grep -oP '(?<=version = ")[^"]+' "$SCRIPT_DIR/pyproject.toml" || echo "0.0.0")
+VERSION=$(sed -n 's/^version = "\([^"]*\)"/\1/p' "$SCRIPT_DIR/pyproject.toml" | head -1 || echo "0.0.0")
 ssh "$SSH_USER@$SSH_HOST" "echo 'VERSION = \"${VERSION}\"' > $REMOTE_DIR/app/version.py"
 echo "  ✓ version.py 已生成: ${VERSION}"
 
