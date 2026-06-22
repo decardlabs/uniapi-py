@@ -17,6 +17,12 @@ async def create_recharge(
     amount: int,
     remark: Optional[str] = None,
 ) -> RechargeRequest:
+    # Verify user exists
+    result = await db.execute(select(User).where(User.id == user_id))
+    user = result.scalar_one_or_none()
+    if user is None:
+        raise ValueError(f"User {user_id} not found")
+
     now = int(time.time() * 1000)
     req = RechargeRequest(
         user_id=user_id,
