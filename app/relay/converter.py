@@ -71,6 +71,7 @@ def anthropic_to_chat(body: dict) -> dict:
         result["stop"] = result.pop("stop_sequences")
     result.pop("thinking", None)
     result.pop("top_k", None)
+    result.pop("metadata", None)  # Anthropic-specific; not valid for OpenAI Chat API
 
     return result
 

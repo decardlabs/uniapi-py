@@ -425,6 +425,7 @@ registry.register(MY_CHANNEL_TYPE, MyProviderAdaptor)
 
 | 版本 | 日期 | 变更 |
 |------|------|------|
+| **v0.10.12** | 2026-06-22 | 修复 Claude Code 中转 GLM 时 metadata 字段导致 400 错误返回登录状态 |
 | **v0.10.11** | 2026-06-22 | 修复原生 Claude 流式(raw_passthrough)不记录实际 token 用量；GLM 适配器注释说明 Coding Plan 限制 |
 | **v0.10.10** | 2026-06-21 | 错误码体系 + Claude Messages SSE 直通修复 + 文档对齐 |
 | **v0.10.9** | 2026-06-21 | 修复 MiniMax/Kimi/Qwen Claude Messages URL 缺少 `/v1/messages` 路径 |

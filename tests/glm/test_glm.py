@@ -216,3 +216,92 @@ async def test_glm_messages_use_chat_conversion_path(client: AsyncClient, monkey
     assert resp.status_code == 200
     assert captured["upstream_url"].endswith("/chat/completions")
     assert captured["body"]["messages"][0]["content"] == "hello"
+
+@pytest.mark.asyncio
+async def test_glm_messages_strips_metadata_in_conversion(client: AsyncClient, monkeypatch):
+    """/v1/messages for GLM should strip 'metadata' from the converted body.
+
+    Claude Code sends the Anthropic 'metadata' field. GLM's Chat API does not
+    recognise it and returns 400 (code 1210). The converter must strip it.
+    """
+    login_resp = await client.post("/api/user/login", json={"username": "root", "password": "123456"})
+    cookies = login_resp.cookies
+
+    token_resp = await client.post(
+        "/api/token/",
+        json={"name": "glm-meta-strip", "unlimited_quota": True},
+        cookies=cookies,
+    )
+    token_key = token_resp.json()["data"]["key"]
+
+    await client.post(
+        "/api/channel/",
+        json={
+            "name": "Test GLM Meta Strip",
+            "type": 41,
+            "key": "test-id.test-secret",
+            "base_url": "https://open.bigmodel.cn/api/paas/v4",
+            "models": "glm-5",
+            "group": "default",
+        },
+        cookies=cookies,
+    )
+
+    captured = {}
+
+    async def _fake_relay_chat_completion(**kwargs):
+        captured["body"] = kwargs.get("body") or {}
+        return {
+            "id": "chatcmpl-test-meta",
+            "object": "chat.completion",
+            "created": int(time.time()),
+            "model": "glm-5",
+            "choices": [{"index": 0, "message": {"role": "assistant", "content": "ok"}, "finish_reason": "stop"}],
+            "usage": {"prompt_tokens": 1, "completion_tokens": 1, "total_tokens": 2},
+        }
+
+    import app.routers.v1.relay as relay_module
+
+    monkeypatch.setattr(relay_module, "relay_chat_completion", _fake_relay_chat_completion)
+
+    resp = await client.post(
+        "/v1/messages",
+        json={
+            "model": "glm-5",
+            "max_tokens": 64,
+            "metadata": {"user_id": "test"},
+            "messages": [{"role": "user", "content": [{"type": "text", "text": "hello"}]}],
+        },
+        headers={"Authorization": f"Bearer {token_key}"},
+    )
+
+    assert resp.status_code == 200, f"Response: {resp.status_code} {resp.text[:200]}"
+    assert "metadata" not in captured["body"], f"metadata should be stripped, got: {captured['body']}"
+    assert captured["body"]["messages"][0]["content"] == "hello"
+
+@pytest.mark.asyncio
+async def test_anthropic_to_chat_strips_metadata():
+    """anthropic_to_chat() must strip Anthropic-specific 'metadata' field."""
+    from app.relay.converter import anthropic_to_chat
+
+    body = {
+        "model": "glm-5",
+        "max_tokens": 100,
+        "metadata": {"user_id": "test-claude-code"},
+        "messages": [{"role": "user", "content": "hello"}],
+    }
+    result = anthropic_to_chat(body)
+    assert "metadata" not in result, f"metadata should be stripped: {result}"
+
+    # Other Anthropic-only fields should also be stripped
+    body2 = {
+        "model": "glm-5",
+        "metadata": {"user_id": "x"},
+        "thinking": {"enabled": True, "budget_tokens": 1024},
+        "top_k": 10,
+        "messages": [{"role": "user", "content": "hi"}],
+    }
+    result2 = anthropic_to_chat(body2)
+    assert "metadata" not in result2
+    assert "thinking" not in result2
+    assert "top_k" not in result2
