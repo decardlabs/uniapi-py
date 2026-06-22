@@ -676,7 +676,8 @@ async def _handle_relay(request: Request, db: AsyncSession):
             except Exception:
                 err_body = str(exc)
             provider_name = adaptor.provider_name if adaptor else "unknown"
-            uni_code, upstream = map_upstream_http_error(provider_name, status, err_body)
+            uni_code, upstream, reason = map_upstream_http_error(provider_name, status, err_body)
+            details = {"reason": reason} if reason else None
             raise UpstreamException(
                 message=f"Upstream returned {status}",
                 code=uni_code,
@@ -684,6 +685,7 @@ async def _handle_relay(request: Request, db: AsyncSession):
                 upstream_status=upstream["status_code"],
                 upstream_code=upstream.get("code"),
                 upstream_message=upstream.get("message"),
+                details=details,
             )
 
         except Exception:
@@ -730,12 +732,14 @@ async def _handle_relay(request: Request, db: AsyncSession):
 
             error_type = "timeout" if "timeout" in str(exc).lower() else "unknown"
             provider_name = adaptor.provider_name if adaptor else "unknown"
-            uni_code, upstream = map_upstream_connection_error(provider_name, error_type)
+            uni_code, upstream, reason = map_upstream_connection_error(provider_name, error_type)
+            details = {"reason": reason} if reason else None
             raise UpstreamException(
                 message=f"Upstream request failed: {exc}",
                 code=uni_code,
                 upstream_provider=upstream["provider"],
                 upstream_status=upstream["status_code"],
+                details=details,
             )
 
     if stream:
