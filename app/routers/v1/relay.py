@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import asyncio
 import logging
 import random
 import time
@@ -613,7 +614,10 @@ async def _handle_relay(request: Request, db: AsyncSession):
         next_headers = adaptor.setup_request_headers(meta.api_key)
         return next_body, next_url, next_headers
 
-    for attempt in range(2):  # primary + 1 fallback
+    MAX_RETRIES = settings.upstream_retry_max
+    BACKOFF_BASE = settings.upstream_retry_backoff_base
+
+    for attempt in range(MAX_RETRIES):
         try:
             upstream_response = await relay_chat_completion(
                 body=upstream_body,
@@ -625,47 +629,95 @@ async def _handle_relay(request: Request, db: AsyncSession):
                 on_stream_usage=stream_usage_cb,
                 raw_passthrough=native_claude_stream,
             )
-            _reset_channel_failures(_channel_id)  # reset failure count on success
+            _reset_channel_failures(_channel_id)
             break  # success, exit retry loop
 
         except httpx.HTTPStatusError as exc:
             status = exc.response.status_code
-            is_recoverable = status in (429, 500, 502, 503)
+            remaining = MAX_RETRIES - attempt - 1
 
-            if attempt == 0 and is_recoverable and not stream:
-                # Try fallback channel
+            # ── Path A: 429 with remaining retries → exponential backoff on same channel ──
+            if status == 429 and remaining >= 1:
+                delay = BACKOFF_BASE * (2 ** attempt) * (0.5 + random.random() * 0.5)
+                logger.info(
+                    "UPSTREAM 429 | channel=%d attempt=%d/%d retry_in=%.2fs",
+                    _channel_id, attempt + 1, MAX_RETRIES, delay,
+                )
+                await asyncio.sleep(delay)
+                continue  # retry same channel — no failure count, no refund
+
+            # ── Path B: 429 with no remaining retries → try fallback channel ──
+            if status == 429:
                 fallback_channel = await _find_fallback_channel(db, channel_type, model_name)
                 if fallback_channel and fallback_channel.models:
                     fallback_model = fallback_channel.models.split(",")[0].strip()
-                    if not _check_token_model(token, fallback_model):
+                    if _check_token_model(token, fallback_model):
+                        adaptor = _get_adaptor(channel_type)
+                        if adaptor:
+                            model_name = fallback_model
+                            model_config = adaptor.get_supported_models().get(model_name)
+                            if model_config:
+                                failed_channel_id = _channel_id
+                                prepared = await _prepare_fallback_request(model_name, fallback_channel)
+                                if prepared is not None:
+                                    upstream_body, upstream_url, upstream_headers = prepared
+                                    _channel_id = fallback_channel.id
+                                    logger.info(
+                                        "FALLBACK | 429 -> model=%s | channel_type=%d",
+                                        model_name, channel_type,
+                                    )
+                                    await _record_channel_failure(failed_channel_id, db)
+                                    continue  # retry with fallback
+                    else:
                         logger.info("FALLBACK skip | model=%s not allowed by token", fallback_model)
-                        break
-                    adaptor = _get_adaptor(channel_type)
-                    if adaptor:
-                        model_name = fallback_model
-                        model_config = adaptor.get_supported_models().get(model_name)
-                        if model_config:
-                            failed_channel_id = _channel_id
-                            prepared = await _prepare_fallback_request(model_name, fallback_channel)
-                            if prepared is None:
-                                break
-                            upstream_body, upstream_url, upstream_headers = prepared
-                            _channel_id = fallback_channel.id
-                            logger.info(
-                                "FALLBACK | %d -> model=%s | channel_type=%d",
-                                status, model_name, channel_type,
-                            )
-                            await _record_channel_failure(failed_channel_id, db)
-                            continue  # retry with fallback
+                # Fall through to refund/raise code below
 
-            # Fallback failed or not available — refund and raise
-            if is_recoverable:
+            # ── Path C: 5xx recoverable, first attempt → try fallback (existing logic, keep not stream) ──
+            is_recoverable = status in (500, 502, 503)
+            if attempt == 0 and is_recoverable and not stream:
+                fallback_channel = await _find_fallback_channel(db, channel_type, model_name)
+                if fallback_channel and fallback_channel.models:
+                    fallback_model = fallback_channel.models.split(",")[0].strip()
+                    if _check_token_model(token, fallback_model):
+                        adaptor = _get_adaptor(channel_type)
+                        if adaptor:
+                            model_name = fallback_model
+                            model_config = adaptor.get_supported_models().get(model_name)
+                            if model_config:
+                                failed_channel_id = _channel_id
+                                prepared = await _prepare_fallback_request(model_name, fallback_channel)
+                                if prepared is not None:
+                                    upstream_body, upstream_url, upstream_headers = prepared
+                                    _channel_id = fallback_channel.id
+                                    logger.info(
+                                        "FALLBACK | %d -> model=%s | channel_type=%d",
+                                        status, model_name, channel_type,
+                                    )
+                                    await _record_channel_failure(failed_channel_id, db)
+                                    continue
+                    else:
+                        logger.info("FALLBACK skip | model=%s not allowed by token", fallback_model)
+
+            # ── All retries and fallbacks exhausted → record failure, refund, raise ──
+            if is_recoverable or status == 429:
                 await _record_channel_failure(_channel_id, db)
 
+            # Refund quota
             if not token.unlimited_quota:
                 token.remain_quota += estimated
             user.quota += estimated
             user.used_quota -= estimated
+            await db.commit()
+
+            # Budget settlement
+            if budget_arbiter and settings.budget_enabled and hasattr(request.state, "budget_info") and request.state.budget_info:
+                bi = request.state.budget_info
+                await budget_arbiter.post_settle(
+                    user_id=user.id, period=bi["period"], frozen_amount=bi["frozen_amount"],
+                    monthly_budget=0, request_id=provisional_log.request_id,
+                    actual_usage=ActualUsage(model=model_name, input_tokens=0, output_tokens=0),
+                    db_session=db,
+                )
             await db.commit()
 
             # Map upstream HTTP error to UniAPI code
@@ -689,28 +741,28 @@ async def _handle_relay(request: Request, db: AsyncSession):
             )
 
         except Exception:
-            # Non-HTTP error (timeout, connection error, etc.)
+            # Non-HTTP error (timeout, connection error, etc.) — existing behavior
             if attempt == 0 and not stream:
                 fallback_channel = await _find_fallback_channel(db, channel_type, model_name)
                 if fallback_channel and fallback_channel.models:
                     fallback_model = fallback_channel.models.split(",")[0].strip()
-                    if not _check_token_model(token, fallback_model):
+                    if _check_token_model(token, fallback_model):
+                        adaptor = _get_adaptor(channel_type)
+                        if adaptor:
+                            model_name = fallback_model
+                            model_config = adaptor.get_supported_models().get(model_name)
+                            if model_config:
+                                failed_channel_id = _channel_id
+                                prepared = await _prepare_fallback_request(model_name, fallback_channel)
+                                if prepared is not None:
+                                    upstream_body, upstream_url, upstream_headers = prepared
+                                    _channel_id = fallback_channel.id
+                                    logger.info("FALLBACK | error -> model=%s", model_name)
+                                    await _record_channel_failure(failed_channel_id, db)
+                                    continue
+                    else:
                         logger.info("FALLBACK skip | model=%s not allowed by token", fallback_model)
-                        break
-                    adaptor = _get_adaptor(channel_type)
-                    if adaptor:
-                        model_name = fallback_model
-                        model_config = adaptor.get_supported_models().get(model_name)
-                        if model_config:
-                            failed_channel_id = _channel_id
-                            prepared = await _prepare_fallback_request(model_name, fallback_channel)
-                            if prepared is None:
-                                break
-                            upstream_body, upstream_url, upstream_headers = prepared
-                            _channel_id = fallback_channel.id
-                            logger.info("FALLBACK | error -> model=%s", model_name)
-                            await _record_channel_failure(failed_channel_id, db)
-                            continue
+            # Fall through to refund/raise code below
 
             # Refund on failure
             if not token.unlimited_quota:
