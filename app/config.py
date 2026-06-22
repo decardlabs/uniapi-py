@@ -26,6 +26,10 @@ class Settings(BaseSettings):
     api_rate_limit: int = 480
     relay_rate_limit: int = 480
 
+    # Upstream retry
+    upstream_retry_max: int = 4
+    upstream_retry_backoff_base: float = 1.0
+
     # DeepSeek
     deepseek_api_key: str = ""
 
