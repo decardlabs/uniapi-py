@@ -6,6 +6,7 @@ Provides SSE streaming helpers and response processing for
 OpenAI-compatible providers (including DeepSeek).
 """
 
+import asyncio
 import json
 import time
 import uuid
@@ -31,6 +32,7 @@ async def _capture_stream_usage(
     3. Usage-only chunk: ``choices`` is empty but ``usage`` present (GLM)
     """
     last_usage: dict[str, Any] | None = None
+    cb = on_usage
     try:
         async for line in raw_stream:
             if line.startswith("data: ") and '"usage"' in line:
@@ -55,8 +57,9 @@ async def _capture_stream_usage(
                     pass
             yield line
     finally:
-        if last_usage is not None and on_usage is not None:
-            await on_usage(last_usage)
+        # Don't await in finally (see _eager_raw_stream for why) — schedule it instead.
+        if last_usage is not None and cb is not None:
+            asyncio.ensure_future(cb(last_usage))
 
 
 def make_chat_completion_response(
@@ -189,9 +192,21 @@ async def relay_chat_completion(
                         pass
                     return None
 
+                # ------------------------------------------------------------
+                # NOTE: on_stream_usage MUST NOT be awaited inside an async
+                # generator ``finally`` block.  When FastAPI closes the
+                # generator (client disconnect), ``aclose()`` sends a
+                # ``GeneratorExit`` into the generator at the active ``yield``.
+                # Inside the ``finally`` during ``GeneratorExit``, ``await``
+                # may be silently ignored or raise ``RuntimeError`` depending
+                # on the Python version (observed on 3.14).  We use
+                # ``asyncio.ensure_future`` to schedule the callback on the
+                # event loop *outside* the close context instead.
+                # ------------------------------------------------------------
+                last_usage_captured: dict[str, Any] | None = None
+                on_usage_cb = on_stream_usage
+
                 try:
-                    # NOTE: httpx.Response does NOT support async with when using
-                    # client.send(stream=True). Use try/finally + aclose() instead.
                     try:
                         async for chunk in resp.aiter_bytes(chunk_size=4096):
                             yield chunk
@@ -216,11 +231,11 @@ async def relay_chat_completion(
                         await resp.aclose()
                 finally:
                     await client.aclose()
-                    # Report the best usage we have — message_delta preferred,
-                    # message_start as fallback (client may have disconnected).
-                    usage_to_report = last_usage or message_start_usage
-                    if usage_to_report is not None and on_stream_usage is not None:
-                        await on_stream_usage(usage_to_report)
+                    # Don't await in finally — schedule on event loop instead
+                    if on_usage_cb is not None:
+                        usage_to_report = last_usage or message_start_usage
+                        if usage_to_report is not None:
+                            asyncio.ensure_future(on_usage_cb(usage_to_report))
 
             return StreamingResponse(
                 _eager_raw_stream(),
