@@ -688,7 +688,7 @@ async def _handle_relay(request: Request, db: AsyncSession):
                 details=details,
             )
 
-        except Exception:
+        except Exception as exc:
             # Non-HTTP error (timeout, connection error, etc.)
             if attempt == 0 and not stream:
                 fallback_channel = await _find_fallback_channel(db, channel_type, model_name)
