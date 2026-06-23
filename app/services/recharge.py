@@ -135,12 +135,13 @@ async def approve_recharge(
     req.reviewer_id = admin_id
     req.reviewed_time = now
 
-    # Add quota to user
+    # Add quota to user (dual-write)
     result = await db.execute(select(User).where(User.id == req.user_id))
     user = result.scalar_one_or_none()
     if user is None:
         raise ValueError(f"User {req.user_id} not found")
     user.quota = (user.quota or 0) + req.amount
+    user.balance = (user.balance or 0) + req.amount
 
     # Create log entry
     log = Log(
@@ -197,6 +198,7 @@ async def admin_topup(
 
     now = int(time.time() * 1000)
     user.quota = (user.quota or 0) + quota
+    user.balance = (user.balance or 0) + quota
 
     log = Log(
         user_id=user_id,

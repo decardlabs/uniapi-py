@@ -11,6 +11,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.database import get_db
 from app.dependencies import admin_auth
 from app.models.budget import Budget, BudgetPool, PoolAllocation, PoolTransaction, CostRecord
+from app.models.user import User
 from app.budget.arbiter import BudgetArbiter
 from app.schemas.common import GenericApiResponse, PaginatedResponse
 
@@ -267,7 +268,7 @@ async def allocate_to_user(
     )
     db.add(tx)
 
-    # 4. Increase user's Budget.monthly_budget
+    # 4. Increase user's Budget.monthly_budget and balance
     budget_result = await db.execute(select(Budget).where(Budget.user_id == user_id))
     budget = budget_result.scalar_one_or_none()
     if budget:
@@ -283,6 +284,12 @@ async def allocate_to_user(
             updated_at=now,
         )
         db.add(budget)
+
+    # 5. Credit user's micro-yuan balance
+    user_result = await db.execute(select(User).where(User.id == user_id))
+    user = user_result.scalar_one_or_none()
+    if user:
+        user.balance = (user.balance or 0) + int(amount * 1_000_000)
 
     await db.commit()
     return GenericApiResponse(data=_allocation_to_dict(allocation))
@@ -346,12 +353,18 @@ async def recall_from_user(
     )
     db.add(tx)
 
-    # Decrease user's Budget.monthly_budget
+    # Decrease user's Budget.monthly_budget and balance
     budget_result = await db.execute(select(Budget).where(Budget.user_id == user_id))
     budget = budget_result.scalar_one_or_none()
     if budget:
         budget.monthly_budget = max(0.0, budget.monthly_budget - amount)
         budget.updated_at = now
+
+    # Deduct from user's micro-yuan balance
+    user_result = await db.execute(select(User).where(User.id == user_id))
+    user = user_result.scalar_one_or_none()
+    if user:
+        user.balance = max(0, (user.balance or 0) - int(amount * 1_000_000))
 
     await db.commit()
     return GenericApiResponse(data=_allocation_to_dict(allocation))

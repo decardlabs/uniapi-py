@@ -74,6 +74,7 @@ def _make_stream_usage_callback(
     log_id: int,
     model_config: Any,
     estimated: int,
+    estimated_micro: int,
     token_id: int,
     user_id: int,
     token_unlimited_quota: bool,
@@ -130,8 +131,16 @@ def _make_stream_usage_callback(
             log_entry.cached_prompt_tokens = cache_hit
             await session.commit()
 
-            # Refund the difference between estimated and actual cost
+            # Write actual cost in micro-yuan
+            actual_micro = calculate_cost_micro(
+                log_entry.model_name or "",
+                prompt_tokens, completion_tokens, cache_hit,
+            )
+            log_entry.cost = actual_micro
+
+            # Refund the difference (dual-write: micro-yuan + legacy quota)
             diff = estimated - actual
+            diff_micro = estimated_micro - actual_micro
             if diff > 0:
                 if not token_unlimited_quota:
                     token = await session.get(Token, token_id)
@@ -141,14 +150,11 @@ def _make_stream_usage_callback(
                 if user:
                     user.quota += diff
                     user.used_quota -= diff
+                    user.balance += diff_micro
                 await session.commit()
 
-            # Write CostRecord (micro-yuan) — same as non-stream path
+            # Write CostRecord — same as non-stream path
             try:
-                actual_micro = calculate_cost_micro(
-                    log_entry.model_name or "",
-                    prompt_tokens, completion_tokens, cache_hit,
-                )
                 cr = CostRecord(
                     request_id=log_entry.request_id,
                     user_id=user_id,
@@ -537,14 +543,25 @@ async def _handle_relay(request: Request, db: AsyncSession):
             "monthly_budget": decision.monthly_budget,
         }
 
-    # Pre-consume quota
-    estimated = _estimate_cost(body, model_config)
+    # Pre-consume quota (dual-write: micro-yuan balance + legacy quota)
+    estimated = _estimate_cost(body, model_config)  # legacy quota units
+    input_tokens_est = _estimate_input_tokens(body, model_config)
+    output_tokens_est = min(body.get("max_tokens", body.get("max_output_tokens", 256)), 4096)
+    estimated_micro = estimate_cost_micro(model_name, input_tokens_est, output_tokens_est)
+
+    # PRIMARY: micro-yuan balance check (allows ¥1 overdraft)
+    if user.balance < estimated_micro and user.balance - estimated_micro < -MAX_OVERDRAFT_MICRO:
+        raise RelayException(
+            code="UNIAPI_QUOTA_EXHAUSTED",
+            message="Insufficient user balance",
+        )
+
+    # LEGACY: token quota check (backward compat)
     if not token.unlimited_quota and token.remain_quota < estimated:
         raise RelayException(
             code="UNIAPI_QUOTA_EXHAUSTED",
             message="Insufficient token quota",
         )
-    # Allow small overdraft (~¥1) — conservative estimation is imprecise
     OVERDRAFT_QUOTA = 500_000  # ~¥1 worth of quota at 500K quota/USD
     if user.quota < estimated and user.quota - estimated < -OVERDRAFT_QUOTA:
         raise RelayException(
@@ -562,6 +579,7 @@ async def _handle_relay(request: Request, db: AsyncSession):
         token_name=token.name,
         model_name=model_name,
         quota=estimated,
+        cost=estimated_micro,
         channel_id=_channel_id,
         request_id=uuid.uuid4().hex,
         is_stream=stream,
@@ -572,6 +590,7 @@ async def _handle_relay(request: Request, db: AsyncSession):
         token.remain_quota -= estimated
     user.quota -= estimated
     user.used_quota += estimated
+    user.balance -= estimated_micro
     await db.flush()
 
     # SMART ROUTING: use NATIVE_FORMATS to decide proxy vs convert
@@ -635,6 +654,7 @@ async def _handle_relay(request: Request, db: AsyncSession):
             log_id=stream_log_id,
             model_config=model_config,
             estimated=estimated,
+            estimated_micro=estimated_micro,
             token_id=token.id,
             user_id=user.id,
             token_unlimited_quota=token.unlimited_quota,
@@ -761,11 +781,12 @@ async def _handle_relay(request: Request, db: AsyncSession):
             if is_recoverable or status == 429:
                 await _record_channel_failure(_channel_id, db)
 
-            # Refund quota
+            # Refund quota (dual-write)
             if not token.unlimited_quota:
                 token.remain_quota += estimated
             user.quota += estimated
             user.used_quota -= estimated
+            user.balance += estimated_micro
             await db.commit()
 
             # Budget settlement
@@ -823,11 +844,12 @@ async def _handle_relay(request: Request, db: AsyncSession):
                         logger.info("FALLBACK skip | model=%s not allowed by token", fallback_model)
             # Fall through to refund/raise code below
 
-            # Refund on failure
+            # Refund on failure (dual-write)
             if not token.unlimited_quota:
                 token.remain_quota += estimated
             user.quota += estimated
             user.used_quota -= estimated
+            user.balance += estimated_micro
             if budget_arbiter and settings.budget_enabled and hasattr(request.state, "budget_info") and request.state.budget_info:
                 bi = request.state.budget_info
                 await budget_arbiter.post_settle(
@@ -889,7 +911,7 @@ async def _handle_relay(request: Request, db: AsyncSession):
             prompt_tokens = cache_hit
         cache_miss = max(0, prompt_tokens - cache_hit)
 
-    # Cost: cached tokens at cached_input_ratio, miss tokens at input_ratio
+    # Cost (dual-write: micro-yuan + legacy quota units)
     if model_config:
         actual = int(
             cache_hit * model_config.cached_input_ratio
@@ -899,15 +921,21 @@ async def _handle_relay(request: Request, db: AsyncSession):
     else:
         actual = int(cache_hit * 0.1 + cache_miss * 1.0 + completion_tokens * 1.0)
 
+    actual_micro = calculate_cost_micro(model_name, prompt_tokens, completion_tokens, cache_hit)
+
     diff = estimated - actual
+    diff_micro = estimated_micro - actual_micro
     if diff > 0:
         if not token.unlimited_quota:
             token.remain_quota += diff
         user.quota += diff
         user.used_quota -= diff
+    if diff_micro != 0:
+        user.balance += diff_micro
 
     provisional_log.type = 2
     provisional_log.quota = actual
+    provisional_log.cost = actual_micro
     provisional_log.prompt_tokens = prompt_tokens
     provisional_log.completion_tokens = completion_tokens
     provisional_log.elapsed_time = int((time.time() - relay_start) * 1000)
