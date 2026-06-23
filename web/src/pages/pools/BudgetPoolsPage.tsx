@@ -23,7 +23,6 @@ import {
 } from '@/components/ui/select';
 import { STORAGE_KEYS, usePageSize } from '@/hooks/usePersistentState';
 import { api } from '@/lib/api';
-import { renderQuotaWithUsd } from '@/lib/utils';
 import type { ColumnDef } from '@tanstack/react-table';
 import {
   Plus,
@@ -405,6 +404,8 @@ export default function BudgetPoolsPage() {
   };
 
   // ── Helper ──────────────────────────────────────────
+  const formatYuan = (value: number) => `¥${value.toFixed(2)}`;
+
   const openAllocateDialog = (pool: Pool, userId: number, maxRecall: number) => {
     setSelectedPool(pool);
     setRecallUserId(String(userId));
@@ -448,14 +449,14 @@ export default function BudgetPoolsPage() {
       accessorKey: 'total_funded',
       header: tr('total_funded', 'Total Funded'),
       cell: ({ row }) => (
-        <span className="font-mono font-medium">${renderQuotaWithUsd(row.original.total_funded)}</span>
+        <span className="font-mono font-medium">{formatYuan(row.original.total_funded)}</span>
       ),
     },
     {
       id: 'total_allocated',
       header: tr('allocated', 'Allocated'),
       cell: ({ row }) => (
-        <span className="font-mono">${renderQuotaWithUsd(row.original.total_allocated)}</span>
+        <span className="font-mono">{formatYuan(row.original.total_allocated)}</span>
       ),
     },
     {
@@ -463,7 +464,7 @@ export default function BudgetPoolsPage() {
       header: tr('available', 'Available'),
       cell: ({ row }) => (
         <span className="font-mono text-emerald-600 dark:text-emerald-400">
-          ${renderQuotaWithUsd(row.original.available)}
+          {formatYuan(row.original.available)}
         </span>
       ),
     },
@@ -820,7 +821,7 @@ export default function BudgetPoolsPage() {
                 max={recallMax}
               />
               <p className="text-xs text-muted-foreground mt-1">
-                {tr('recall_amount_placeholder', 'Max: {{max}}').replace('{{max}}', renderQuotaWithUsd(recallMax))}
+                {tr('recall_amount_placeholder', 'Max: {{max}}').replace('{{max}}', formatYuan(recallMax))}
               </p>
             </div>
             <div>
@@ -902,16 +903,16 @@ export default function BudgetPoolsPage() {
               <div className="grid grid-cols-3 gap-4">
                 <div className="rounded-lg border p-3 text-center">
                   <div className="text-xs text-muted-foreground">{tr('total_funded', 'Total Funded')}</div>
-                  <div className="text-lg font-bold font-mono">${renderQuotaWithUsd(reconcileData.pool?.total_funded || 0)}</div>
+                  <div className="text-lg font-bold font-mono">{formatYuan(reconcileData.pool?.total_funded || 0)}</div>
                 </div>
                 <div className="rounded-lg border p-3 text-center">
                   <div className="text-xs text-muted-foreground">{tr('reconciliation_allocated', 'Total Allocated')}</div>
-                  <div className="text-lg font-bold font-mono">${renderQuotaWithUsd(reconcileData.pool?.total_allocated || 0)}</div>
+                  <div className="text-lg font-bold font-mono">{formatYuan(reconcileData.pool?.total_allocated || 0)}</div>
                 </div>
                 <div className="rounded-lg border p-3 text-center">
                   <div className="text-xs text-muted-foreground">{tr('reconciliation_available', 'Available')}</div>
                   <div className="text-lg font-bold font-mono text-emerald-600 dark:text-emerald-400">
-                    ${renderQuotaWithUsd(reconcileData.pool?.available || 0)}
+                    {formatYuan(reconcileData.pool?.available || 0)}
                   </div>
                 </div>
               </div>
@@ -935,10 +936,10 @@ export default function BudgetPoolsPage() {
                         return (
                           <tr key={a.id} className="border-b last:border-0">
                             <td className="px-3 py-2">{a.username || `User #${a.user_id}`}</td>
-                            <td className="px-3 py-2 text-right font-mono">${renderQuotaWithUsd(a.net_allocated)}</td>
-                            <td className="px-3 py-2 text-right font-mono">${renderQuotaWithUsd(a.consumed)}</td>
-                            <td className="px-3 py-2 text-right font-mono">${renderQuotaWithUsd(a.remaining)}</td>
-                            <td className="px-3 py-2 text-right font-mono">${renderQuotaWithUsd(a.remaining)}</td>
+                            <td className="px-3 py-2 text-right font-mono">{formatYuan(a.net_allocated)}</td>
+                            <td className="px-3 py-2 text-right font-mono">{formatYuan(a.consumed)}</td>
+                            <td className="px-3 py-2 text-right font-mono">{formatYuan(a.remaining)}</td>
+                            <td className="px-3 py-2 text-right font-mono">{formatYuan(a.remaining)}</td>
                             <td className="px-3 py-2 text-right">
                               <Button
                                 variant="outline"
