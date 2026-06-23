@@ -67,8 +67,42 @@ def _tx_to_dict(tx: PoolTransaction) -> dict:
     }
 
 
-def _period_ms_range(period_key: str) -> tuple[int, int]:
-    """Return (start_ms, end_ms) for a YYYY-MM period key."""
+def _period_ms_range(period_key: str, period_type: str = "monthly") -> tuple[int, int]:
+    """Return (start_ms, end_ms) for a period key.
+
+    Supports:
+      - "YYYY-MM" (monthly)
+      - "YYYY"    (yearly)
+      - "YYYY-QN" (quarterly, e.g. "2026-Q1")
+      - ""        (oneoff → returns (0, 0): no time filter)
+    """
+    if not period_key:
+        return 0, 0
+
+    # Yearly: single year → Jan 1 of that year to Jan 1 of next year
+    if period_type == "yearly" or (period_key.isdigit() and len(period_key) == 4):
+        y = int(period_key)
+        start = int(datetime(y, 1, 1).timestamp() * 1000)
+        end = int(datetime(y + 1, 1, 1).timestamp() * 1000)
+        return start, end
+
+    # Quarterly: "YYYY-QN"
+    if period_type == "quarterly" or (len(period_key) == 7 and period_key[4] == '-' and period_key[5] == 'Q'):
+        parts = period_key.split("-Q")
+        y = int(parts[0])
+        q = int(parts[1])
+        start_month = (q - 1) * 3 + 1
+        end_month = start_month + 3
+        if end_month > 12:
+            end_month -= 12
+            start = int(datetime(y, start_month, 1).timestamp() * 1000)
+            end = int(datetime(y + 1, 1, 1).timestamp() * 1000)
+        else:
+            start = int(datetime(y, start_month, 1).timestamp() * 1000)
+            end = int(datetime(y, end_month, 1).timestamp() * 1000)
+        return start, end
+
+    # Monthly: "YYYY-MM" (default / fallback)
     parts = period_key.split("-")
     year, month = int(parts[0]), int(parts[1])
     start = int(datetime(year, month, 1).timestamp() * 1000)
@@ -580,7 +614,7 @@ async def _reconcile_pool(pool: BudgetPool, db: AsyncSession):
     if not pool.period_key:
         return
 
-    period_start, period_end = _period_ms_range(pool.period_key)
+    period_start, period_end = _period_ms_range(pool.period_key, pool.period_type or "monthly")
 
     # Get all allocations for this pool
     result = await db.execute(
