@@ -159,7 +159,11 @@ async def relay_chat_completion(
                 scanner = b""
 
                 def _extract_usage(marker: bytes) -> dict[str, Any] | None:
-                    """Find the ``data:`` line nearest to *marker* and return its ``usage`` key, if any."""
+                    """Find the ``data:`` line nearest to *marker* and return its ``usage`` key, if any.
+
+                    Handles both top-level ``usage`` (message_delta) and
+                    nested ``message.usage`` (message_start).
+                    """
                     idx = scanner.rfind(marker)
                     if idx < 0:
                         return None
@@ -173,7 +177,12 @@ async def relay_chat_completion(
                     try:
                         data_line = scanner[data_start:data_end]
                         event_data = json.loads(data_line.decode("utf-8"))
+                        # Try top-level usage first (message_delta)
                         usage = event_data.get("usage")
+                        # Fallback to nested message.usage (message_start)
+                        if usage is None:
+                            msg = event_data.get("message") or {}
+                            usage = msg.get("usage")
                         if usage and any(usage.values()):
                             return usage
                     except (json.JSONDecodeError, UnicodeDecodeError):
