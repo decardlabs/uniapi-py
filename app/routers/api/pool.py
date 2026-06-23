@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import time
+import uuid
 from datetime import datetime
 
 from fastapi import APIRouter, Depends, HTTPException, Query, Request
@@ -11,6 +12,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.database import get_db
 from app.dependencies import admin_auth
 from app.models.budget import Budget, BudgetPool, PoolAllocation, PoolTransaction, CostRecord
+from app.models.log import Log
 from app.models.user import User
 from app.budget.arbiter import BudgetArbiter
 from app.schemas.common import GenericApiResponse, PaginatedResponse
@@ -209,6 +211,7 @@ async def get_pool(
 async def fund_pool(
     pool_id: int,
     body: dict,
+    request: Request,
     db: AsyncSession = Depends(get_db),
     _=Depends(admin_auth),
 ):
@@ -236,6 +239,16 @@ async def fund_pool(
         created_at=now,
     )
     db.add(tx)
+
+    # Log: pool funded
+    admin_user = request.state.user
+    db.add(Log(
+        created_at=now,
+        type=3,  # MANAGE
+        content=f"Pool \"{pool.name}\" funded +¥{amount:.2f} by {admin_user.username}",
+        cost=0,
+        request_id=uuid.uuid4().hex,
+    ))
     await db.commit()
     return GenericApiResponse(data=_pool_to_dict(pool))
 
@@ -246,6 +259,7 @@ async def fund_pool(
 async def allocate_to_user(
     pool_id: int,
     body: dict,
+    request: Request,
     db: AsyncSession = Depends(get_db),
     _=Depends(admin_auth),
 ):
@@ -325,6 +339,15 @@ async def allocate_to_user(
     if user:
         user.balance = (user.balance or 0) + int(amount * 1_000_000)
 
+    # Log: pool allocated
+    admin_user = request.state.user
+    db.add(Log(
+        created_at=now,
+        type=3,  # MANAGE
+        content=f"Pool \"{pool.name}\" allocated ¥{amount:.2f} to {user.username} (#{user_id}) by {admin_user.username}",
+        cost=0,
+        request_id=uuid.uuid4().hex,
+    ))
     await db.commit()
     return GenericApiResponse(data=_allocation_to_dict(allocation))
 
@@ -335,6 +358,7 @@ async def allocate_to_user(
 async def recall_from_user(
     pool_id: int,
     body: dict,
+    request: Request,
     db: AsyncSession = Depends(get_db),
     _=Depends(admin_auth),
 ):
@@ -400,6 +424,15 @@ async def recall_from_user(
     if user:
         user.balance = max(0, (user.balance or 0) - int(amount * 1_000_000))
 
+    # Log: pool recalled
+    admin_user = request.state.user
+    db.add(Log(
+        created_at=now,
+        type=3,  # MANAGE
+        content=f"Pool \"{pool.name}\" recalled ¥{amount:.2f} from {user.username if user else '#' + str(user_id)} by {admin_user.username}",
+        cost=0,
+        request_id=uuid.uuid4().hex,
+    ))
     await db.commit()
     return GenericApiResponse(data=_allocation_to_dict(allocation))
 
@@ -408,6 +441,7 @@ async def recall_from_user(
 async def recall_all_from_user(
     pool_id: int,
     body: dict,
+    request: Request,
     db: AsyncSession = Depends(get_db),
     _=Depends(admin_auth),
 ):
@@ -432,7 +466,7 @@ async def recall_all_from_user(
 
     # Reuse recall endpoint with the remaining amount
     body["amount"] = remaining
-    return await recall_from_user(pool_id, body, db, _=None)
+    return await recall_from_user(pool_id, body, request, db, _=None)
 
 
 # ── Close ──────────────────────────────────────────────
@@ -459,6 +493,16 @@ async def close_pool(
     now = int(time.time() * 1000)
     pool.status = "closed"
     pool.closed_at = now
+
+    # Log: pool closed
+    admin_user = request.state.user
+    db.add(Log(
+        created_at=now,
+        type=3,  # MANAGE
+        content=f"Pool \"{pool.name}\" closed by {admin_user.username}",
+        cost=0,
+        request_id=uuid.uuid4().hex,
+    ))
     await db.commit()
     return GenericApiResponse(data=_pool_to_dict(pool))
 
@@ -469,6 +513,7 @@ async def close_pool(
 async def rollover_pool(
     pool_id: int,
     body: dict,
+    request: Request,
     db: AsyncSession = Depends(get_db),
     _=Depends(admin_auth),
 ):
@@ -532,6 +577,15 @@ async def rollover_pool(
         )
         db.add(tx2)
 
+    # Log: pool rolled over
+    admin_user = request.state.user
+    db.add(Log(
+        created_at=now,
+        type=3,  # MANAGE
+        content=f"Pool \"{pool.name}\" rolled over to \"{new_name or new_pool.name}\" ({new_period_key}), carry ¥{carry:.2f} by {admin_user.username}",
+        cost=0,
+        request_id=uuid.uuid4().hex,
+    ))
     await db.commit()
     return GenericApiResponse(data={
         "old_pool": _pool_to_dict(pool),
