@@ -32,7 +32,8 @@ async def _capture_stream_usage(
     3. Usage-only chunk: ``choices`` is empty but ``usage`` present (GLM)
     """
     last_usage: dict[str, Any] | None = None
-    cb = on_usage
+    captured_usage: list[dict[str, Any] | None] = [None]
+    done = asyncio.Event()
     try:
         async for line in raw_stream:
             if line.startswith("data: ") and '"usage"' in line:
@@ -57,9 +58,18 @@ async def _capture_stream_usage(
                     pass
             yield line
     finally:
-        # Don't await in finally (see _eager_raw_stream for why) — schedule it instead.
-        if last_usage is not None and cb is not None:
-            asyncio.ensure_future(cb(last_usage))
+        captured_usage[0] = last_usage
+        done.set()
+        if on_usage is not None:
+            async def _report():
+                await done.wait()
+                u = captured_usage[0]
+                if u is not None:
+                    try:
+                        await on_usage(u)
+                    except Exception:
+                        pass
+            asyncio.ensure_future(_report())
 
 
 def make_chat_completion_response(
@@ -148,94 +158,96 @@ async def relay_chat_completion(
                 await client.aclose()
                 resp.raise_for_status()
 
-            async def _eager_raw_stream():
-                """Raw byte-level SSE passthrough — preserves original wire format.
+            # ---- Queue-based streaming with async reader task ----------
+            # Usage MUST NOT be reported from inside a generator's
+            # ``finally`` block during ``GeneratorExit`` (client
+            # disconnect).  ``asyncio.ensure_future`` tasks scheduled
+            # there are silently dropped (Python 3.14).  Instead, a
+            # dedicated reader task reads upstream bytes via an
+            # asyncio.Queue, scans for usage, and calls the callback
+            # directly from task context (safe to await).
+            # ------------------------------------------------------------
+            last_usage: dict[str, Any] | None = None
+            message_start_usage: dict[str, Any] | None = None
+            scanner = b""
 
-                Scans the byte stream for both ``message_start`` (initial input
-                tokens) and ``message_delta`` (final usage) Anthropic SSE events.
-                Captured usage is reported even if the client disconnects before
-                the final ``message_delta`` event (uses ``message_start`` as
-                fallback).
-                """
-                last_usage: dict[str, Any] | None = None
-                message_start_usage: dict[str, Any] | None = None
-                scanner = b""
-
-                def _extract_usage(marker: bytes) -> dict[str, Any] | None:
-                    """Find the ``data:`` line nearest to *marker* and return its ``usage`` key, if any.
-
-                    Handles both top-level ``usage`` (message_delta) and
-                    nested ``message.usage`` (message_start).
-                    """
-                    idx = scanner.rfind(marker)
-                    if idx < 0:
-                        return None
-                    data_start = scanner.rfind(b"data: ", 0, idx)
-                    if data_start < 0:
-                        return None
-                    data_start += len(b"data: ")
-                    data_end = scanner.find(b"\n", data_start)
-                    if data_end < 0:
-                        data_end = len(scanner)
-                    try:
-                        data_line = scanner[data_start:data_end]
-                        event_data = json.loads(data_line.decode("utf-8"))
-                        # Try top-level usage first (message_delta)
-                        usage = event_data.get("usage")
-                        # Fallback to nested message.usage (message_start)
-                        if usage is None:
-                            msg = event_data.get("message") or {}
-                            usage = msg.get("usage")
-                        if usage and any(usage.values()):
-                            return usage
-                    except (json.JSONDecodeError, UnicodeDecodeError):
-                        pass
+            def _extract_usage(marker: bytes) -> dict[str, Any] | None:
+                idx = scanner.rfind(marker)
+                if idx < 0:
                     return None
-
-                # ------------------------------------------------------------
-                # NOTE: on_stream_usage MUST NOT be awaited inside an async
-                # generator ``finally`` block.  When FastAPI closes the
-                # generator (client disconnect), ``aclose()`` sends a
-                # ``GeneratorExit`` into the generator at the active ``yield``.
-                # Inside the ``finally`` during ``GeneratorExit``, ``await``
-                # may be silently ignored or raise ``RuntimeError`` depending
-                # on the Python version (observed on 3.14).  We use
-                # ``asyncio.ensure_future`` to schedule the callback on the
-                # event loop *outside* the close context instead.
-                # ------------------------------------------------------------
-                last_usage_captured: dict[str, Any] | None = None
-                on_usage_cb = on_stream_usage
-
+                data_start = scanner.rfind(b"data: ", 0, idx)
+                if data_start < 0:
+                    return None
+                data_start += len(b"data: ")
+                data_end = scanner.find(b"\n", data_start)
+                if data_end < 0:
+                    data_end = len(scanner)
                 try:
-                    try:
-                        async for chunk in resp.aiter_bytes(chunk_size=4096):
-                            yield chunk
+                    data_line = scanner[data_start:data_end]
+                    event_data = json.loads(data_line.decode("utf-8"))
+                    usage = event_data.get("usage")
+                    if usage is None:
+                        msg = event_data.get("message") or {}
+                        usage = msg.get("usage")
+                    if usage and any(usage.values()):
+                        return usage
+                except (json.JSONDecodeError, UnicodeDecodeError):
+                    pass
+                return None
 
-                            scanner += chunk
+            queue: asyncio.Queue[bytes | None] = asyncio.Queue(maxsize=32)
 
-                            # Capture message_start usage (always has input_tokens)
-                            if message_start_usage is None:
-                                ms_usage = _extract_usage(b'type":"message_start"')
-                                if ms_usage is not None:
-                                    message_start_usage = ms_usage
+            async def _reader():
+                try:
+                    async for chunk in resp.aiter_bytes(chunk_size=4096):
+                        await queue.put(chunk)
+                        scanner += chunk
 
-                            # Capture message_delta usage (final input+output tokens)
-                            if last_usage is None:
-                                md_usage = _extract_usage(b'type":"message_delta"')
-                                if md_usage is not None:
-                                    last_usage = md_usage
+                        if message_start_usage is None:
+                            ms_usage = _extract_usage(b'type":"message_start"')
+                            if ms_usage is not None:
+                                message_start_usage = ms_usage
 
-                            if len(scanner) > 16384:
-                                scanner = scanner[-8192:]
-                    finally:
-                        await resp.aclose()
+                        if last_usage is None:
+                            md_usage = _extract_usage(b'type":"message_delta"')
+                            if md_usage is not None:
+                                last_usage = md_usage
+
+                        if len(scanner) > 16384:
+                            scanner = scanner[-8192:]
                 finally:
+                    await resp.aclose()
+                    await queue.put(None)
                     await client.aclose()
-                    # Don't await in finally — schedule on event loop instead
-                    if on_usage_cb is not None:
-                        usage_to_report = last_usage or message_start_usage
-                        if usage_to_report is not None:
-                            asyncio.ensure_future(on_usage_cb(usage_to_report))
+                    # Report usage from the reader task (safe to await)
+                    usage_data = last_usage or message_start_usage
+                    if usage_data is not None and on_stream_usage is not None:
+                        try:
+                            await on_stream_usage(usage_data)
+                        except Exception:
+                            pass
+
+            asyncio.ensure_future(_reader())
+
+            async def _client_stream():
+                try:
+                    while True:
+                        chunk = await queue.get()
+                        if chunk is None:
+                            break
+                        yield chunk
+                except GeneratorExit:
+                    pass
+
+            return StreamingResponse(
+                _client_stream(),
+                media_type="text/event-stream",
+                headers={
+                    "Cache-Control": "no-cache",
+                    "Connection": "keep-alive",
+                    "X-Accel-Buffering": "no",
+                },
+            )
 
             return StreamingResponse(
                 _eager_raw_stream(),
