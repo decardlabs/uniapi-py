@@ -15,7 +15,7 @@ import { useResponsive } from '@/hooks/useResponsive';
 import { api } from '@/lib/api';
 import type { AxiosResponse } from 'axios';
 import { useAuthStore } from '@/lib/stores/auth';
-import { cn, renderQuota, renderQuotaWithUsd } from '@/lib/utils';
+import { cn, renderQuota } from '@/lib/utils';
 import type { ColumnDef } from '@tanstack/react-table';
 import { Ban, Check, CheckCircle, Copy, Eye, EyeOff, Plus, Settings, Trash2 } from 'lucide-react';
 import { useCallback, useEffect, useRef, useState } from 'react';
@@ -28,9 +28,6 @@ export interface Token {
   name: string;
   key: string;
   status: number;
-  remain_quota: number;
-  unlimited_quota: boolean;
-  used_quota: number;
   created_time: number;
   accessed_time: number;
   expired_time: number;
@@ -46,11 +43,6 @@ const TOKEN_STATUS = {
   EXHAUSTED: 4,
 } as const;
 
-export const shouldHighlightTokenQuota = (_token: Token, _userBalance: number | null): boolean => {
-  // Token quotas were removed in Phase F3 — highlight logic is retired.
-  return false;
-};
-
 /**
  * TokensPage renders the management interface for API tokens, including search, sorting, and key utilities.
  */
@@ -58,7 +50,6 @@ export function TokensPage() {
   const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
   const { isMobile } = useResponsive();
-  const userBalance = useAuthStore((state) => state.user?.balance ?? null);
   const { t } = useTranslation();
   const [confirmDelete, ConfirmDeleteDialog] = useConfirmDialog();
   const tr = useCallback(
@@ -78,15 +69,6 @@ export function TokensPage() {
   const initializedRef = useRef(false);
   const [showKeys, setShowKeys] = useState<Record<number, boolean>>({});
   const { copiedTokens, manualCopyToken, handleCopySuccess, handleCopyFailure, clearManualCopyToken } = useClipboardManager();
-  const formatQuotaLabel = useCallback(
-    (quota: number, unlimited = false) => {
-      if (unlimited) {
-        return tr('quota.unlimited', 'Unlimited');
-      }
-      return renderQuotaWithUsd(quota);
-    },
-    [tr]
-  );
   const renderStatusBadge = useCallback(
     (status: number) => {
       switch (status) {
@@ -200,11 +182,6 @@ export function TokensPage() {
               <div className="text-sm text-muted-foreground flex items-center gap-2 flex-wrap">
                 <span>{tr('search.id_label', 'ID: {{id}}', { id: token.id })}</span>
                 {renderStatusBadge(token.status)}
-                <span>
-                  {tr('search.quota_label', 'Quota: {{quota}}', {
-                    quota: formatQuotaLabel(token.remain_quota, token.unlimited_quota),
-                  })}
-                </span>
               </div>
             </div>
           ),
@@ -355,61 +332,6 @@ export function TokensPage() {
       accessorKey: 'status',
       header: tr('columns.status', 'Status'),
       cell: ({ row }) => renderStatusBadge(row.original.status),
-    },
-    {
-      accessorKey: 'remain_quota',
-      header: tr('columns.remaining_quota', 'Remaining Quota'),
-      cell: ({ row }) => {
-        const token = row.original;
-        const quotaLabel = formatQuotaLabel(token.remain_quota, token.unlimited_quota);
-        const highlight = shouldHighlightTokenQuota(token, userBalance);
-        const quotaClasses = cn('font-mono text-sm', highlight && 'text-warning font-semibold');
-
-        if (!highlight) {
-          return (
-            <span
-              className={quotaClasses}
-              title={tr('columns.remaining_title', 'Remaining: {{label}}', {
-                label: quotaLabel,
-              })}
-            >
-              {quotaLabel}
-            </span>
-          );
-        }
-
-        return (
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <span
-                className={quotaClasses}
-                title={tr('columns.remaining_title', 'Remaining: {{label}}', {
-                  label: quotaLabel,
-                })}
-              >
-                {quotaLabel}
-              </span>
-            </TooltipTrigger>
-            <TooltipContent>
-              {tr('columns.remaining_tooltip', 'This token retains more quota than your account allocation.')}
-            </TooltipContent>
-          </Tooltip>
-        );
-      },
-    },
-    {
-      accessorKey: 'used_quota',
-      header: tr('columns.used_quota', 'Used Quota'),
-      cell: ({ row }) => (
-        <span
-          className="font-mono text-sm"
-          title={tr('columns.used_title', 'Used: {{label}}', {
-            label: formatQuotaLabel(row.original.used_quota),
-          })}
-        >
-          {formatQuotaLabel(row.original.used_quota)}
-        </span>
-      ),
     },
     {
       accessorKey: 'created_time',

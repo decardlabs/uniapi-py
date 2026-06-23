@@ -552,19 +552,10 @@
           "label": "Nombre del token",
           "placeholder": "Introduce el nombre del token"
         },
-        "remain_quota": {
-          "help": "La cuota se mide en tokens. USD es una estimación basada en el precio por unidad configurado por el administrador.",
-          "label": "Cuota restante",
-          "usd_hint": "Aprox. {{usd}} USD restantes"
-        },
         "subnet": {
           "help": "Permitir solicitudes solo desde estas IP o rangos CIDR (ej. 192.168.1.0/24). Múltiples entradas separadas por comas.",
           "label": "Restricción de IP (Opcional)",
           "placeholder": "ej., 192.168.1.0/24 o 10.0.0.1"
-        },
-        "unlimited": {
-          "help": "Si se habilita, este token ignora las comprobaciones de cuota restante.",
-          "label": "Cuota ilimitada"
         }
       },
       "loading": "Cargando token...",
@@ -606,12 +597,7 @@
         "name": "Nombre",
         "never": "Nunca",
         "no_value": "—",
-        "remaining_quota": "Cuota restante",
-        "remaining_title": "Restante: {{label}}",
-        "remaining_tooltip": "Este token conserva más cuota que la asignación de tu cuenta.",
-        "status": "Estado",
-        "used_quota": "Cuota utilizada",
-        "used_title": "Utilizado: {{label}}"
+        "status": "Estado"
       },
       "confirm": {
         "delete": "¿Estás seguro de que quieres eliminar el token \"{{label}}\"?"

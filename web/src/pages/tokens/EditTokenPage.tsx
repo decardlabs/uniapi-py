@@ -21,14 +21,10 @@ import { useNavigate, useParams } from 'react-router-dom';
 import * as z from 'zod';
 
 // Helper function to render quota (micro-yuan based)
-import { renderQuotaWithPrompt as displayQuota } from '@/lib/utils';
-const renderQuotaWithPrompt = (quota: number): string => displayQuota(quota * 2);
 
 const tokenSchema = z.object({
   name: z.string().min(1, 'Token name is required'),
-  remain_quota: z.coerce.number().min(0, 'Quota must be non-negative'),
   expired_time: z.union([z.string(), z.number()]).optional(),
-  unlimited_quota: z.boolean().default(false),
   models: z.array(z.string()).default([]),
   subnet: z.string().optional(),
 });
@@ -68,16 +64,11 @@ export function EditTokenPage() {
     resolver: zodResolver(tokenSchema),
     defaultValues: {
       name: '',
-      remain_quota: 500000,
       expired_time: '',
-      unlimited_quota: false,
       models: [],
       subnet: '',
     },
   });
-
-  const watchUnlimitedQuota = form.watch('unlimited_quota');
-  const watchRemainQuota = form.watch('remain_quota');
 
   const loadToken = async () => {
     if (!tokenId) return;
@@ -225,10 +216,6 @@ export function EditTokenPage() {
         let nextStatus = original.status;
         const nowSec = Math.floor(Date.now() / 1000);
         const exp = Number((payload as Record<string, unknown>).expired_time);
-        const isUnlimited = !!(payload as Record<string, unknown>).unlimited_quota;
-        const hasQuota = Number((payload as Record<string, unknown>).remain_quota) > 0;
-        // Exhausted -> Enabled if unlimited or quota > 0
-        if (nextStatus === 4 && (isUnlimited || hasQuota)) nextStatus = 1;
         // Expired -> Enabled if never expire or a future expiry
         if (nextStatus === 3 && (exp === -1 || exp > nowSec)) nextStatus = 1;
         (payload as Record<string, unknown>).status = nextStatus;
@@ -487,68 +474,6 @@ export function EditTokenPage() {
                       {tr('fields.expired_time.minute', '1 Minute')}
                     </Button>
                   </div>
-
-                  <div className="flex flex-row items-start space-x-3 space-y-0">
-                    <FormControl>
-                      <Checkbox
-                        id="unlimited_quota"
-                        checked={!!watchUnlimitedQuota}
-                        onCheckedChange={(checked) =>
-                          form.setValue('unlimited_quota', !!checked, {
-                            shouldDirty: true,
-                          })
-                        }
-                      />
-                    </FormControl>
-                    <div className="flex items-center gap-1 space-y-0">
-                      <LabelWithHelp
-                        labelKey="fields.unlimited.label"
-                        defaultLabel="Unlimited Quota"
-                        helpKey="fields.unlimited.help"
-                        defaultHelp="If enabled, this token ignores remaining quota checks."
-                        htmlFor="unlimited_quota"
-                      />
-                    </div>
-                  </div>
-
-                  <FormField
-                    control={form.control}
-                    name="remain_quota"
-                    render={({ field }) => {
-                      const raw = field.value as number | string;
-                      const fallback = form.getValues('remain_quota') as number | string;
-                      const current = (raw ?? fallback) as number | string;
-                      const numeric = Number(current);
-                      const usdLabel = Number.isFinite(numeric) && numeric >= 0 ? renderQuotaWithPrompt(numeric) : '$0.00';
-                      return (
-                        <FormItem>
-                          <LabelWithHelp
-                            labelKey="fields.remain_quota.label"
-                            defaultLabel="Remaining Quota"
-                            helpKey="fields.remain_quota.help"
-                            defaultHelp="Quota is measured in tokens. USD is an estimate based on admin-configured per-unit pricing."
-                          />
-                          <div className="text-xs text-muted-foreground mb-1">
-                            {tr('fields.remain_quota.usd_hint', 'Approx. {{usd}} USD remaining', { usd: usdLabel })}
-                          </div>
-                          <FormControl>
-                            <Input
-                              type="number"
-                              min="0"
-                              disabled={watchUnlimitedQuota}
-                              className={errorClass('remain_quota')}
-                              {...field}
-                              onChange={(e) => {
-                                // Pass original event to RHF (prevents libs reading value.name from breaking)
-                                field.onChange(e);
-                              }}
-                            />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      );
-                    }}
-                  />
 
                   {form.formState.errors.root && <div className="text-sm text-destructive">{form.formState.errors.root.message}</div>}
 

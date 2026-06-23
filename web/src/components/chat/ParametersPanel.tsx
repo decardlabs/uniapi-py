@@ -18,9 +18,6 @@ interface Token {
   name: string;
   key: string;
   status: number;
-  remain_quota: number;
-  unlimited_quota: boolean;
-  used_quota: number;
   created_time: number;
   accessed_time: number;
   expired_time: number;
@@ -361,7 +358,7 @@ export function ParametersPanel({
                     <div className="flex items-center justify-between w-full">
                       <span>{token.name || `Token ${token.id}`}</span>
                       <Badge variant="outline" className="ml-2 text-xs">
-                        {token.unlimited_quota ? t('playground.parameters.token.unlimited') : `${Math.floor(token.remain_quota / 1000)}K`}
+                        {token.status === 1 ? t('playground.parameters.token.active', 'Active') : t('playground.parameters.token.disabled', 'Disabled')}
                       </Badge>
                     </div>
                   </SelectItem>

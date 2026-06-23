@@ -552,19 +552,10 @@
           "label": "Nom du jeton",
           "placeholder": "Entrez le nom du jeton"
         },
-        "remain_quota": {
-          "help": "Le quota est mesuré en jetons. L'USD est une estimation basée sur la tarification par unité configurée par l'administrateur.",
-          "label": "Quota restant",
-          "usd_hint": "Env. {{usd}} USD restants"
-        },
         "subnet": {
           "help": "Autoriser les requêtes uniquement depuis ces IP ou plages CIDR (ex: 192.168.1.0/24). Les entrées multiples sont séparées par des virgules.",
           "label": "Restriction IP (Facultatif)",
           "placeholder": "ex: 192.168.1.0/24 ou 10.0.0.1"
-        },
-        "unlimited": {
-          "help": "Si activé, ce jeton ignore les vérifications de quota restant.",
-          "label": "Quota illimité"
         }
       },
       "loading": "Chargement du jeton...",
@@ -606,12 +597,7 @@
         "name": "Nom",
         "never": "Jamais",
         "no_value": "—",
-        "remaining_quota": "Quota restant",
-        "remaining_title": "Restant : {{label}}",
-        "remaining_tooltip": "Ce jeton conserve plus de quota que l'allocation de votre compte.",
-        "status": "Statut",
-        "used_quota": "Quota utilisé",
-        "used_title": "Utilisé : {{label}}"
+        "status": "Statut"
       },
       "confirm": {
         "delete": "Voulez-vous vraiment supprimer le jeton \"{{label}}\" ?"

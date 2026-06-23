@@ -5,9 +5,6 @@ export interface Token {
   name: string;
   key: string;
   status: number;
-  remain_quota: number;
-  unlimited_quota: boolean;
-  used_quota: number;
   created_time: number;
   accessed_time: number;
   expired_time: number;

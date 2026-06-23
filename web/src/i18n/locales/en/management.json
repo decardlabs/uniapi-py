@@ -552,19 +552,10 @@
           "label": "Token Name",
           "placeholder": "Enter token name"
         },
-        "remain_quota": {
-          "help": "Quota is measured in tokens. USD is an estimate based on admin-configured per-unit pricing.",
-          "label": "Remaining Quota",
-          "usd_hint": "Approx. {{usd}} USD remaining"
-        },
         "subnet": {
           "help": "Allow requests only from these IPs or CIDR ranges (e.g., 192.168.1.0/24). Multiple entries are comma-separated.",
           "label": "IP Restriction (Optional)",
           "placeholder": "e.g., 192.168.1.0/24 or 10.0.0.1"
-        },
-        "unlimited": {
-          "help": "If enabled, this token ignores remaining quota checks.",
-          "label": "Unlimited Quota"
         }
       },
       "loading": "Loading token...",
@@ -606,12 +597,7 @@
         "name": "Name",
         "never": "Never",
         "no_value": "—",
-        "remaining_quota": "Remaining Quota",
-        "remaining_title": "Remaining: {{label}}",
-        "remaining_tooltip": "This token retains more quota than your account allocation.",
-        "status": "Status",
-        "used_quota": "Used Quota",
-        "used_title": "Used: {{label}}"
+        "status": "Status"
       },
       "confirm": {
         "delete": "Are you sure you want to delete token \"{{label}}\"?"

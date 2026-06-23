@@ -11,16 +11,13 @@ export interface Token {
   key: string;
   name: string;
   status: number;
-  remain_quota: number;
-  unlimited_quota: boolean;
   expired_time: number | string;
   created_time: number;
   models?: string; // comma-separated or array
   subnet?: string;
-  used_quota?: number;
 }
 
-export type CreateTokenRequest = Omit<Token, 'id' | 'key' | 'status' | 'created_time' | 'used_quota'>;
+export type CreateTokenRequest = Omit<Token, 'id' | 'key' | 'status' | 'created_time'>;
 
 export type UpdateTokenRequest = Partial<CreateTokenRequest> & { id: number };
 

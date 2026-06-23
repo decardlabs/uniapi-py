@@ -632,7 +632,7 @@ function TopUpDialog({
               if (!userId) return;
               const res = await adminTopup({
                 user_id: userId,
-                amount: values.amount,
+                quota: values.amount,
                 remark: values.remark,
                 pool_id: values.pool_id || 0,
               });

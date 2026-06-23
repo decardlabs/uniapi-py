@@ -23,9 +23,6 @@ def _token_to_response(t) -> dict:
         name=t.name,
         key=key_display,
         status=t.status,
-        remain_quota=0,
-        unlimited_quota=False,
-        used_quota=0,
         created_time=t.created_time // 1000 if t.created_time else 0,
         accessed_time=t.accessed_time // 1000 if t.accessed_time else 0,
         expired_time=t.expired_time // 1000 if t.expired_time else 0,
@@ -47,7 +44,8 @@ async def token_balance(
     db: AsyncSession = Depends(get_db),
     _=Depends(token_auth),
 ):
-    return GenericApiResponse(data={"remain_quota": 0})
+    user = request.state.user
+    return GenericApiResponse(data={"balance": user.balance if hasattr(user, 'balance') else user.quota})
 
 
 @router.get("/api/token/transactions")

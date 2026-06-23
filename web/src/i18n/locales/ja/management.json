@@ -552,19 +552,10 @@
           "label": "トークン名",
           "placeholder": "トークン名を入力"
         },
-        "remain_quota": {
-          "help": "クォータはトークン単位で測定されます。USD は管理者が設定した単価に基づく推定値です。",
-          "label": "残りクォータ",
-          "usd_hint": "残り約 {{usd}} USD"
-        },
         "subnet": {
           "help": "これらの IP または CIDR 範囲 (例: 192.168.1.0/24) からのリクエストのみを許可します。複数のエントリはカンマ区切りです。",
           "label": "IP 制限 (任意)",
           "placeholder": "例: 192.168.1.0/24 または 10.0.0.1"
-        },
-        "unlimited": {
-          "help": "有効にすると、このトークンは残りクォータチェックを無視します。",
-          "label": "無制限クォータ"
         }
       },
       "loading": "トークンを読み込み中...",
@@ -606,12 +597,7 @@
         "name": "名前",
         "never": "無期限",
         "no_value": "—",
-        "remaining_quota": "残りクォータ",
-        "remaining_title": "残り: {{label}}",
-        "remaining_tooltip": "このトークンはアカウントの割り当てよりも多くのクォータを保持しています。",
-        "status": "ステータス",
-        "used_quota": "使用済みクォータ",
-        "used_title": "使用済み: {{label}}"
+        "status": "ステータス"
       },
       "confirm": {
         "delete": "トークン \"{{label}}\" を削除してよろしいですか？"

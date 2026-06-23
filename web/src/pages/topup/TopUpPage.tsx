@@ -37,7 +37,7 @@ interface TopUpRequest {
 export function TopUpPage() {
   const { user, updateUser } = useAuthStore();
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [userQuota, setUserQuota] = useState(user?.quota || 0);
+  const [userQuota, setUserQuota] = useState(user?.balance || 0);
   const [topUpLink, setTopUpLink] = useState('');
   const [userData, setUserData] = useState<UserInfo | null>(null);
   const [myRequests, setMyRequests] = useState<TopUpRequest[]>([]);

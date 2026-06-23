@@ -552,19 +552,10 @@
           "label": "令牌名称",
           "placeholder": "输入令牌名称"
         },
-        "remain_quota": {
-          "help": "额度以令牌为单位。USD 是基于管理员配置的单位定价的估算值。",
-          "label": "剩余额度",
-          "usd_hint": "约剩余 {{usd}} USD"
-        },
         "subnet": {
           "help": "仅允许来自这些 IP 或 CIDR 范围的请求 (例如 192.168.1.0/24)。多个条目用逗号分隔。",
           "label": "IP 限制 (可选)",
           "placeholder": "例如 192.168.1.0/24 或 10.0.0.1"
-        },
-        "unlimited": {
-          "help": "如果启用，此令牌将忽略剩余额度检查。",
-          "label": "无限额度"
         }
       },
       "loading": "正在加载令牌...",
@@ -606,12 +597,7 @@
         "name": "名称",
         "never": "永不过期",
         "no_value": "—",
-        "remaining_quota": "剩余额度",
-        "remaining_title": "剩余: {{label}}",
-        "remaining_tooltip": "此令牌保留的额度多于您的账户分配。",
-        "status": "状态",
-        "used_quota": "已用额度",
-        "used_title": "已用: {{label}}"
+        "status": "状态"
       },
       "confirm": {
         "delete": "确定要删除令牌 \"{{label}}\" 吗？"
