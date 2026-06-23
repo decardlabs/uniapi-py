@@ -106,11 +106,20 @@ def _make_stream_usage_callback(
                     f.write(f"_on_usage: log_entry NOT FOUND for id={log_id}\n")
                 return
 
-            # Recalculate with actual model name from log
-            actual_micro = calculate_cost_micro(
-                log_entry.model_name or "",
-                prompt_tokens, completion_tokens, cache_hit,
-            )
+            with open("/tmp/_on_usage_debug.log", "a") as f:
+                f.write(f"_on_usage: GOT log_entry id={log_entry.id} model={log_entry.model_name}\n")
+
+            try:
+                # Recalculate with actual model name from log
+                actual_micro = calculate_cost_micro(
+                    log_entry.model_name or "",
+                    prompt_tokens, completion_tokens, cache_hit,
+                )
+            except Exception as e:
+                with open("/tmp/_on_usage_debug.log", "a") as f:
+                    f.write(f"_on_usage: calculate_cost_micro FAILED: {e}\n")
+                return
+
             with open("/tmp/_on_usage_debug.log", "a") as f:
                 f.write(f"_on_usage: updating log {log_id} pt={prompt_tokens} ct={completion_tokens}\n")
             log_entry.cost = actual_micro
