@@ -20,14 +20,9 @@ import { useTranslation } from 'react-i18next';
 import { useNavigate, useParams } from 'react-router-dom';
 import * as z from 'zod';
 
-// Helper function to render quota with USD conversion (USD only)
-const renderQuotaWithPrompt = (quota: number): string => {
-  const quotaPerUnitRaw = localStorage.getItem('quota_per_unit');
-  const quotaPerUnit = parseFloat(quotaPerUnitRaw || '500000');
-  const usd = Number.isFinite(quota) && quotaPerUnit > 0 ? quota / quotaPerUnit : NaN;
-  const usdValue = Number.isFinite(usd) ? usd.toFixed(2) : '0.00';
-  return `$${usdValue}`;
-};
+// Helper function to render quota (micro-yuan based)
+import { renderQuotaWithPrompt as displayQuota } from '@/lib/utils';
+const renderQuotaWithPrompt = (quota: number): string => displayQuota(quota * 2);
 
 const tokenSchema = z.object({
   name: z.string().min(1, 'Token name is required'),

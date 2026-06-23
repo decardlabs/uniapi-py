@@ -12,7 +12,7 @@ import { TimestampDisplay } from '@/components/ui/timestamp';
 import { STORAGE_KEYS, usePageSize } from '@/hooks/usePersistentState';
 import { useResponsive } from '@/hooks/useResponsive';
 import { api } from '@/lib/api';
-import { cn } from '@/lib/utils';
+import { cn, renderQuotaWithUsd } from '@/lib/utils';
 import { zodResolver } from '@hookform/resolvers/zod';
 import type { ColumnDef } from '@tanstack/react-table';
 import { useCallback, useEffect, useRef, useState } from 'react';
@@ -145,11 +145,8 @@ export function RedemptionsPage() {
       header: tr('columns.quota', 'Quota'),
       accessorKey: 'quota',
       cell: ({ row }) => (
-        <span
-          className="font-mono text-sm"
-          title={`${tr('columns.quota', 'Quota')}: ${row.original.quota ? `$${(row.original.quota / 500000).toFixed(2)}` : '$0.00'}`}
-        >
-          {row.original.quota ? `$${(row.original.quota / 500000).toFixed(2)}` : '$0.00'}
+        <span className="font-mono text-sm">
+          {renderQuotaWithUsd(row.original.quota * 2)}
         </span>
       ),
     },
