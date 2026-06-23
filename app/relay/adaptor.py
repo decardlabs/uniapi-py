@@ -8,16 +8,7 @@ from app.relay.mode import RelayMode
 
 
 class ModelConfig:
-    def __init__(
-        self,
-        input_ratio: float = 1.0,
-        output_ratio: float = 1.0,
-        cached_input_ratio: float = 0.1,
-        max_tokens: int = 128000,
-    ):
-        self.input_ratio = input_ratio
-        self.output_ratio = output_ratio
-        self.cached_input_ratio = cached_input_ratio
+    def __init__(self, max_tokens: int = 128000):
         self.max_tokens = max_tokens
 
 

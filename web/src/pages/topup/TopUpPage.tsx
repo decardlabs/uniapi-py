@@ -231,7 +231,7 @@ export function TopUpPage() {
                       </FormControl>
                       {(field.value || 0) > 0 && (
                         <p className="text-xs text-muted-foreground mt-1">
-                          {tr('request.preview', 'Recharge amount: ¥{{amount}}', { amount: previewYuan.toFixed(2) })}
+                          {t('topup.request.preview', { defaultValue: 'Recharge amount: ¥{{amount}}', amount: previewYuan.toFixed(2) })}
                         </p>
                       )}
                       <FormMessage />

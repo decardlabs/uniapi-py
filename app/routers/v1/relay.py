@@ -24,7 +24,7 @@ from app.relay.mode import RelayMode, relay_mode_from_path
 from app.relay.registry import registry
 from app.relay.openai_compatible import relay_chat_completion
 from app.budget.arbiter import BudgetArbiter, ActualUsage
-from app.budget.pricing import calculate_cost, calculate_cost_micro, estimate_cost_micro, MAX_OVERDRAFT_MICRO
+from app.budget.pricing import calculate_cost, calculate_cost_micro, estimate_cost_micro, get_model_pricing, MAX_OVERDRAFT_MICRO
 from app.models.budget import CostRecord
 from app.config import settings
 
@@ -55,29 +55,12 @@ def _estimate_input_tokens(body: dict, model_config=None) -> int:
     return max(10, total_chars // 4)
 
 
-def _estimate_cost(body: dict, model_config: Any) -> int:
-    prompt_tokens = _estimate_input_tokens(body)
-    max_tokens = body.get("max_tokens", body.get("max_output_tokens", 256))
-    if isinstance(max_tokens, str):
-        max_tokens = 256
-    completion_tokens = min(max_tokens, 1024)
-    if model_config:
-        return int(
-            prompt_tokens * model_config.input_ratio
-            + completion_tokens * model_config.output_ratio
-        )
-    return int(prompt_tokens + completion_tokens)  # fallback 1:1
-
 
 
 def _make_stream_usage_callback(
     log_id: int,
-    model_config: Any,
-    estimated: int,
     estimated_micro: int,
-    token_id: int,
     user_id: int,
-    token_unlimited_quota: bool,
 ) -> Any:
     """Return a callback that patches the provisional log after a stream ends.
 
@@ -86,74 +69,56 @@ def _make_stream_usage_callback(
     """
     from app.database import async_session_factory
     from app.models.log import Log as LogModel
-    from app.models.token import Token
     from app.models.user import User
 
     async def _on_usage(usage: dict[str, Any]) -> None:
-        # Skip empty usage objects — some providers send `"usage": {}` in the
-        # final SSE chunk but populate tokens in a different event entirely.
         if not usage or not any(usage.values()):
             return
 
         prompt_tokens = usage.get("prompt_tokens") or usage.get("input_tokens") or 0
         completion_tokens = usage.get("completion_tokens") or usage.get("output_tokens") or 0
 
-        # Parse cache tokens -- support DeepSeek Chat, OpenAI, and Anthropic SSE formats
         cache_hit = (
-            usage.get("prompt_cache_hit_tokens")             # DeepSeek Chat format
-            or (usage.get("prompt_tokens_details") or {}).get("cached_tokens")  # OpenAI format
-            or usage.get("cache_read_input_tokens")          # Anthropic SSE format (DeepSeek)
-            or usage.get("cached_tokens")                    # legacy fallback
+            usage.get("prompt_cache_hit_tokens")
+            or (usage.get("prompt_tokens_details") or {}).get("cached_tokens")
+            or usage.get("cache_read_input_tokens")
+            or usage.get("cached_tokens")
             or 0
         )
-        # MiniMax quirk: when prompt_tokens=0 but cached_tokens>0,
-        # the cached_tokens IS the total prompt tokens (all were cached)
         if prompt_tokens == 0 and cache_hit > 0:
             prompt_tokens = cache_hit
         cache_miss = max(0, prompt_tokens - cache_hit)
 
-        if model_config:
-            actual = int(
-                cache_hit * model_config.cached_input_ratio
-                + cache_miss * model_config.input_ratio
-                + completion_tokens * model_config.output_ratio
-            )
-        else:
-            actual = int(cache_hit * 0.1 + cache_miss + completion_tokens)
+        actual_micro = calculate_cost_micro(
+            "",  # model filled from log_entry below
+            prompt_tokens, completion_tokens, cache_hit,
+        )
 
         async with async_session_factory() as session:
             log_entry = await session.get(LogModel, log_id)
             if log_entry is None:
                 return
-            log_entry.quota = actual
-            log_entry.prompt_tokens = prompt_tokens
-            log_entry.completion_tokens = completion_tokens
-            log_entry.cached_prompt_tokens = cache_hit
-            await session.commit()
 
-            # Write actual cost in micro-yuan
+            # Recalculate with actual model name from log
             actual_micro = calculate_cost_micro(
                 log_entry.model_name or "",
                 prompt_tokens, completion_tokens, cache_hit,
             )
             log_entry.cost = actual_micro
+            log_entry.prompt_tokens = prompt_tokens
+            log_entry.completion_tokens = completion_tokens
+            log_entry.cached_prompt_tokens = cache_hit
+            await session.commit()
 
-            # Refund the difference (dual-write: micro-yuan + legacy quota)
-            diff = estimated - actual
+            # Refund overcharge to user's micro-yuan balance
             diff_micro = estimated_micro - actual_micro
-            if diff > 0:
-                if not token_unlimited_quota:
-                    token = await session.get(Token, token_id)
-                    if token:
-                        token.remain_quota += diff
+            if diff_micro > 0:
                 user = await session.get(User, user_id)
                 if user:
-                    user.quota += diff
-                    user.used_quota -= diff
                     user.balance += diff_micro
                 await session.commit()
 
-            # Write CostRecord — same as non-stream path
+            # Write CostRecord
             try:
                 cr = CostRecord(
                     request_id=log_entry.request_id,
@@ -360,15 +325,15 @@ async def _handle_relay(request: Request, db: AsyncSession):
             from app.fusion.core.engine import FusionConfig, FusionEngine
 
             # Score models by price (higher = more capable = better for judge/synth)
+            from app.budget.pricing import get_model_pricing
+
             scored = []
             for m_name in panel:
-                adaptor = registry.resolve_channel_type(m_name)
-                if adaptor is not None:
-                    a = _get_adaptor(adaptor)
-                    if a:
-                        cfg = a.get_supported_models().get(m_name)
-                        if cfg:
-                            scored.append((cfg.input_ratio + cfg.output_ratio, m_name))
+                try:
+                    p = get_model_pricing(m_name)
+                    scored.append((p["input"] + p["output"], m_name))
+                except KeyError:
+                    continue
             scored.sort(reverse=True)
 
             fusion_config = FusionConfig(
@@ -385,19 +350,6 @@ async def _handle_relay(request: Request, db: AsyncSession):
             chat_request = ChatRequest.from_dict(body)
             response = await engine.execute(chat_request)
             result = response.to_dict()
-
-            estimated = sum(
-                u.get("prompt_tokens", 0) + u.get("completion_tokens", 0)
-                for b in (result.get("usage", {}).get("fusion_breakdown", {}).get("panel", {}) or {}).values()
-                for u in [b]
-            ) or 5000
-            if not token.unlimited_quota and token.remain_quota < estimated:
-                raise RelayException(
-                    code="UNIAPI_QUOTA_EXHAUSTED",
-                    message="Insufficient token quota for fusion request",
-                )
-            if not token.unlimited_quota:
-                token.remain_quota -= estimated
             await db.commit()
             return result
 
@@ -435,11 +387,14 @@ async def _handle_relay(request: Request, db: AsyncSession):
             for m_name in model_list:
                 if allowed_models is not None and m_name not in allowed_models:
                     continue
-                cfg = supported.get(m_name)
-                if not cfg:
+                if m_name not in supported:
                     continue
-                # Use combined price as sort key (lower = cheaper)
-                price = cfg.input_ratio + cfg.output_ratio
+                # Use combined yuan price as sort key (lower = cheaper)
+                try:
+                    p = get_model_pricing(m_name)
+                    price = p["input"] + p["output"]
+                except KeyError:
+                    price = 999.0
                 candidates.append((price, m_name, ch))
 
         if not candidates:
@@ -543,30 +498,16 @@ async def _handle_relay(request: Request, db: AsyncSession):
             "monthly_budget": decision.monthly_budget,
         }
 
-    # Pre-consume quota (dual-write: micro-yuan balance + legacy quota)
-    estimated = _estimate_cost(body, model_config)  # legacy quota units
+    # Pre-consume: check and deduct micro-yuan balance
     input_tokens_est = _estimate_input_tokens(body, model_config)
     output_tokens_est = min(body.get("max_tokens", body.get("max_output_tokens", 256)), 4096)
     estimated_micro = estimate_cost_micro(model_name, input_tokens_est, output_tokens_est)
 
-    # PRIMARY: micro-yuan balance check (allows ¥1 overdraft)
+    # Allow ¥1 overdraft — conservative estimation is imprecise
     if user.balance < estimated_micro and user.balance - estimated_micro < -MAX_OVERDRAFT_MICRO:
         raise RelayException(
             code="UNIAPI_QUOTA_EXHAUSTED",
             message="Insufficient user balance",
-        )
-
-    # LEGACY: token quota check (backward compat)
-    if not token.unlimited_quota and token.remain_quota < estimated:
-        raise RelayException(
-            code="UNIAPI_QUOTA_EXHAUSTED",
-            message="Insufficient token quota",
-        )
-    OVERDRAFT_QUOTA = 500_000  # ~¥1 worth of quota at 500K quota/USD
-    if user.quota < estimated and user.quota - estimated < -OVERDRAFT_QUOTA:
-        raise RelayException(
-            code="UNIAPI_QUOTA_EXHAUSTED",
-            message="Insufficient user quota",
         )
 
     now_ms = int(time.time() * 1000)
@@ -578,7 +519,6 @@ async def _handle_relay(request: Request, db: AsyncSession):
         username=user.username,
         token_name=token.name,
         model_name=model_name,
-        quota=estimated,
         cost=estimated_micro,
         channel_id=_channel_id,
         request_id=uuid.uuid4().hex,
@@ -586,10 +526,6 @@ async def _handle_relay(request: Request, db: AsyncSession):
     )
     db.add(provisional_log)
 
-    if not token.unlimited_quota:
-        token.remain_quota -= estimated
-    user.quota -= estimated
-    user.used_quota += estimated
     user.balance -= estimated_micro
     await db.flush()
 
@@ -652,12 +588,8 @@ async def _handle_relay(request: Request, db: AsyncSession):
         stream_log_id = provisional_log.id
         stream_usage_cb = _make_stream_usage_callback(
             log_id=stream_log_id,
-            model_config=model_config,
-            estimated=estimated,
             estimated_micro=estimated_micro,
-            token_id=token.id,
             user_id=user.id,
-            token_unlimited_quota=token.unlimited_quota,
         )
 
     async def _prepare_fallback_request(next_model_name: str, next_channel: Channel) -> tuple[dict, str, dict[str, str]] | None:
@@ -781,11 +713,7 @@ async def _handle_relay(request: Request, db: AsyncSession):
             if is_recoverable or status == 429:
                 await _record_channel_failure(_channel_id, db)
 
-            # Refund quota (dual-write)
-            if not token.unlimited_quota:
-                token.remain_quota += estimated
-            user.quota += estimated
-            user.used_quota -= estimated
+            # Refund micro-yuan balance
             user.balance += estimated_micro
             await db.commit()
 
@@ -844,11 +772,7 @@ async def _handle_relay(request: Request, db: AsyncSession):
                         logger.info("FALLBACK skip | model=%s not allowed by token", fallback_model)
             # Fall through to refund/raise code below
 
-            # Refund on failure (dual-write)
-            if not token.unlimited_quota:
-                token.remain_quota += estimated
-            user.quota += estimated
-            user.used_quota -= estimated
+            # Refund micro-yuan balance on failure
             user.balance += estimated_micro
             if budget_arbiter and settings.budget_enabled and hasattr(request.state, "budget_info") and request.state.budget_info:
                 bi = request.state.budget_info
@@ -882,7 +806,7 @@ async def _handle_relay(request: Request, db: AsyncSession):
         await db.commit()
         return upstream_response
 
-    # Post-consume: reconcile quota
+    # Post-consume: reconcile micro-yuan balance
     usage = upstream_response.get("usage", {})
 
     # Parse cache tokens — support both DeepSeek and OpenAI formats
@@ -911,30 +835,15 @@ async def _handle_relay(request: Request, db: AsyncSession):
             prompt_tokens = cache_hit
         cache_miss = max(0, prompt_tokens - cache_hit)
 
-    # Cost (dual-write: micro-yuan + legacy quota units)
-    if model_config:
-        actual = int(
-            cache_hit * model_config.cached_input_ratio
-            + cache_miss * model_config.input_ratio
-            + completion_tokens * model_config.output_ratio
-        )
-    else:
-        actual = int(cache_hit * 0.1 + cache_miss * 1.0 + completion_tokens * 1.0)
-
+    # Calculate actual cost in micro-yuan
     actual_micro = calculate_cost_micro(model_name, prompt_tokens, completion_tokens, cache_hit)
 
-    diff = estimated - actual
+    # Refund/charge difference to user's balance
     diff_micro = estimated_micro - actual_micro
-    if diff > 0:
-        if not token.unlimited_quota:
-            token.remain_quota += diff
-        user.quota += diff
-        user.used_quota -= diff
     if diff_micro != 0:
         user.balance += diff_micro
 
     provisional_log.type = 2
-    provisional_log.quota = actual
     provisional_log.cost = actual_micro
     provisional_log.prompt_tokens = prompt_tokens
     provisional_log.completion_tokens = completion_tokens

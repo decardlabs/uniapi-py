@@ -66,8 +66,8 @@ async def test_new_adaptor_implements_base(client: AsyncClient):
 
         def get_supported_models(self) -> dict[str, ModelConfig]:
             return {
-                "gpt-4o": ModelConfig(input_ratio=2.5, output_ratio=10.0),
-                "gpt-4o-mini": ModelConfig(input_ratio=0.15, output_ratio=0.6),
+                "gpt-4o": ModelConfig(max_tokens=128000),
+                "gpt-4o-mini": ModelConfig(max_tokens=128000),
             }
 
     adp = OpenAIAdaptor()
@@ -91,7 +91,7 @@ async def test_new_adaptor_registered_and_used(client: AsyncClient):
         async def convert_request(self, body, meta): return body
         def get_request_url(self, meta, relay_mode=1): return "http://test/chat"
         def setup_request_headers(self, api_key=""): return {}
-        def get_supported_models(self): return {"test-model": ModelConfig(input_ratio=1.0, output_ratio=1.0)}
+        def get_supported_models(self): return {"test-model": ModelConfig(max_tokens=128000)}
 
     # Register at a unique channel type
     registry.register(9999, TestAdaptor)

@@ -19,6 +19,7 @@ from app.database import get_db
 from app.dependencies import admin_auth
 from app.models.channel import Channel
 from app.models.log import Log
+from app.budget.pricing import get_model_pricing
 from app.relay.registry import registry as adaptor_registry
 from app.schemas.common import GenericApiResponse
 
@@ -40,21 +41,16 @@ def _empty_summary() -> dict[str, Any]:
     }
 
 
-def _get_model_ratios(model_name: str) -> tuple[float, float]:
-    """Return (input_ratio, output_ratio) for a model.
+def _get_model_prices(model_name: str) -> tuple[float, float]:
+    """Return (input_price_per_1M, output_price_per_1M) from pricing table.
 
-    Falls back to (1.0, 1.0) when the model is not found in any adaptor.
+    Falls back to (1.0, 1.0) when the model is not found.
     """
-    channel_type = adaptor_registry.resolve_channel_type(model_name)
-    if channel_type is not None:
-        adaptor = adaptor_registry.get(channel_type)
-        if adaptor:
-            models = adaptor.get_supported_models()
-            canonical = adaptor.resolve_model_name(model_name)
-            if canonical and canonical in models:
-                cfg = models[canonical]
-                return cfg.input_ratio, cfg.output_ratio
-    return 1.0, 1.0
+    try:
+        p = get_model_pricing(model_name)
+        return p["input"], p["output"]
+    except KeyError:
+        return 1.0, 1.0
 
 
 def _hit_rate(pt: int, cpt: int) -> float:
@@ -83,8 +79,8 @@ def _enrich_summary_with_rates(
         pt_b = br.get("prompt_tokens", 0) or 0
         ct_b = br.get("completion_tokens", 0) or 0
         q_b = br.get("quota", 0) or 0
-        ir, or_ = _get_model_ratios(model)
-        total_without_cache += pt_b * ir + ct_b * or_
+        input_price, output_price = _get_model_prices(model)
+        total_without_cache += pt_b * input_price + ct_b * output_price
         total_quota += q_b
 
     if total_without_cache > 0:
@@ -116,8 +112,8 @@ def _enrich_timeseries_with_rates(
         total_without = 0.0
         total_q = 0.0
         for mr in model_rows:
-            ir, or_ = _get_model_ratios(mr["model_name"])
-            total_without += (mr["prompt_tokens"] or 0) * ir + (mr["completion_tokens"] or 0) * or_
+            input_price, output_price = _get_model_prices(mr["model_name"])
+            total_without += (mr["prompt_tokens"] or 0) * input_price + (mr["completion_tokens"] or 0) * output_price
             total_q += mr["quota"] or 0
 
         if total_without > 0:
@@ -127,15 +123,14 @@ def _enrich_timeseries_with_rates(
 
 
 def _estimate_savings_rate_from_row(row: dict[str, Any]) -> float:
-    """Compute estimated_savings_rate from summary row alone using default ratios.
+    """Compute estimated_savings_rate from summary row alone using 1:1 default pricing.
 
     Used by compare path where per-model breakdown is not available.
-    For models with 1:1 ratios this is exact; for others it's an approximation.
     """
     pt = row.get("prompt_tokens", 0) or 0
     ct = row.get("completion_tokens", 0) or 0
     q = row.get("quota", 0) or 0
-    cost_without = pt + ct  # default input_ratio=1.0, output_ratio=1.0
+    cost_without = pt + ct  # default 1:1 price per token
     if cost_without > 0:
         return (cost_without - q) / cost_without
     return 0.0
@@ -159,8 +154,8 @@ def _enrich_breakdown_with_rates(
 
         row["cache_hit_rate"] = _hit_rate(pt, cpt)
 
-        ir, or_ = _get_model_ratios(model)
-        cost_without = pt * ir + ct_b * or_
+        input_price, output_price = _get_model_prices(model)
+        cost_without = pt * input_price + ct_b * output_price
         if cost_without > 0:
             row["estimated_savings_rate"] = (cost_without - q_b) / cost_without
         else:

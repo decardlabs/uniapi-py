@@ -56,14 +56,12 @@ def test_adaptor_has_models(channel_type, adp_cls):
 
 
 @pytest.mark.parametrize("channel_type,adp_cls", _get_all_adaptor_classes())
-def test_model_config_ratios_positive(channel_type, adp_cls):
-    """All ModelConfig ratios must be >= 0."""
+def test_model_config_max_tokens_valid(channel_type, adp_cls):
+    """All ModelConfig entries must have valid max_tokens."""
     instance = adp_cls()
     for name, cfg in instance.get_supported_models().items():
         assert isinstance(cfg, ModelConfig), f"{instance.provider_name}:{name} is not ModelConfig"
-        assert cfg.input_ratio >= 0, f"{instance.provider_name}:{name} input_ratio < 0"
-        assert cfg.output_ratio >= 0, f"{instance.provider_name}:{name} output_ratio < 0"
-        assert cfg.cached_input_ratio >= 0, f"{instance.provider_name}:{name} cached_input_ratio < 0"
+        assert cfg.max_tokens > 0, f"{instance.provider_name}:{name} max_tokens must be > 0"
 
 
 @pytest.mark.parametrize("channel_type,adp_cls", _get_all_adaptor_classes())

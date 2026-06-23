@@ -4,7 +4,8 @@ TDD: Channel distribution should be registry-based, not hardcoded.
 Billing calculations must be accurate (no double-count).
 """
 import pytest
-from app.routers.v1.relay import _get_adaptor, _estimate_cost
+from app.routers.v1.relay import _get_adaptor
+from app.budget.pricing import estimate_cost_micro
 from app.relay.adaptor import ModelConfig
 
 
@@ -38,22 +39,18 @@ class TestGetAdaptor:
 class TestBilling:
     """Billing calculations must be accurate."""
 
-    def test_estimate_cost_no_double_count(self):
-        """Completion tokens should not be double-counted through both ratios.
+    def test_estimate_cost_micro_deepseek(self):
+        """Micro-yuan cost for DeepSeek V4 Flash should be correct.
 
-        With input_ratio=2.0, output_ratio=3.0:
-          input: 10 chars//4=1→max(10,1)=10 tokens → 10*2.0=20
-          completion: min(100,1024)=100 tokens → 100*3.0=300
-          total = 20 + 300 = 320
-        Bug would give: 20 + 100*3.0*2.0 = 620
+        input=¥1.0/1M, output=¥2.0/1M
+        1000 input + 500 output:
+          cost = (1000/1M)*1.0 + (500/1M)*2.0 = 0.002 yuan
+          micro = 2000
         """
-        config = ModelConfig(input_ratio=2.0, output_ratio=3.0)
-        body = {
-            "messages": [{"content": "hello"}],
-            "max_tokens": 100,
-        }
-        cost = _estimate_cost(body, config)
-        assert cost == 320, f"Expected 320, got {cost}"
+        cost = estimate_cost_micro("deepseek-v4-flash", 1000, 500)
+        # Expected: 1000*1.0/1M + 500*2.0/1M = 0.002¥ → 2000 micro (× 1.2 safety)
+        expected = int(round(((1000/1_000_000)*1.0 + (500/1_000_000)*2.0) * 1.2 * 1_000_000))
+        assert abs(cost - expected) <= 1, f"Expected ≈{expected}, got {cost}"
 
 
 class TestApiKeyResolution:
