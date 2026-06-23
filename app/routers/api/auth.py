@@ -279,6 +279,7 @@ async def models_display(db: AsyncSession = Depends(get_db)):
     Only shows models from channels that are actually configured (status=1).
     """
     from app.relay.registry import registry
+    from app.budget.pricing import get_model_pricing, MODEL_PRICING_YUAN
 
     result = await db.execute(select(Channel).where(Channel.status == 1))
     channels = result.scalars().all()
@@ -288,23 +289,31 @@ async def models_display(db: AsyncSession = Depends(get_db)):
         adaptor = registry.get(ch.type)
         if not adaptor:
             continue
-        all_pricing = adaptor.get_supported_models()
+        all_models = adaptor.get_supported_models()
 
         # Determine which models to show for this channel
         if ch.models:
             model_names = [m.strip() for m in ch.models.split(",")]
         else:
-            model_names = list(all_pricing.keys())
+            model_names = list(all_models.keys())
 
         models_data = {}
         for model_name in model_names:
-            config = all_pricing.get(model_name)
-            if config:
-                models_data[model_name] = {
-                    "input_price": config.input_ratio,
-                    "output_price": config.output_ratio,
-                    "cached_input_price": config.cached_input_ratio,
-                }
+            if model_name not in all_models:
+                continue
+            try:
+                pricing = get_model_pricing(model_name)
+            except KeyError:
+                # Fallback: use MODEL_PRICING_YUAN with lowercased name
+                try:
+                    pricing = get_model_pricing(model_name.lower())
+                except KeyError:
+                    continue
+            models_data[model_name] = {
+                "input_price": pricing["input"],
+                "output_price": pricing["output"],
+                "cached_input_price": pricing["cache_hit"],
+            }
 
         if models_data:
             display[ch.name or adaptor.provider_name] = {"models": models_data}
