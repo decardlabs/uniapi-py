@@ -158,7 +158,7 @@ model="auto"
   → SELECT * FROM channels WHERE status=1
   → 遍历所有 channel 的模型列表
   → 过滤出 Token 有权限的模型
-  → 按价格 (input_ratio + output_ratio) 升序排序
+  → 按价格 (input + output) 升序排序（价格来自 `app/budget/pricing.py` 的 `MODEL_PRICING_YUAN`）
   → 取最便宜的模型
   → 使用该 channel 的 API key 和 base_url 转发到上游
 ```
@@ -497,25 +497,20 @@ GET  /v1/models/{model_id}                # 模型详情
 
 ## 八、模型定价配置
 
-各供应商的定价在 `app/relay/adaptors/<provider>/pricing.py` 中配置。
+定价统一在 `app/budget/pricing.py` 的 `MODEL_PRICING_YUAN` 字典中配置（¥/M tokens）。
 
 ### 8.1 定价模型
 
 ```python
-# app/relay/adaptors/deepseek/pricing.py
-from app.relay.adaptor import ModelConfig
-
-MODEL_PRICING: dict[str, ModelConfig] = {
-    "deepseek-v4-pro": ModelConfig(
-        input_ratio=3.0,          # ¥/M tokens 输入价格
-        output_ratio=6.0,         # ¥/M tokens 输出价格
-        cached_input_ratio=0.025, # ¥/M tokens 缓存命中价格
-        max_tokens=384000,        # 最大输出 token 数
-    ),
+# app/budget/pricing.py
+MODEL_PRICING_YUAN: dict[str, dict[str, float]] = {
+    "deepseek-v4-pro": {"input": 3.0, "output": 6.0, "cache_hit": 0.025},
+    "deepseek-v4-flash": {"input": 1.0, "output": 2.0, "cache_hit": 0.02},
+    ...
 }
 ```
 
-`input_ratio` / `output_ratio` 的值直接对应 ¥/M tokens 价格。系统用这些值做配额扣费和预算控制。
+所有价格单位为 **¥/M tokens**（人民币）。系统用 `calculate_cost_micro()` 和 `estimate_cost_micro()` 做费用计算和预算控制，返回微元（`1 ¥ = 1,000,000 微元`）。
 
 ### 8.2 当前已配置供应商定价
 

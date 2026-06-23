@@ -12,11 +12,11 @@
 
 | Phase | 内容 | 状态 | 测试数 |
 |-------|------|------|--------|
-| 1 | MVP: Auth, Status, DeepSeek Chat Completions, SSE | ✅ | 28 |
-| 2 | Management API: User/Token/Log/Options CRUD, Billing | ✅ | 128 |
-| 3 | Multi-format: NATIVE_FORMATS smart routing | ✅ | 7 |
-| 4 | Extensibility: BaseAdaptor ABC, Registry, Provider pattern | ✅ | 14 |
-| 5 | Production: 429重试与退路 | ✅ | 132 |
+| 1 | Auth, Status, DeepSeek Chat Completions | ✅ | 28 |
+| 2 | Management API CRUD, Billing | ✅ | 148 |
+| 3 | Multi-format: NATIVE_FORMATS routing | ✅ | 7 |
+| 4 | Extensibility + Budget Pool Management | ✅ | 46 |
+| 5 | Upstream 429 retry + failover | ✅ | 246 |
 | 6 | Recharge & Redemption codes | ✅ | 48 |
 
 ### 已接入供应商（5 家）
@@ -544,10 +544,10 @@ registry.register(MY_CHANNEL_TYPE, MyProviderAdaptor)
 git add ... && git commit -m "fix: description"
 
 # 2. 打 tag（版本号唯一来源）
-git tag -a v0.10.x -m "v0.10.x — release notes"
+git tag -a v0.11.x -m "v0.11.x — release notes"
 
 # 3. 推送
-git push origin main && git push origin v0.10.x
+git push origin main && git push origin v0.11.x
 
 # 4. 部署（自动读取 tag 生成版本号）
 bash deploy.sh
@@ -558,8 +558,8 @@ bash deploy.sh
 ### 版本检查
 
 ```bash
-curl https://api.ccbot.chat/health      # → {"version":"0.10.x"}
-curl https://api.ccbot.chat/api/status  # → {"version":"0.10.x"}
+curl https://api.ccbot.chat/health      # → {"status":"healthy","version":"0.11.x"}
+curl https://api.ccbot.chat/api/status  # → {"success":true,"data":{"version":"0.11.x",...}}
 ```
 
 ### 部署文件
@@ -567,7 +567,7 @@ curl https://api.ccbot.chat/api/status  # → {"version":"0.10.x"}
 | 文件 | 说明 |
 |------|------|
 | `deploy.sh` | 一键部署：构建前端 → 生成版本号 → rsync 代码 → 重启服务 |
-| `app/version.py` | 自动生成（gitignore），`VERSION = "0.10.x"` |
+| `app/version.py` | 自动生成（gitignore），`VERSION = "0.11.x"` |
 | `/etc/systemd/system/uniapi-py.service` | systemd 服务定义 |
 | `/www/server/panel/vhost/nginx/extension/api.ccbot.chat/proxy_sse.conf` | Nginx SSE 优化参数 |
 

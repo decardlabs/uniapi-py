@@ -152,7 +152,7 @@ tests/
 ├── test_channeltype.py     # Channel type tests (15 tests)
 ├── test_relay_comparison.py # Relay comparison tests (3 tests)
 ├── test_cache_analytics.py # Cache analytics tests (8 tests)
-├── phase2/                 # Management API CRUD (128 tests)
+├── phase2/                 # Management API CRUD (148 tests)
 ├── phase3/                 # Multi-format routing (7 tests)
 ├── phase4/                 # Extensibility tests (46 tests)
 ├── phase5/                 # Upstream 429 retry + failover (246 tests)
