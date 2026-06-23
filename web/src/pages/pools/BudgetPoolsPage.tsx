@@ -31,7 +31,7 @@ import {
   Archive,
   Wallet,
 } from 'lucide-react';
-import { useEffect, useRef, useState, useCallback } from 'react';
+import { useEffect, useRef, useState, useCallback, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 
 // ── Types ─────────────────────────────────────────────
@@ -97,13 +97,95 @@ export default function BudgetPoolsPage() {
   // Form state
   const [selectedPool, setSelectedPool] = useState<Pool | null>(null);
 
+  // ── Period key generation ──────────────────────────────
+  const generatePeriodKey = useCallback((type: string): string => {
+    const now = new Date();
+    const y = now.getFullYear();
+    const m = String(now.getMonth() + 1).padStart(2, '0');
+    switch (type) {
+      case 'monthly': return `${y}-${m}`;
+      case 'quarterly': return `${y}-Q${Math.ceil((now.getMonth() + 1) / 3)}`;
+      case 'yearly': return String(y);
+      default: return '';
+    }
+  }, []);
+
+  const generatePoolName = useCallback((type: string, key: string): string => {
+    if (!key) return '';
+    const periodLabels: Record<string, string> = {
+      monthly: 'Monthly Budget',
+      quarterly: 'Quarterly Budget',
+      yearly: 'Yearly Budget',
+      oneoff: 'Budget',
+    };
+    return `${key} ${periodLabels[type] || 'Budget'}`;
+  }, []);
+
   // Create form
-  const [createForm, setCreateForm] = useState({
+  const [createForm, setCreateForm] = useState(() => ({
     name: '',
     total_funded: '',
     period_type: 'monthly',
     period_key: '',
-  });
+  }));
+
+  // Auto-set period_key and name when period_type changes
+  useEffect(() => {
+    const key = generatePeriodKey(createForm.period_type);
+    setCreateForm(prev => ({
+      ...prev,
+      period_key: key,
+      name: prev.name || generatePoolName(createForm.period_type, key),
+    }));
+  }, [createForm.period_type, generatePeriodKey, generatePoolName]);
+
+  // Period key options for Select
+  const periodKeyOptions = useMemo(() => {
+    const now = new Date();
+    const y = now.getFullYear();
+    const m = now.getMonth() + 1;
+    const q = Math.ceil(m / 3);
+    const opts: { label: string; value: string }[] = [];
+
+    switch (createForm.period_type) {
+      case 'monthly':
+        // Current month and next 2 months
+        for (let i = 0; i < 3; i++) {
+          const ym = m + i;
+          let yy = y;
+          let mm = ym;
+          if (mm > 12) { yy++; mm -= 12; }
+          opts.push({
+            label: `${yy}-${String(mm).padStart(2, '0')}`,
+            value: `${yy}-${String(mm).padStart(2, '0')}`,
+          });
+        }
+        break;
+      case 'quarterly': {
+        const qLabels = ['Q1 (Jan-Mar)', 'Q2 (Apr-Jun)', 'Q3 (Jul-Sep)', 'Q4 (Oct-Dec)'];
+        for (let i = 0; i < 4; i++) {
+          opts.push({
+            label: `${y}-${qLabels[i]}`,
+            value: `${y}-Q${i + 1}`,
+          });
+        }
+        break;
+      }
+      case 'yearly':
+        for (let i = 0; i < 3; i++) {
+          opts.push({
+            label: String(y + i),
+            value: String(y + i),
+          });
+        }
+        break;
+      case 'oneoff':
+        // Single custom period key — no auto options
+        opts.push({ label: 'One-off', value: '' });
+        break;
+    }
+    return opts;
+  }, [createForm.period_type]);
 
   // Purchase form
   const [purchaseAmount, setPurchaseAmount] = useState('');
@@ -381,8 +463,10 @@ export default function BudgetPoolsPage() {
   };
 
   // ── Form resets ─────────────────────────────────────
-  const resetCreateForm = () =>
-    setCreateForm({ name: '', total_funded: '', period_type: 'monthly', period_key: '' });
+  const resetCreateForm = () => {
+    const key = generatePeriodKey('monthly');
+    setCreateForm({ name: '', total_funded: '', period_type: 'monthly', period_key: key });
+  };
   const resetPurchaseForm = () => {
     setPurchaseAmount('');
     setPurchaseRemark('');
@@ -655,21 +739,26 @@ export default function BudgetPoolsPage() {
           </DialogHeader>
           <div className="space-y-4">
             <div>
-              <label className="text-sm font-medium">{tr('name', 'Name')}</label>
+              <label className="text-sm font-medium">{tr('name', 'Name (optional)')}</label>
               <Input
                 value={createForm.name}
                 onChange={(e) => setCreateForm({ ...createForm, name: e.target.value })}
-                placeholder={tr('name_placeholder', 'e.g. April 2026 Budget Pool')}
+                placeholder={generatePoolName(createForm.period_type, createForm.period_key) || tr('name_placeholder', 'e.g. Monthly Budget Pool')}
                 className="mt-1"
               />
+              {!createForm.name && (
+                <p className="text-xs text-muted-foreground mt-1">
+                  {tr('name_auto_hint', 'Auto: {{name}}').replace('{{name}}', generatePoolName(createForm.period_type, createForm.period_key))}
+                </p>
+              )}
             </div>
             <div>
-              <label className="text-sm font-medium">{tr('total_funded', 'Total Funded')}</label>
+              <label className="text-sm font-medium">{tr('total_funded', 'Total Funded (¥)')}</label>
               <Input
                 type="number"
                 value={createForm.total_funded}
                 onChange={(e) => setCreateForm({ ...createForm, total_funded: e.target.value })}
-                placeholder={tr('total_funded_placeholder', 'Enter initial amount')}
+                placeholder={tr('total_funded_placeholder', 'e.g. 10000')}
                 className="mt-1"
               />
             </div>
@@ -689,19 +778,32 @@ export default function BudgetPoolsPage() {
             </div>
             <div>
               <label className="text-sm font-medium">{tr('period_key', 'Period Key')}</label>
-              <Input
+              <Select
                 value={createForm.period_key}
-                onChange={(e) => setCreateForm({ ...createForm, period_key: e.target.value })}
-                placeholder={tr('period_key_placeholder', 'e.g. 2026-04')}
-                className="mt-1"
-              />
+                onValueChange={(v) => setCreateForm(prev => ({
+                  ...prev,
+                  period_key: v,
+                  name: prev.name || generatePoolName(prev.period_type, v),
+                }))}
+              >
+                <SelectTrigger className="mt-1">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {periodKeyOptions.map((opt) => (
+                    <SelectItem key={opt.value} value={opt.value}>
+                      {opt.label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             </div>
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => { setCreateOpen(false); resetCreateForm(); }}>
               {t('common.cancel', 'Cancel')}
             </Button>
-            <Button onClick={handleCreate} disabled={submitting || !createForm.name || !createForm.total_funded || !createForm.period_key}>
+            <Button onClick={handleCreate} disabled={submitting || !createForm.total_funded || !createForm.period_key}>
               {t('common.submit', 'Submit')}
             </Button>
           </DialogFooter>
