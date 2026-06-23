@@ -73,6 +73,8 @@ def _make_stream_usage_callback(
 
     async def _on_usage(usage: dict[str, Any]) -> None:
         if not usage or not any(usage.values()):
+            with open("/tmp/_on_usage_debug.log", "a") as f:
+                f.write(f"_on_usage: empty usage={usage!r}\n")
             return
 
         prompt_tokens = usage.get("prompt_tokens") or usage.get("input_tokens") or 0
@@ -89,6 +91,9 @@ def _make_stream_usage_callback(
             prompt_tokens = cache_hit
         cache_miss = max(0, prompt_tokens - cache_hit)
 
+        with open("/tmp/_on_usage_debug.log", "a") as f:
+            f.write(f"_on_usage: pt={prompt_tokens} ct={completion_tokens} ch={cache_hit} log_id={log_id}\n")
+
         actual_micro = calculate_cost_micro(
             "",  # model filled from log_entry below
             prompt_tokens, completion_tokens, cache_hit,
@@ -97,6 +102,8 @@ def _make_stream_usage_callback(
         async with async_session_factory() as session:
             log_entry = await session.get(LogModel, log_id)
             if log_entry is None:
+                with open("/tmp/_on_usage_debug.log", "a") as f:
+                    f.write(f"_on_usage: log_entry NOT FOUND for id={log_id}\n")
                 return
 
             # Recalculate with actual model name from log
@@ -104,11 +111,15 @@ def _make_stream_usage_callback(
                 log_entry.model_name or "",
                 prompt_tokens, completion_tokens, cache_hit,
             )
+            with open("/tmp/_on_usage_debug.log", "a") as f:
+                f.write(f"_on_usage: updating log {log_id} pt={prompt_tokens} ct={completion_tokens}\n")
             log_entry.cost = actual_micro
             log_entry.prompt_tokens = prompt_tokens
             log_entry.completion_tokens = completion_tokens
             log_entry.cached_prompt_tokens = cache_hit
             await session.commit()
+            with open("/tmp/_on_usage_debug.log", "a") as f:
+                f.write(f"_on_usage: COMMITTED log {log_id}\n")
 
             # Refund overcharge to user's micro-yuan balance
             diff_micro = estimated_micro - actual_micro
