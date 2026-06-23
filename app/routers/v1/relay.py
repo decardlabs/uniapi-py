@@ -24,7 +24,7 @@ from app.relay.mode import RelayMode, relay_mode_from_path
 from app.relay.registry import registry
 from app.relay.openai_compatible import relay_chat_completion
 from app.budget.arbiter import BudgetArbiter, ActualUsage
-from app.budget.pricing import calculate_cost
+from app.budget.pricing import calculate_cost, calculate_cost_micro, estimate_cost_micro, MAX_OVERDRAFT_MICRO
 from app.models.budget import CostRecord
 from app.config import settings
 
@@ -142,6 +142,28 @@ def _make_stream_usage_callback(
                     user.quota += diff
                     user.used_quota -= diff
                 await session.commit()
+
+            # Write CostRecord (micro-yuan) — same as non-stream path
+            try:
+                actual_micro = calculate_cost_micro(
+                    log_entry.model_name or "",
+                    prompt_tokens, completion_tokens, cache_hit,
+                )
+                cr = CostRecord(
+                    request_id=log_entry.request_id,
+                    user_id=user_id,
+                    model=log_entry.model_name or "",
+                    input_tokens=prompt_tokens,
+                    output_tokens=completion_tokens,
+                    cache_hit_tokens=cache_hit,
+                    cost=round(actual_micro / 1_000_000, 6),
+                    status="success",
+                    created_at=int(time.time() * 1000),
+                )
+                session.add(cr)
+                await session.commit()
+            except Exception:
+                pass
 
     return _on_usage
 
@@ -522,7 +544,9 @@ async def _handle_relay(request: Request, db: AsyncSession):
             code="UNIAPI_QUOTA_EXHAUSTED",
             message="Insufficient token quota",
         )
-    if user.quota < estimated:
+    # Allow small overdraft (~¥1) — conservative estimation is imprecise
+    OVERDRAFT_QUOTA = 500_000  # ~¥1 worth of quota at 500K quota/USD
+    if user.quota < estimated and user.quota - estimated < -OVERDRAFT_QUOTA:
         raise RelayException(
             code="UNIAPI_QUOTA_EXHAUSTED",
             message="Insufficient user quota",

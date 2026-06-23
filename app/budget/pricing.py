@@ -2,11 +2,17 @@
 
 Pricing in yuan (¥) per million tokens.
 Aligned with app/relay/adaptors/*/pricing.py.
+
+Micro-yuan functions (calculate_cost_micro / estimate_cost_micro) return
+Integer micro-yuan (10^-6 yuan) — the unified internal unit for all billing.
+¥1.00 = 1,000,000 micro-yuan. Overdraft limit: ¥1.00 = 1,000,000 micro-yuan.
 """
 from __future__ import annotations
 
 import datetime
 
+# Per-million-token prices in yuan (Float, for backward compat).
+# These feed into calculate_cost() which rounds to 6 decimal places.
 MODEL_PRICING_YUAN: dict[str, dict[str, float]] = {
     # DeepSeek
     "deepseek-v4-pro": {"input": 3.0, "output": 6.0, "cache_hit": 0.025},
@@ -98,6 +104,46 @@ def estimate_cost(
         + (output_tokens / 1_000_000) * pricing["output"]
     )
     return round(base * PRICING_SAFETY_MARGIN, 6)
+
+
+# ── Micro-yuan variants (Integer, unified billing unit) ────────────────
+# 1 micro-yuan = 10^-6 yuan. ¥1.00 = 1,000,000 micro-yuan.
+# Used by relay.py as the PRIMARY cost unit, replacing ModelConfig ratios.
+
+def calculate_cost_micro(
+    model: str,
+    input_tokens: int,
+    output_tokens: int,
+    cache_hit_tokens: int = 0,
+) -> int:
+    """Calculate actual cost in micro-yuan (Integer)."""
+    pricing = get_model_pricing(model)
+    input_miss = input_tokens - cache_hit_tokens
+
+    cost = (
+        (input_miss / 1_000_000) * pricing["input"]
+        + (cache_hit_tokens / 1_000_000) * pricing["cache_hit"]
+        + (output_tokens / 1_000_000) * pricing["output"]
+    )
+    return max(1, int(round(cost * 1_000_000)))
+
+
+def estimate_cost_micro(
+    model: str,
+    input_tokens: int,
+    output_tokens: int = 1000,
+) -> int:
+    """Conservative cost estimate in micro-yuan (includes 20% safety margin)."""
+    pricing = get_model_pricing(model)
+    base = (
+        (input_tokens / 1_000_000) * pricing["input"]
+        + (output_tokens / 1_000_000) * pricing["output"]
+    )
+    return max(1, int(round(base * PRICING_SAFETY_MARGIN * 1_000_000)))
+
+
+# Default overdraft in micro-yuan: ¥1.00
+MAX_OVERDRAFT_MICRO = 1_000_000
 
 
 def compute_period() -> str:
