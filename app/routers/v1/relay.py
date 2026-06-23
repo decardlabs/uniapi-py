@@ -99,8 +99,15 @@ def _make_stream_usage_callback(
             prompt_tokens, completion_tokens, cache_hit,
         )
 
+        with open("/tmp/_on_usage_debug.log", "a") as f:
+            f.write(f"_on_usage: opening session for log_id={log_id}\n")
         async with async_session_factory() as session:
-            log_entry = await session.get(LogModel, log_id)
+            try:
+                log_entry = await session.get(LogModel, log_id)
+            except Exception as e:
+                with open("/tmp/_on_usage_debug.log", "a") as f:
+                    f.write(f"_on_usage: session.get FAILED: {e}\n")
+                return
             if log_entry is None:
                 with open("/tmp/_on_usage_debug.log", "a") as f:
                     f.write(f"_on_usage: log_entry NOT FOUND for id={log_id}\n")
@@ -109,8 +116,8 @@ def _make_stream_usage_callback(
             with open("/tmp/_on_usage_debug.log", "a") as f:
                 f.write(f"_on_usage: GOT log_entry id={log_entry.id} model={log_entry.model_name}\n")
 
+            # Recalculate with actual model name from log
             try:
-                # Recalculate with actual model name from log
                 actual_micro = calculate_cost_micro(
                     log_entry.model_name or "",
                     prompt_tokens, completion_tokens, cache_hit,
