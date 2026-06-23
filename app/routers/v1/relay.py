@@ -91,45 +91,23 @@ def _make_stream_usage_callback(
             prompt_tokens = cache_hit
         cache_miss = max(0, prompt_tokens - cache_hit)
 
-        with open("/tmp/_on_usage_debug.log", "a") as f:
-            f.write(f"_on_usage: pt={prompt_tokens} ct={completion_tokens} ch={cache_hit} log_id={log_id}\n")
 
-        actual_micro = calculate_cost_micro(
-            "",  # model filled from log_entry below
-            prompt_tokens, completion_tokens, cache_hit,
-        )
-
-        with open("/tmp/_on_usage_debug.log", "a") as f:
-            f.write(f"_on_usage: opening session for log_id={log_id}\n")
         async with async_session_factory() as session:
-            try:
-                log_entry = await session.get(LogModel, log_id)
-            except Exception as e:
-                with open("/tmp/_on_usage_debug.log", "a") as f:
-                    f.write(f"_on_usage: session.get FAILED: {e}\n")
-                return
+            log_entry = await session.get(LogModel, log_id)
             if log_entry is None:
-                with open("/tmp/_on_usage_debug.log", "a") as f:
-                    f.write(f"_on_usage: log_entry NOT FOUND for id={log_id}\n")
                 return
 
-            with open("/tmp/_on_usage_debug.log", "a") as f:
-                f.write(f"_on_usage: GOT log_entry id={log_entry.id} model={log_entry.model_name}\n")
+            # Calculate cost using the model name stored in the log entry
+            actual_micro = calculate_cost_micro(
+                log_entry.model_name or "",
+                prompt_tokens, completion_tokens, cache_hit,
+            )
 
-            # Recalculate with actual model name from log
-            try:
-                actual_micro = calculate_cost_micro(
-                    log_entry.model_name or "",
-                    prompt_tokens, completion_tokens, cache_hit,
-                )
-            except Exception as e:
-                with open("/tmp/_on_usage_debug.log", "a") as f:
-                    f.write(f"_on_usage: calculate_cost_micro FAILED: {e}\n")
-                return
-
-            with open("/tmp/_on_usage_debug.log", "a") as f:
-                f.write(f"_on_usage: updating log {log_id} pt={prompt_tokens} ct={completion_tokens}\n")
             log_entry.cost = actual_micro
+            log_entry.prompt_tokens = prompt_tokens
+            log_entry.completion_tokens = completion_tokens
+            log_entry.cached_prompt_tokens = cache_hit
+
             log_entry.prompt_tokens = prompt_tokens
             log_entry.completion_tokens = completion_tokens
             log_entry.cached_prompt_tokens = cache_hit
