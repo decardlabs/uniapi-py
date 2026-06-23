@@ -12,21 +12,19 @@ import { api } from '@/lib/api';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { Info } from 'lucide-react';
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { useForm, useWatch } from 'react-hook-form';
+import { useForm } from 'react-hook-form';
 import { useTranslation } from 'react-i18next';
 import { useNavigate, useParams } from 'react-router-dom';
 import * as z from 'zod';
 
-// Helper function to render quota (micro-yuan based)
-import { renderQuotaWithPrompt as displayQuota } from '@/lib/utils';
-const renderQuotaWithPrompt = (quota: number): string => displayQuota(quota * 2);
+// Helper function to format balance (micro-yuan → yuan)
+const formatYuan = (micro: number): string => `¥${(micro / 1_000_000).toFixed(2)}`;
 
 type UserForm = {
   username: string;
   display_name?: string;
   password?: string;
   email?: string;
-  quota: number;
   group: string;
   mcp_tool_blacklist: string[];
 };
@@ -41,7 +39,6 @@ type UserSnapshot = {
   username: string;
   display_name: string;
   email: string;
-  quota: number;
   group: string;
   mcp_tool_blacklist: string[];
 };
@@ -50,7 +47,6 @@ const snapshotUserForm = (values: UserForm): UserSnapshot => ({
   username: values.username.trim(),
   display_name: (values.display_name ?? '').trim(),
   email: (values.email ?? '').trim(),
-  quota: values.quota,
   group: values.group,
   mcp_tool_blacklist: values.mcp_tool_blacklist,
 });
@@ -72,6 +68,8 @@ export function EditUserPage() {
   const [initialSnapshot, setInitialSnapshot] = useState<UserSnapshot | null>(null);
   const [createdAt, setCreatedAt] = useState<number | null>(null);
   const [updatedAt, setUpdatedAt] = useState<number | null>(null);
+  const [balance, setBalance] = useState<number>(0);
+  const [totalSpent, setTotalSpent] = useState<number>(0);
   const { notify } = useNotifications();
 
   const userSchema = useMemo(
@@ -92,7 +90,6 @@ export function EditUserPage() {
             message: tr('validation.email_invalid', 'Valid email is required'),
           })
           .optional(),
-        quota: z.coerce.number().min(0, tr('validation.quota_min', 'Quota must be non-negative')),
         group: z.string().min(1, tr('validation.group_required', 'Group is required')),
         mcp_tool_blacklist: z.array(z.string()).optional().default([]),
       }),
@@ -106,13 +103,10 @@ export function EditUserPage() {
       display_name: '',
       password: '',
       email: '',
-      quota: 0,
       group: 'default',
       mcp_tool_blacklist: [],
     },
   });
-
-  const watchQuota = useWatch({ control: form.control, name: 'quota' });
 
   const loadUser = async () => {
     if (!userId) return;
@@ -128,13 +122,14 @@ export function EditUserPage() {
           display_name: (data.display_name ?? '') as string,
           password: '',
           email: (data.email ?? '') as string,
-          quota: Number(data.quota ?? 0),
           group: (data.group ?? 'default') as string,
           mcp_tool_blacklist: Array.isArray(data.mcp_tool_blacklist) ? data.mcp_tool_blacklist : [],
         };
         form.reset(normalized);
         setInitialSnapshot(snapshotUserForm(normalized));
-        // Capture timestamps for display
+        // Capture timestamps and balance for display
+        setBalance(data.balance ?? 0);
+        setTotalSpent(data.total_spent ?? 0);
         if (typeof data.created_at === 'number') {
           setCreatedAt(data.created_at);
         }
@@ -199,9 +194,6 @@ export function EditUserPage() {
         if (!previous || snapshot.email !== previous.email) {
           payload.email = snapshot.email;
         }
-        if (!previous || snapshot.quota !== previous.quota) {
-          payload.quota = snapshot.quota;
-        }
         if (!previous || snapshot.group !== previous.group) {
           payload.group = snapshot.group;
         }
@@ -218,7 +210,6 @@ export function EditUserPage() {
           username: snapshot.username,
           display_name: snapshot.display_name,
           email: snapshot.email,
-          quota: snapshot.quota,
           group: snapshot.group,
           mcp_tool_blacklist: snapshot.mcp_tool_blacklist,
         };
@@ -461,47 +452,23 @@ export function EditUserPage() {
                 </div>
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                  <FormField
-                    control={form.control}
-                    name="quota"
-                    render={({ field }) => (
-                      <FormItem>
-                        <div className="flex items-center gap-1">
-                          <FormLabel>
-                            {(() => {
-                              const current = watchQuota ?? field.value ?? 0;
-                              const numeric = Number(current);
-                              const usdLabel = Number.isFinite(numeric) && numeric >= 0 ? renderQuotaWithPrompt(numeric) : '$0.00';
-                              return tr('fields.quota.label', 'Quota ({{usd}})', { usd: usdLabel });
-                            })()}
-                          </FormLabel>
-                          <Tooltip>
-                            <TooltipTrigger asChild>
-                              <Info
-                                className="h-4 w-4 text-muted-foreground cursor-help"
-                                aria-label={tr('aria.help_quota', 'Help: Quota')}
-                              />
-                            </TooltipTrigger>
-                            <TooltipContent className="max-w-xs">
-                              {tr('fields.quota.help', 'Quota units are tokens. USD estimate uses the per-unit ratio configured by admin.')}
-                            </TooltipContent>
-                          </Tooltip>
-                        </div>
-                        <FormControl>
-                          <Input
-                            type="number"
-                            min="0"
-                            className={errorClass('quota')}
-                            {...field}
-                            onChange={(e) => {
-                              field.onChange(e);
-                            }}
-                          />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
+                  {/* Read-only balance display — balance is managed via Top Up */}
+                  {isEdit && (
+                    <div className="space-y-2">
+                      <label className="text-sm font-medium">
+                        {tr('fields.balance.label', 'Balance')}
+                      </label>
+                      <div className="p-2 bg-muted rounded-md flex justify-between items-center">
+                        <span className="text-lg font-semibold text-primary">{formatYuan(balance)}</span>
+                        <span className="text-xs text-muted-foreground">
+                          {tr('fields.total_spent.label', 'Spent')}: ¥{totalSpent.toFixed(6)}
+                        </span>
+                      </div>
+                      <p className="text-xs text-muted-foreground">
+                        {tr('fields.balance.help', 'Managed via Top Up from budget pool')}
+                      </p>
+                    </div>
+                  )}
 
                   <FormField
                     control={form.control}
