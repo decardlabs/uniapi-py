@@ -104,10 +104,13 @@ async def create_recharge(
 ):
     """User creates a recharge request (pending admin approval)."""
     user_id = request.state.user.id
-    req = await recharge_service.create_recharge(
-        db, user_id=user_id, amount=body.amount, remark=body.remark,
-    )
-    return GenericApiResponse(data={"id": req.id})
+    try:
+        req = await recharge_service.create_recharge(
+            db, user_id=user_id, amount=body.amount, remark=body.remark,
+        )
+        return GenericApiResponse(data={"id": req.id})
+    except ValueError as e:
+        return GenericApiResponse(success=False, message=str(e))
 
 
 # ── Recharge (admin) ──
