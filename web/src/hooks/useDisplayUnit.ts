@@ -3,221 +3,145 @@ import { useState, useEffect, useCallback, useMemo } from 'react';
 /**
  * Display Unit Types
  *
- * - 'token': Show quota as token count (raw internal value)
- * - 'usd':  Show quota as US dollars
- * - 'cny': Show quota as Chinese Yuan (RMB)
+ * All input values are expected in micro-yuan (10^-6 yuan).
+ * - 'cny':    Display as yuan (CNY) — divide by 1,000,000
+ * - 'usd':    Display as US dollars — divide by 1M then by exchange rate
+ * - 'token':  Display as approximate legacy quota units (÷2) — backward compat
  */
-export type DisplayUnit = 'token' | 'usd' | 'cny';
+export type DisplayUnit = 'cny' | 'usd' | 'token';
 
 /** LocalStorage key for persisting the user's display unit preference */
 const DISPLAY_UNIT_KEY = 'display_unit';
-/** Fallback default display unit — default to yuan (CNY) */
+/** Fallback default display unit */
 const DEFAULT_DISPLAY_UNIT: DisplayUnit = 'cny';
 
-/** LocalStorage key for quota-per-USD conversion rate (from server) */
-const QUOTA_PER_UNIT_KEY = 'quota_per_unit';
-/** Default: 500,000 quota per USD ($1 = 500K quota) */
-const DEFAULT_QUOTA_PER_UNIT = 500000;
+/** Exchange rate: USD per CNY */
+const USD_PER_CNY = 0.14;  // 1 CNY ≈ 0.14 USD
+const CNY_PER_USD = 7.2;   // 1 USD ≈ 7.2 CNY
 
-/** Exchange rate: CNY per USD (from backend model.go) */
-const EXCHANGE_RATE_RMB = 8;
 
 /**
  * Get the current display mode from localStorage.
- * Supports migration from legacy `display_in_currency` boolean.
  */
 export function getDisplayUnit(): DisplayUnit {
   const stored = localStorage.getItem(DISPLAY_UNIT_KEY);
-  if (stored && ['token', 'usd', 'cny'].includes(stored)) {
+  if (stored && ['cny', 'usd', 'token'].includes(stored)) {
     return stored as DisplayUnit;
   }
-
-  // Migration from legacy boolean setting
-  const legacyDisplayInCurrency = localStorage.getItem('display_in_currency');
-  if (legacyDisplayInCurrency === 'true') {
-    return 'usd'; // legacy "display as currency" → default to USD
-  }
-
   return DEFAULT_DISPLAY_UNIT;
 }
 
 /**
  * Persist display unit preference to localStorage.
- * Also cleans up legacy keys.
  */
 export function setDisplayUnit(unit: DisplayUnit): void {
   localStorage.setItem(DISPLAY_UNIT_KEY, unit);
-  // Clean up legacy boolean key after migration
-  if (localStorage.getItem('display_in_currency') !== null) {
-    // Keep it for backward compat but it's no longer authoritative
-  }
 }
 
 /**
- * Get the quota-per-unit conversion rate from localStorage.
- */
-function getQuotaPerUnit(): number {
-  const stored = parseFloat(localStorage.getItem(QUOTA_PER_UNIT_KEY) || '');
-  return stored > 0 ? stored : DEFAULT_QUOTA_PER_UNIT;
-}
-
-/**
- * Convert internal quota value to the selected display unit.
+ * Convert micro-yuan to the selected display unit.
  *
- * @param quota - Internal quota value (int64)
- * @param unit - Target display unit
+ * @param micro - Value in micro-yuan (10^-6 yuan)
+ * @param unit  - Target display unit
  * @returns Converted numeric value
  */
-export function quotaToValue(quota: number, unit: DisplayUnit): number {
-  const quotaPerUnit = getQuotaPerUnit();
-
+export function quotaToValue(micro: number, unit: DisplayUnit): number {
   switch (unit) {
     case 'token':
-      // Raw token count (quota ≈ tokens in current system)
-      return quota;
+      return micro / 2;         // approximate legacy quota units
     case 'usd':
-      return quota / quotaPerUnit;
+      return (micro / 1_000_000) * USD_PER_CNY;
     case 'cny':
-      return (quota / quotaPerUnit) * EXCHANGE_RATE_RMB;
+      return micro / 1_000_000; // micro-yuan → yuan
     default:
-      return quota;
+      return micro / 1_000_000;
   }
 }
 
 /**
- * Format a quota value into a human-readable string based on display unit.
- *
- * @param quota - Internal quota value
- * @param unit - Display unit
- * @param options - Formatting options
- * @returns Formatted string like "1.5M tokens", "$3.00", "¥24.00"
+ * Convert a user-input display value back to micro-yuan.
+ */
+export function valueToQuota(inputAmount: number, unit: DisplayUnit): number {
+  switch (unit) {
+    case 'token':
+      return Math.round(inputAmount * 2);
+    case 'usd':
+      return Math.round((inputAmount / USD_PER_CNY) * 1_000_000);
+    case 'cny':
+      return Math.round(inputAmount * 1_000_000);
+    default:
+      return Math.round(inputAmount * 1_000_000);
+  }
+}
+
+/**
+ * Format a micro-yuan value into a human-readable string.
  */
 export function formatQuotaByUnit(
-  quota: number,
+  micro: number,
   unit: DisplayUnit,
   options?: { decimals?: number; showSymbol?: boolean; showLabel?: boolean },
 ): string {
   const { decimals = 2, showSymbol = true, showLabel = true } = options || {};
-  const value = quotaToValue(quota, unit);
+  const value = quotaToValue(micro, unit);
 
   switch (unit) {
     case 'token': {
-      const formatted = formatTokenCount(value);
-      return showLabel ? `${formatted} ${showSymbol ? 'tokens' : ''}`.trim() : formatted;
+      const formatted = formatLargeNum(value);
+      return showLabel ? `${formatted}${showSymbol ? ' tokens' : ''}`.trim() : formatted;
     }
-    case 'usd': {
-      const formatted = value.toFixed(decimals);
-      return showSymbol ? `$${formatted}` : formatted;
-    }
-    case 'cny': {
-      const formatted = value.toFixed(decimals);
-      return showSymbol ? `¥${formatted}` : formatted;
-    }
+    case 'usd':
+      return showSymbol ? `$${value.toFixed(decimals)}` : value.toFixed(decimals);
+    case 'cny':
+      return showSymbol ? `¥${value.toFixed(decimals)}` : value.toFixed(decimals);
     default:
       return String(value);
   }
 }
 
-/**
- * Format a large token count with K/M suffixes.
- */
-function formatTokenCount(tokens: number): string {
-  if (tokens >= 1_000_000) {
-    return (tokens / 1_000_000).toFixed(1) + 'M';
-  }
-  if (tokens >= 1_000) {
-    return (tokens / 1_000).toFixed(1) + 'K';
-  }
-  return Math.round(tokens).toLocaleString();
+/** Format a large number with K/M suffixes. */
+function formatLargeNum(n: number): string {
+  if (n >= 1_000_000) return (n / 1_000_000).toFixed(1) + 'M';
+  if (n >= 1_000) return (n / 1_000).toFixed(1) + 'K';
+  return Math.round(n).toLocaleString();
 }
 
 /**
- * Convert a user-input value in the given display unit back to internal quota.
+ * React hook for unified billing display.
  *
- * Examples:
- * - inputAmount=10, unit='usd', quotaPerUnit=500000 → returns 5,000,000
- * - inputAmount=1000, unit='token' → returns 1000
- * - inputAmount=80, unit='cny', quotaPerUnit=500000 → returns 5,000,000
- */
-export function valueToQuota(inputAmount: number, unit: DisplayUnit): number {
-  const quotaPerUnit = getQuotaPerUnit();
-
-  switch (unit) {
-    case 'token':
-      return Math.round(inputAmount);
-    case 'usd':
-      return Math.round(inputAmount * quotaPerUnit);
-    case 'cny':
-      return Math.round((inputAmount / EXCHANGE_RATE_RMB) * quotaPerUnit);
-    default:
-      return Math.round(inputAmount);
-  }
-}
-
-/**
- * React hook for unified quota display management.
+ * All input values are expected in micro-yuan.
  *
- * Provides:
- * - Current display unit (token/usd/cny)
- * - Formatted rendering functions
- * - Conversion utilities
- * - Unit switching capability
- *
- * @example
  * ```tsx
- * const { displayUnit, formatQuota, renderQuota, setDisplayUnit, unitLabel } = useDisplayUnit();
- *
- * // In component:
- * <span>{renderQuota(user.quota)}</span>  // e.g., "1.5M tokens" or "$3.00"
- * <select onChange={(e) => setDisplayUnit(e.target.value as DisplayUnit)}>
- *   <option value="token">Tokens</option>
- *   <option value="usd">USD</option>
- *   <option value="cny">CNY</option>
- * </select>
+ * const { renderQuota } = useDisplayUnit();
+ * <span>{renderQuota(user.balance)}</span>  // "¥50.00" or "$7.00"
  * ```
  */
 export interface UseDisplayUnitResult {
-  /** Currently active display unit */
   displayUnit: DisplayUnit;
-  /** Set the display unit and persist it */
   setDisplayUnit: (unit: DisplayUnit) => void;
-  /** Format quota to a plain value string (no symbol/label by default) */
-  formatQuotaValue: (quota: number, decimals?: number) => string;
-  /** Render quota with full formatting (symbol + label), suitable for direct UI display */
-  renderQuota: (quota: number, options?: { showLabel?: boolean }) => string;
-  /** Render quota with prompt-style formatting (shows both units when helpful) */
-  renderQuotaWithPrompt: (quota: number) => string;
-  /** Convert display-unit value back to internal quota */
+  formatQuotaValue: (micro: number, decimals?: number) => string;
+  renderQuota: (micro: number, options?: { showLabel?: boolean }) => string;
+  renderQuotaWithPrompt: (micro: number) => string;
   toQuota: (inputAmount: number) => number;
-  /** Convert internal quota to display-unit value */
-  toValue: (quota: number) => number;
-  /** Human-readable label for the current unit (e.g., "Tokens", "USD", "CNY") */
+  toValue: (micro: number) => number;
   unitLabel: string;
-  /** Symbol for the current unit (e.g., "", "$", "¥") */
   unitSymbol: string;
-  /** All available display units for building selectors */
   availableUnits: readonly { value: DisplayUnit; label: string; symbol: string }[];
-  /** The quota-per-USD conversion rate */
-  quotaPerUnit: number;
 }
 
 const UNIT_OPTIONS: readonly { value: DisplayUnit; label: string; symbol: string }[] = [
-  { value: 'token', label: 'Tokens', symbol: '' },
-  { value: 'usd', label: 'USD', symbol: '$' },
   { value: 'cny', label: 'CNY', symbol: '¥' },
+  { value: 'usd', label: 'USD', symbol: '$' },
+  { value: 'token', label: 'Tokens', symbol: '' },
 ] as const;
 
 export const useDisplayUnit = (): UseDisplayUnitResult => {
   const [displayUnit, setDisplayUnitState] = useState<DisplayUnit>(getDisplayUnit);
 
-  // Sync across tabs: listen for storage events
   useEffect(() => {
     const handleStorageChange = (e: StorageEvent) => {
-      if (e.key === DISPLAY_UNIT_KEY && e.newValue) {
-        const newUnit = e.newValue;
-        if (['token', 'usd', 'cny'].includes(newUnit)) {
-          setDisplayUnitState(newUnit as DisplayUnit);
-        }
+      if (e.key === DISPLAY_UNIT_KEY && e.newValue && ['cny', 'usd', 'token'].includes(e.newValue)) {
+        setDisplayUnitState(e.newValue as DisplayUnit);
       }
     };
     window.addEventListener('storage', handleStorageChange);
@@ -230,48 +154,33 @@ export const useDisplayUnit = (): UseDisplayUnitResult => {
   }, []);
 
   const formatQuotaValue = useCallback(
-    (quota: number, decimals: number = 2): string => {
-      return formatQuotaByUnit(quota, displayUnit, { decimals, showSymbol: true, showLabel: false });
-    },
+    (micro: number, decimals: number = 2): string =>
+      formatQuotaByUnit(micro, displayUnit, { decimals, showSymbol: true, showLabel: false }),
     [displayUnit],
   );
 
   const renderQuota = useCallback(
-    (quota: number, options?: { showLabel?: boolean }): string => {
-      return formatQuotaByUnit(quota, displayUnit, { decimals: 2, showSymbol: true, showLabel: options?.showLabel !== false });
-    },
+    (micro: number, options?: { showLabel?: boolean }): string =>
+      formatQuotaByUnit(micro, displayUnit, { decimals: 2, showSymbol: true, showLabel: options?.showLabel !== false }),
     [displayUnit],
   );
 
   const renderQuotaWithPrompt = useCallback(
-    (quota: number): string => {
-      // For token mode, just show token count
+    (micro: number): string => {
       if (displayUnit === 'token') {
-        const value = quotaToValue(quota, 'token');
-        return `${formatTokenCount(value)} tokens`;
+        return `${formatLargeNum(micro / 2)} tokens`;
       }
-      // For currency modes, show both token count and currency value
-      const tokenStr = formatTokenCount(quotaToValue(quota, 'token'));
-      const currencyStr = formatQuotaByUnit(quota, displayUnit, { decimals: 4, showSymbol: true, showLabel: false });
-      return `${tokenStr} tokens (${currencyStr})`;
+      const cny = micro / 1_000_000;
+      const usd = cny * USD_PER_CNY;
+      if (displayUnit === 'usd') return `$${usd.toFixed(2)} (≈¥${cny.toFixed(2)})`;
+      return `¥${cny.toFixed(2)} (≈$${usd.toFixed(2)})`;
     },
     [displayUnit],
   );
 
-  const toQuota = useCallback(
-    (inputAmount: number): number => valueToQuota(inputAmount, displayUnit),
-    [displayUnit],
-  );
-
-  const toValue = useCallback(
-    (quota: number): number => quotaToValue(quota, displayUnit),
-    [displayUnit],
-  );
-
-  const unitInfo = useMemo(
-    () => UNIT_OPTIONS.find((u) => u.value === displayUnit) || UNIT_OPTIONS[0],
-    [displayUnit],
-  );
+  const toQuota = useCallback((inputAmount: number): number => valueToQuota(inputAmount, displayUnit), [displayUnit]);
+  const toValue = useCallback((micro: number): number => quotaToValue(micro, displayUnit), [displayUnit]);
+  const unitInfo = useMemo(() => UNIT_OPTIONS.find((u) => u.value === displayUnit) || UNIT_OPTIONS[0], [displayUnit]);
 
   return {
     displayUnit,
@@ -284,9 +193,7 @@ export const useDisplayUnit = (): UseDisplayUnitResult => {
     unitLabel: unitInfo.label,
     unitSymbol: unitInfo.symbol,
     availableUnits: UNIT_OPTIONS,
-    quotaPerUnit: getQuotaPerUnit(),
   };
 };
 
-// Re-export utility functions for non-hook usage (e.g., in utils.ts)
-export { getQuotaPerUnit, EXCHANGE_RATE_RMB };
+export { USD_PER_CNY, CNY_PER_USD };

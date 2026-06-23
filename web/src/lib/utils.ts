@@ -177,62 +177,33 @@ export function formatNumber(num: number): string {
   return num.toString();
 }
 
-// Quota formatting — DEPRECATED: prefer useDisplayUnit() hook for new code.
-// These functions are kept for backward compatibility and auto-migrate from legacy settings.
+// Quota formatting — delegates to useDisplayUnit hook (micro-yuan based).
 import { getDisplayUnit, formatQuotaByUnit } from '@/hooks/useDisplayUnit';
 
-export function formatQuota(quota: number): string {
+export function formatQuota(micro: number): string {
   const unit = getDisplayUnit();
-  return formatQuotaByUnit(quota, unit, { decimals: 4, showSymbol: true, showLabel: false });
+  return formatQuotaByUnit(micro, unit, { decimals: 4, showSymbol: true, showLabel: false });
 }
 
-// Render quota with proper formatting
-export function renderQuota(quota: number): string {
+export function renderQuota(micro: number): string {
   const unit = getDisplayUnit();
-  return formatQuotaByUnit(quota, unit, { decimals: 2, showSymbol: true, showLabel: true });
+  return formatQuotaByUnit(micro, unit, { decimals: 2, showSymbol: true, showLabel: true });
 }
 
-// Render quota with USD equivalent — always shows token value + ≈$USD
-// This is the B-solution: users always see the "real money" value alongside tokens
-export function renderQuotaWithUsd(quota: number): string {
-  const unit = getDisplayUnit();
-  const quotaPerUnit = parseFloat(localStorage.getItem('quota_per_unit') || '500000');
-
-  if (unit === 'token' && Number.isFinite(quota) && quota > 0 && quotaPerUnit > 0) {
-    const usdValue = quota / quotaPerUnit;
-    // Format token part
-    let tokenStr: string;
-    if (quota >= 1_000_000) {
-      tokenStr = (quota / 1_000_000).toFixed(1) + 'M';
-    } else if (quota >= 1_000) {
-      tokenStr = (quota / 1_000).toFixed(1) + 'K';
-    } else {
-      tokenStr = Math.round(quota).toLocaleString();
-    }
-    // Show USD for meaningful amounts (>= $0.001)
-    if (usdValue >= 0.001) {
-      return `${tokenStr} ≈$${usdValue.toFixed(usdValue >= 100 ? 1 : usdValue >= 1 ? 2 : 4)}`;
-    }
-    return tokenStr;
-  }
-
-  // For currency modes, delegate to normal renderQuota
-  return formatQuotaByUnit(quota, unit, { decimals: 2, showSymbol: true, showLabel: true });
+export function renderQuotaWithUsd(micro: number): string {
+  return formatQuotaByUnit(micro, getDisplayUnit(), { decimals: 2, showSymbol: true, showLabel: true });
 }
 
-// Render quota with prompting information (shows both token + currency)
-export function renderQuotaWithPrompt(quota: number): string {
+export function renderQuotaWithPrompt(micro: number): string {
   const unit = getDisplayUnit();
   if (unit === 'token') {
-    const value = quota; // raw tokens
-    if (value >= 1_000_000) return `${(value / 1_000_000).toFixed(1)}M tokens`;
-    if (value >= 1_000) return `${(value / 1_000).toFixed(1)}K tokens`;
-    return `${Math.round(value).toLocaleString()} tokens`;
+    const val = micro / 2;
+    return `${Math.round(val).toLocaleString()} tokens`;
   }
-  // Currency mode: show both
-  const tokenStr = quota >= 1_000_000 ? `${(quota / 1_000_000).toFixed(1)}M` : quota >= 1_000 ? `${(quota / 1_000).toFixed(1)}K` : `${quota}`;
-  const currencyStr = formatQuotaByUnit(quota, unit, { decimals: 4, showSymbol: true, showLabel: false });
-  return `${tokenStr} tokens (${currencyStr})`;
+  const cny = micro / 1_000_000;
+  const usd = cny * 0.14;
+  const currencyStr = unit === 'usd' ? `$${usd.toFixed(4)}` : `¥${cny.toFixed(2)}`;
+  return `¥${cny.toFixed(2)} tokens (${currencyStr})`;
 }
 
 // System status utility function

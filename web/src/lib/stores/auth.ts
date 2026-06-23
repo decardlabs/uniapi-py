@@ -11,6 +11,7 @@ interface User {
   email?: string;
   quota: number;
   used_quota: number;
+  balance: number;
   group: string;
 }
 
