@@ -244,19 +244,8 @@ export const persistSystemStatus = (data: SystemStatus) => {
 };
 
 export const loadSystemStatus = async (): Promise<SystemStatus | null> => {
-  // First try to get from localStorage
-  const status = localStorage.getItem('status');
-  if (status) {
-    try {
-      const parsedStatus = JSON.parse(status);
-      persistSystemStatus(parsedStatus);
-      return parsedStatus;
-    } catch (error) {
-      console.error('Error parsing system status:', error);
-    }
-  }
-
-  // If not in localStorage, fetch from server
+  // Always fetch from server to get the latest version/config.
+  // Falls back to localStorage cache if the server is unreachable.
   try {
     const response = await api.get('/api/status');
     const { success, data } = response.data;
@@ -267,6 +256,17 @@ export const loadSystemStatus = async (): Promise<SystemStatus | null> => {
     }
   } catch (error) {
     console.error('Error fetching system status:', error);
+  }
+
+  // Fallback: use cached status when server is unreachable
+  const status = localStorage.getItem('status');
+  if (status) {
+    try {
+      const parsedStatus = JSON.parse(status);
+      return parsedStatus;
+    } catch (error) {
+      console.error('Error parsing system status:', error);
+    }
   }
 
   return null;
