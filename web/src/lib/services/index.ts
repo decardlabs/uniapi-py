@@ -27,5 +27,5 @@ export type { LogEntry, LogSearchParams, PaginatedLogResponse } from './log';
 export { getOptions, updateOption, getOptionByKey } from './setting';
 export type { OptionItem } from './setting';
 
-export { getRechargeRequests, createRechargeRequest, reviewRecharge } from './recharge';
+export { getRechargeRequests, createRechargeRequest } from './recharge';
 export type { TopUpRequest, CreateRechargeRequest, PaginatedRechargeResponse } from './recharge';

@@ -6,6 +6,7 @@ import { useNotifications } from '@/components/ui/notifications';
 import { ResponsivePageContainer } from '@/components/ui/responsive-container';
 import { STORAGE_KEYS, usePageSize } from '@/hooks/usePersistentState';
 import { getRechargeRequests, approveRecharge, rejectRecharge } from '@/lib/services/recharge';
+import type { TopUpRequest } from '@/lib/services/recharge';
 import { renderQuotaWithUsd } from '@/lib/utils';
 import type { ColumnDef } from '@tanstack/react-table';
 import {
@@ -17,17 +18,10 @@ import { useEffect, useRef, useState, useCallback } from 'react';
 import { createPortal } from 'react-dom';
 import { useTranslation } from 'react-i18next';
 
-interface RechargeRequest {
-  id: number;
-  user_id: number;
-  amount: number;
-  quota: number;
-  status: number;
-  remark: string;
-  admin_remark: string;
-  created_time: number;
-  reviewed_time: number;
-  reviewer_id: number;
+interface RechargeRequest extends TopUpRequest {
+  reviewed_time?: number;
+  reviewer_id?: number;
+  admin_remark?: string;
   user?: { id: number; username: string };
 }
 
