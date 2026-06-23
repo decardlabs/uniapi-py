@@ -198,6 +198,7 @@ async def relay_chat_completion(
             queue: asyncio.Queue[bytes | None] = asyncio.Queue(maxsize=32)
 
             async def _reader():
+                nonlocal last_usage, message_start_usage, scanner
                 try:
                     async for chunk in resp.aiter_bytes(chunk_size=4096):
                         await queue.put(chunk)
