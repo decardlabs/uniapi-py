@@ -3,6 +3,7 @@ from __future__ import annotations
 from typing import Optional
 
 from fastapi import APIRouter, Depends, Query, Request
+from sqlalchemy import select, func
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.database import get_db
@@ -10,11 +11,12 @@ from app.dependencies import admin_auth
 from app.schemas.common import GenericApiResponse, PaginatedResponse
 from app.schemas.user import UserResponse
 from app.services import user as user_service
+from app.models.budget import CostRecord
 
 router = APIRouter(tags=["admin-users"])
 
 
-def _user_to_response(u) -> dict:
+def _user_to_response(u, total_spent: float = 0.0) -> dict:
     return UserResponse(
         id=u.id,
         username=u.username,
@@ -22,13 +24,24 @@ def _user_to_response(u) -> dict:
         email=u.email,
         role=u.role,
         status=u.status,
-        quota=0,
-        used_quota=0,
         balance=u.balance,
+        total_spent=total_spent,
         group=u.group,
         created_at=u.created_at // 1000 if u.created_at else 0,
         updated_at=u.updated_at // 1000 if u.updated_at else 0,
     ).model_dump()
+
+
+async def _batch_total_spent(db: AsyncSession, user_ids: list[int]) -> dict[int, float]:
+    """Return {user_id: total_spent_yuan} for the given user IDs."""
+    if not user_ids:
+        return {}
+    result = await db.execute(
+        select(CostRecord.user_id, func.sum(CostRecord.cost))
+        .where(CostRecord.user_id.in_(user_ids))
+        .group_by(CostRecord.user_id)
+    )
+    return {row[0]: round(float(row[1] or 0), 6) for row in result.all()}
 
 
 @router.get("/api/user/")
@@ -39,8 +52,10 @@ async def list_users(
     _=Depends(admin_auth),
 ):
     users, total = await user_service.list_users(db, page=p, size=size)
+    user_ids = [u.id for u in users]
+    spent_map = await _batch_total_spent(db, user_ids)
     return PaginatedResponse(
-        data=[_user_to_response(u) for u in users],
+        data=[_user_to_response(u, spent_map.get(u.id, 0.0)) for u in users],
         total=total,
     )
 
@@ -54,10 +69,18 @@ async def search_users(
     _=Depends(admin_auth),
 ):
     users, total = await user_service.search_users(db, keyword=keyword, page=p, size=size)
+    user_ids = [u.id for u in users]
+    spent_map = await _batch_total_spent(db, user_ids)
     return PaginatedResponse(
-        data=[_user_to_response(u) for u in users],
+        data=[_user_to_response(u, spent_map.get(u.id, 0.0)) for u in users],
         total=total,
     )
+
+
+async def _user_to_response_with_spent(db: AsyncSession, u) -> dict:
+    """Fetch a single user's response with total_spent populated."""
+    spent_map = await _batch_total_spent(db, [u.id])
+    return _user_to_response(u, spent_map.get(u.id, 0.0))
 
 
 @router.get("/api/user/{user_id}")
@@ -69,7 +92,7 @@ async def get_user(
     user = await user_service.get_user_by_id(db, user_id)
     if not user:
         return GenericApiResponse(success=False, message="User not found")
-    return GenericApiResponse(data=_user_to_response(user))
+    return GenericApiResponse(data=await _user_to_response_with_spent(db, user))
 
 
 @router.post("/api/user/")
@@ -87,7 +110,7 @@ async def create_user(
         quota=body.get("quota"),
         group=body.get("group"),
     )
-    return GenericApiResponse(message="User created", data=_user_to_response(user))
+    return GenericApiResponse(message="User created", data=await _user_to_response_with_spent(db, user))
 
 
 @router.put("/api/user/")
@@ -111,7 +134,7 @@ async def update_user(
         group=body.get("group"),
         status=body.get("status"),
     )
-    return GenericApiResponse(message="User updated", data=_user_to_response(user))
+    return GenericApiResponse(message="User updated", data=await _user_to_response_with_spent(db, user))
 
 
 @router.delete("/api/user/{user_id}")

@@ -27,9 +27,8 @@ class UserResponse(BaseModel):
     email: Optional[str] = None
     role: int
     status: int
-    quota: int
-    used_quota: int
-    balance: int = 0
+    balance: int = 0  # micro-yuan
+    total_spent: float = 0.0  # yuan
     group: str
     created_at: Optional[int] = None
     updated_at: Optional[int] = None
@@ -41,8 +40,7 @@ class LoginResponse(BaseModel):
     display_name: Optional[str] = None
     role: int
     status: int
-    quota: int
-    balance: int = 0
+    balance: int = 0  # micro-yuan
     group: str
     access_token: Optional[str] = None
     totp_required: Optional[bool] = None
@@ -55,9 +53,7 @@ class SelfResponse(BaseModel):
     email: Optional[str] = None
     role: int
     status: int
-    quota: int
-    used_quota: int
-    balance: int = 0
+    balance: int = 0  # micro-yuan
     group: str
     created_at: Optional[int] = None
     updated_at: Optional[int] = None

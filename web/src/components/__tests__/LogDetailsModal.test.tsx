@@ -86,8 +86,7 @@ const defaultUser: AuthUser = {
   username: 'fallback-user',
   role: 1,
   status: 1,
-  quota: 1000,
-  used_quota: 0, balance: 0,
+  balance: 0,
   group: 'default',
 };
 

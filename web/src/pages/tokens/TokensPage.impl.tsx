@@ -46,14 +46,9 @@ const TOKEN_STATUS = {
   EXHAUSTED: 4,
 } as const;
 
-export const shouldHighlightTokenQuota = (token: Token, userQuota: number | null): boolean => {
-  if (userQuota === null || userQuota < 0) {
-    return false;
-  }
-  if (token.unlimited_quota) {
-    return true;
-  }
-  return token.remain_quota > userQuota;
+export const shouldHighlightTokenQuota = (_token: Token, _userBalance: number | null): boolean => {
+  // Token quotas were removed in Phase F3 — highlight logic is retired.
+  return false;
 };
 
 /**
@@ -63,7 +58,7 @@ export function TokensPage() {
   const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
   const { isMobile } = useResponsive();
-  const userQuota = useAuthStore((state) => state.user?.quota ?? null);
+  const userBalance = useAuthStore((state) => state.user?.balance ?? null);
   const { t } = useTranslation();
   const [confirmDelete, ConfirmDeleteDialog] = useConfirmDialog();
   const tr = useCallback(
@@ -367,7 +362,7 @@ export function TokensPage() {
       cell: ({ row }) => {
         const token = row.original;
         const quotaLabel = formatQuotaLabel(token.remain_quota, token.unlimited_quota);
-        const highlight = shouldHighlightTokenQuota(token, userQuota);
+        const highlight = shouldHighlightTokenQuota(token, userBalance);
         const quotaClasses = cn('font-mono text-sm', highlight && 'text-warning font-semibold');
 
         if (!highlight) {

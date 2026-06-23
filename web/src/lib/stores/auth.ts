@@ -9,8 +9,6 @@ interface User {
   role: number;
   status: number;
   email?: string;
-  quota: number;
-  used_quota: number;
   balance: number;
   group: string;
 }

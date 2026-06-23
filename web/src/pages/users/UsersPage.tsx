@@ -15,7 +15,7 @@ import { STORAGE_KEYS, usePageSize } from '@/hooks/usePersistentState';
 import { useResponsive } from '@/hooks/useResponsive';
 import { api } from '@/lib/api';
 import { adminTopup } from '@/lib/services/recharge';
-import { cn, renderQuota, renderQuotaWithUsd } from '@/lib/utils';
+import { cn, renderQuota } from '@/lib/utils';
 import { zodResolver } from '@hookform/resolvers/zod';
 import type { ColumnDef } from '@tanstack/react-table';
 import { Ban, CheckCircle, CreditCard, Settings, Trash2 } from 'lucide-react';
@@ -32,8 +32,8 @@ interface UserRow {
   role: number;
   status: number;
   email?: string;
-  quota: number;
-  used_quota: number;
+  balance: number;       // micro-yuan (10^-6 yuan)
+  total_spent: number;   // yuan
   group: string;
   created_at?: number;
   updated_at?: number;
@@ -85,14 +85,13 @@ export function UsersPage() {
     (status: number) => (status === 1 ? tr('table.status.enabled', 'Enabled') : tr('table.status.disabled', 'Disabled')),
     [tr]
   );
-  const formatRemainingQuota = useCallback(
-    (quota: number) => {
-      if (quota === -1) {
-        return tr('table.quota.unlimited', 'Unlimited');
-      }
-      return renderQuotaWithUsd(quota);
-    },
-    [tr]
+  const formatBalance = useCallback(
+    (micro: number) => renderQuota(micro),
+    [],
+  );
+  const formatTotalSpent = useCallback(
+    (yuan: number) => `¥${yuan.toFixed(6)}`,
+    [],
   );
 
   const load = async (p = 0, size = pageSize) => {
@@ -221,35 +220,25 @@ export function UsersPage() {
     },
     { header: tr('columns.group', 'Group'), accessorKey: 'group' },
     {
-      header: tr('columns.used_quota', 'Used Quota'),
-      accessorKey: 'used_quota',
-      cell: ({ row }) => {
-        const quotaLabel = renderQuotaWithUsd(row.original.used_quota || 0);
-        return (
-          <span
-            className="font-mono text-sm"
-            title={tr('table.used_quota_title', 'Used: {{quota}}', {
-              quota: quotaLabel,
-            })}
-          >
-            {quotaLabel}
-          </span>
-        );
-      },
+      header: tr('columns.balance', 'Balance'),
+      accessorKey: 'balance',
+      cell: ({ row }) => (
+        <span className="font-mono text-sm">
+          {formatBalance(row.original.balance)}
+        </span>
+      ),
     },
     {
-      header: tr('columns.remaining_quota', 'Remaining Quota'),
-      accessorKey: 'quota',
+      header: tr('columns.total_spent', 'Total Spent'),
+      accessorKey: 'total_spent',
       cell: ({ row }) => {
-        const quotaLabel = formatRemainingQuota(row.original.quota);
+        const label = formatTotalSpent(row.original.total_spent);
         return (
           <span
             className="font-mono text-sm"
-            title={tr('table.remaining_quota_title', 'Remaining: {{quota}}', {
-              quota: quotaLabel,
-            })}
+            title={tr('table.total_spent_title', 'Total: {{quota}}', { quota: label })}
           >
-            {row.original.quota === -1 ? <span className="text-success font-semibold">{quotaLabel}</span> : quotaLabel}
+            {label}
           </span>
         );
       },
@@ -357,8 +346,8 @@ export function UsersPage() {
           </SelectTrigger>
           <SelectContent>
             <SelectItem value="__none__">{tr('toolbar.sort.default', 'Default')}</SelectItem>
-            <SelectItem value="quota">{tr('toolbar.sort.quota', 'Remaining Quota')}</SelectItem>
-            <SelectItem value="used_quota">{tr('toolbar.sort.used_quota', 'Used Quota')}</SelectItem>
+            <SelectItem value="balance">{tr('toolbar.sort.balance', 'Balance')}</SelectItem>
+            <SelectItem value="total_spent">{tr('toolbar.sort.total_spent', 'Total Spent')}</SelectItem>
             <SelectItem value="username">{tr('toolbar.sort.username', 'Username')}</SelectItem>
             <SelectItem value="id">{tr('toolbar.sort.id', 'ID')}</SelectItem>
             <SelectItem value="created_at">{tr('toolbar.sort.register_time', 'Register Time')}</SelectItem>

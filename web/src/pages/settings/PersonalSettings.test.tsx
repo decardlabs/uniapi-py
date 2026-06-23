@@ -78,8 +78,6 @@ describe('PersonalSettings', () => {
         email: '',
         role: 1,
         status: 1,
-        quota: 0,
-        used_quota: 0,
         balance: 0,
         group: 'default',
       },

@@ -38,7 +38,7 @@ interface TopUpRequest {
 export function TopUpPage() {
   const { user, updateUser } = useAuthStore();
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [userQuota, setUserQuota] = useState(user?.quota || 0);
+  const [userBalance, setUserBalance] = useState(user?.balance || 0);
   const [topUpLink, setTopUpLink] = useState('');
   const [userData, setUserData] = useState<UserInfo | null>(null);
   const [myRequests, setMyRequests] = useState<TopUpRequest[]>([]);
@@ -64,7 +64,7 @@ export function TopUpPage() {
       const res = await api.get('/api/user/self');
       const { success, data } = res.data;
       if (success) {
-        setUserQuota(data.quota);
+        setUserBalance(data.balance ?? 0);
         setUserData(data);
         updateUser(data);
       }
@@ -196,7 +196,7 @@ export function TopUpPage() {
           </CardHeader>
           <CardContent>
             <div className="text-center">
-              <div className="text-3xl font-bold text-primary mb-2">{renderQuotaWithPrompt(userQuota)}</div>
+              <div className="text-3xl font-bold text-primary mb-2">{renderQuotaWithPrompt(userBalance)}</div>
               <p className="text-sm text-muted-foreground">{tr('balance.available', 'Available quota for API usage')}</p>
               <Button variant="outline" className="mt-4" onClick={loadUserData}>
                 {tr('balance.refresh', 'Refresh Balance')}
