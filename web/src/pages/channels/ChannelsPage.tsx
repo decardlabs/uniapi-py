@@ -347,6 +347,7 @@ export function ChannelsPage() {
       });
     } catch (error) {
       console.error('Bulk test failed:', error);
+      load(pageIndex, pageSize);  // Reload to show any partial results that were persisted
       notify({
         type: 'error',
         title: t('channels.notifications.bulk_test_failed_title'),

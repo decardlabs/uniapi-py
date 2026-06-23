@@ -33,6 +33,7 @@ import app.models.ability  # noqa: F401
 import app.models.budget  # noqa: F401
 import app.models.recharge  # noqa: F401
 import app.models.redemption  # noqa: F401
+import app.models.mcp_server  # noqa: F401
 from app.config import settings
 
 

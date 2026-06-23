@@ -126,6 +126,21 @@ def _enrich_timeseries_with_rates(
             ts_row["estimated_savings_rate"] = 0.0
 
 
+def _estimate_savings_rate_from_row(row: dict[str, Any]) -> float:
+    """Compute estimated_savings_rate from summary row alone using default ratios.
+
+    Used by compare path where per-model breakdown is not available.
+    For models with 1:1 ratios this is exact; for others it's an approximation.
+    """
+    pt = row.get("prompt_tokens", 0) or 0
+    ct = row.get("completion_tokens", 0) or 0
+    q = row.get("quota", 0) or 0
+    cost_without = pt + ct  # default input_ratio=1.0, output_ratio=1.0
+    if cost_without > 0:
+        return (cost_without - q) / cost_without
+    return 0.0
+
+
 def _enrich_breakdown_with_rates(
     breakdown_rows: list[dict[str, Any]],
 ) -> None:
@@ -356,9 +371,14 @@ async def cache_analytics(
 
         after_row = await _query_summary(db, after_conditions)
 
-        # Enrich compare summary rows with rates (use breakdown rows from same scope)
-        compare_data["before"] = _enrich_summary_with_rates(before_row, [])
-        compare_data["after"] = _enrich_summary_with_rates(after_row, [])
+        # Enrich compare summary rows with rates (lightweight, no per-model breakdown)
+        for key, row in [("before", before_row), ("after", after_row)]:
+            enriched = dict(row)
+            pt = row.get("prompt_tokens", 0) or 0
+            cpt = row.get("cached_prompt_tokens", 0) or 0
+            enriched["cache_hit_rate"] = _hit_rate(pt, cpt)
+            enriched["estimated_savings_rate"] = _estimate_savings_rate_from_row(row)
+            compare_data[key] = enriched
 
     # ── 6. Enrich with computed rates ─────────────────────────────
     summary = _enrich_summary_with_rates(summary_row, breakdown_rows)

@@ -16,6 +16,7 @@ import app.models.ability  # noqa: F401
 import app.models.budget  # noqa: F401
 import app.models.recharge  # noqa: F401
 import app.models.redemption  # noqa: F401
+import app.models.mcp_server  # noqa: F401
 
 config = context.config
 if config.config_file_name is not None:
@@ -24,8 +25,16 @@ if config.config_file_name is not None:
 target_metadata = Base.metadata
 
 
-def run_migrations_offline() -> None:
+def _sync_db_url() -> str:
+    """Return a sync-compatible db_url (strip async driver suffix from sqlite)."""
     url = settings.db_url
+    if url.startswith("sqlite+aiosqlite"):
+        url = url.replace("+aiosqlite", "", 1)
+    return url
+
+
+def run_migrations_offline() -> None:
+    url = _sync_db_url()
     context.configure(
         url=url,
         target_metadata=target_metadata,
@@ -38,7 +47,7 @@ def run_migrations_offline() -> None:
 
 def run_migrations_online() -> None:
     configuration = config.get_section(config.config_ini_section, {})
-    configuration["sqlalchemy.url"] = settings.db_url
+    configuration["sqlalchemy.url"] = _sync_db_url()
     connectable = engine_from_config(
         configuration,
         prefix="sqlalchemy.",

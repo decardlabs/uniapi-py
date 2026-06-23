@@ -760,8 +760,8 @@ async def _handle_relay(request: Request, db: AsyncSession):
 
             try:
                 err_body = exc.response.json()
-            except Exception:
-                err_body = str(exc)
+            except Exception as err:
+                err_body = str(err)
             provider_name = adaptor.provider_name if adaptor else "unknown"
             uni_code, upstream, reason = map_upstream_http_error(provider_name, status, err_body)
             details = {"reason": reason} if reason else None

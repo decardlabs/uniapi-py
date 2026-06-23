@@ -203,7 +203,7 @@ export default function BudgetPoolsPage() {
     if (!selectedPool) return;
     setSubmitting(true);
     try {
-      const res = await api.post(`/api/pool/${selectedPool.id}/purchase`, {
+      const res = await api.post(`/api/pool/${selectedPool.id}/fund`, {
         amount: Number(purchaseAmount),
         remark: purchaseRemark,
       });

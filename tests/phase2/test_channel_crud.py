@@ -42,6 +42,72 @@ async def test_create_channel(client: AsyncClient):
 
 
 @pytest.mark.asyncio
+async def test_create_channel_with_multiple_keys(client: AsyncClient):
+    """POST /api/channel/ with multiline key should create one channel per key."""
+    cookies = await _login(client)
+    resp = await client.post("/api/channel/", json={
+        "name": "Multi-Key DeepSeek",
+        "type": 39,
+        "key": "sk-key-1\nsk-key-2\nsk-key-3",
+        "models": "deepseek-v4-pro",
+        "group": "default",
+    }, cookies=cookies)
+    assert resp.status_code == 200
+    assert resp.json()["success"] is True
+    assert resp.json()["data"]["id"] > 0
+
+    # Verify 3 channels were created with different keys
+    list_resp = await client.get("/api/channel/?p=0&size=100", cookies=cookies)
+    channels = list_resp.json()["data"]
+    multi_key_channels = [c for c in channels if c["name"] == "Multi-Key DeepSeek"]
+    assert len(multi_key_channels) == 3
+    keys = [c["key"] for c in multi_key_channels]
+    assert "sk-key-1" in keys
+    assert "sk-key-2" in keys
+    assert "sk-key-3" in keys
+
+
+@pytest.mark.asyncio
+async def test_create_channel_ignores_blank_key_lines(client: AsyncClient):
+    """POST /api/channel/ with blank lines in key should skip blanks."""
+    cookies = await _login(client)
+    resp = await client.post("/api/channel/", json={
+        "name": "Blank Lines",
+        "type": 39,
+        "key": "sk-a\n\n\nsk-b\n  \nsk-c",
+        "group": "default",
+    }, cookies=cookies)
+    assert resp.status_code == 200
+    assert resp.json()["success"] is True
+
+    list_resp = await client.get("/api/channel/?p=0&size=100", cookies=cookies)
+    channels = list_resp.json()["data"]
+    blank_channels = [c for c in channels if c["name"] == "Blank Lines"]
+    assert len(blank_channels) == 3
+
+
+@pytest.mark.asyncio
+async def test_create_channel_single_key_unchanged(client: AsyncClient):
+    """POST /api/channel/ with single-line key should behave exactly as before."""
+    cookies = await _login(client)
+    resp = await client.post("/api/channel/", json={
+        "name": "Single Key",
+        "type": 39,
+        "key": "sk-only-one",
+        "models": "deepseek-v4-pro",
+        "group": "default",
+    }, cookies=cookies)
+    assert resp.status_code == 200
+    assert resp.json()["success"] is True
+    assert resp.json()["data"]["key"] == "sk-only-one"
+
+    list_resp = await client.get("/api/channel/?p=0&size=100", cookies=cookies)
+    channels = list_resp.json()["data"]
+    single_channels = [c for c in channels if c["name"] == "Single Key"]
+    assert len(single_channels) == 1
+
+
+@pytest.mark.asyncio
 async def test_get_channel(client: AsyncClient):
     """GET /api/channel/{id} should return a single channel."""
     cookies = await _login(client)
