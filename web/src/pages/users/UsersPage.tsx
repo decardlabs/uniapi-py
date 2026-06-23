@@ -86,7 +86,11 @@ export function UsersPage() {
     [tr]
   );
   const formatBalance = useCallback(
-    (micro: number) => renderQuota(micro),
+    (micro: number) => {
+      // Balance is always real money (micro-yuan) — display as yuan regardless of display unit preference
+      const yuan = micro / 1_000_000;
+      return `¥${yuan.toFixed(2)}`;
+    },
     [],
   );
   const formatTotalSpent = useCallback(
