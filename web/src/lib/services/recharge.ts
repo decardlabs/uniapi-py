@@ -9,13 +9,11 @@ import type { AxiosResponse } from 'axios';
 export interface TopUpRequest {
   id: number;
   user_id: number;
-  amount?: number; // eslint-disable-line @typescript-eslint/no-explicit-any
-  quota: number;
+  amount: number;  // micro-yuan
   status: number;
-  remark?: string; // eslint-disable-line @typescript-eslint/no-explicit-any
-  admin_remark?: string; // eslint-disable-line @typescript-eslint/no-explicit-any
-  created_at: string;
-  created_time?: number; // eslint-disable-line @typescript-eslint/no-explicit-any
+  remark?: string;
+  admin_remark?: string;
+  created_time: number;
 }
 
 export interface CreateRechargeRequest {

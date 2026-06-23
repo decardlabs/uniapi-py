@@ -7,9 +7,8 @@ import { Badge } from '@/components/ui/badge';
 import { ResponsivePageContainer } from '@/components/ui/responsive-container';
 import { useNotifications } from '@/components/ui/notifications';
 import { api } from '@/lib/api';
-import { getSelfRechargeRequests, createRechargeRequest } from '@/lib/services/recharge';
+import { getSelfRechargeRequests, createRechargeRequest, type TopUpRequest } from '@/lib/services/recharge';
 import { useAuthStore } from '@/lib/stores/auth';
-import { useDisplayUnit } from '@/hooks/useDisplayUnit'; // for balance display only
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useEffect, useState } from 'react';
 import { useForm } from 'react-hook-form';
@@ -17,22 +16,9 @@ import { useTranslation } from 'react-i18next';
 import * as z from 'zod';
 
 interface UserInfo {
-  id: number; // eslint-disable-line @typescript-eslint/no-explicit-any
+  id: number;
   username: string;
   display_name?: string;
-  quota: number;
-}
-
-interface TopUpRequest {
-  id: number;
-  user_id: number;
-  amount?: number; // eslint-disable-line @typescript-eslint/no-explicit-any
-  quota: number;
-  status: number;
-  remark?: string; // eslint-disable-line @typescript-eslint/no-explicit-any
-  admin_remark?: string; // eslint-disable-line @typescript-eslint/no-explicit-any
-  created_at: string;
-  created_time?: number; // eslint-disable-line @typescript-eslint/no-explicit-any — backend may return this instead of created_at
 }
 
 export function TopUpPage() {
@@ -42,22 +28,14 @@ export function TopUpPage() {
   const [topUpLink, setTopUpLink] = useState('');
   const [userData, setUserData] = useState<UserInfo | null>(null);
   const [myRequests, setMyRequests] = useState<TopUpRequest[]>([]);
-  // Use the new display unit hook for balance rendering only (input is always tokens)
-  const { renderQuota: renderQuotaHook } = useDisplayUnit();
-
-  // USD conversion for preview — always use quota/500000 regardless of user's display unit
-  const QUOTA_PER_USD = 500000; // sync with backend ratio.QuotaPerUsd
-  const quotaToUsd = (quota: number): number => quota / QUOTA_PER_USD;
   const { t } = useTranslation();
   const { notify } = useNotifications();
 
   const tr = (key: string, defaultValue: string) =>
     t(`topup.${key}`, { defaultValue });
 
-  // Render quota using the unified display unit system (for balance display)
-  const renderQuotaWithPrompt = (quota: number): string => {
-    return renderQuotaHook(quota);
-  };
+  // Format balance in micro-yuan → yuan (¥) — always shows CNY regardless of display unit preference
+  const formatBalance = (micro: number): string => `¥${(micro / 1_000_000).toFixed(2)}`;
 
   const loadUserData = async () => {
     try {
@@ -127,17 +105,14 @@ export function TopUpPage() {
   // Watch the amount field for live conversion preview
   const watchAmount = form.watch('amount');
 
-  // Input is in yuan (¥) — multiply by 1,000,000 to get micro-yuan for backend
-  const YUAN_TO_MICRO = 1_000_000;
-  const getAmountFromInput = (yuanAmount: number): number => {
-    return Math.round(yuanAmount * YUAN_TO_MICRO);
-  };
+  /** Convert yuan → micro-yuan before sending to backend */
+  const yuanToMicro = (yuan: number): number => Math.round(yuan * 1_000_000);
 
   const onSubmitRecharge = async (data: RechargeForm) => {
     setIsSubmitting(true);
     try {
       // Convert yuan → micro-yuan before sending to server
-      const amountMicro = getAmountFromInput(data.amount);
+      const amountMicro = yuanToMicro(data.amount);
       const res = await createRechargeRequest({ amount: amountMicro, remark: data.remark || '' });
       if (res.data?.success) {
         notify({ type: 'success', message: tr('request.success', 'Recharge request submitted successfully! Awaiting admin approval.') });
@@ -192,12 +167,12 @@ export function TopUpPage() {
         <Card>
           <CardHeader>
             <CardTitle>{tr('balance.title', 'Current Balance')}</CardTitle>
-            <CardDescription>{tr('balance.description', 'Your current quota balance')}</CardDescription>
+            <CardDescription>{tr('balance.description', 'Your current balance (CNY)')}</CardDescription>
           </CardHeader>
           <CardContent>
             <div className="text-center">
-              <div className="text-3xl font-bold text-primary mb-2">{renderQuotaWithPrompt(userBalance)}</div>
-              <p className="text-sm text-muted-foreground">{tr('balance.available', 'Available quota for API usage')}</p>
+              <div className="text-3xl font-bold text-primary mb-2">{formatBalance(userBalance)}</div>
+              <p className="text-sm text-muted-foreground">{tr('balance.available', 'Available balance for API usage (CNY)')}</p>
               <Button variant="outline" className="mt-4" onClick={loadUserData}>
                 {tr('balance.refresh', 'Refresh Balance')}
               </Button>

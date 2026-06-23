@@ -14,7 +14,7 @@ class RechargeStatus(enum.IntEnum):
 
 
 class RechargeCreate(BaseModel):
-    amount: int = Field(..., ge=1, description="Quota amount requested")
+    amount: int = Field(..., ge=1, description="Amount in micro-yuan (10^-6 yuan)")
     remark: Optional[str] = None
 
 
