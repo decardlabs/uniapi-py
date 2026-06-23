@@ -50,7 +50,7 @@ export function RechargesPage() {
   const load = async (p = 0, size = pageSize) => {
     setLoading(true);
     try {
-      const res = await getRechargeRequests({ p: p + 1, size });
+      const res = await getRechargeRequests({ p, size });
       if (res.data?.success) {
         setData(res.data.data || []);
         setTotal(res.data.total || 0);

@@ -89,7 +89,7 @@ export function TopUpPage() {
 
   const loadMyRequests = async () => {
     try {
-      const res = await getSelfRechargeRequests({ p: 1, size: 10 });
+      const res = await getSelfRechargeRequests({ p: 0, size: 10 });
       if (res.data?.success) {
         setMyRequests(res.data.data || []);
       }
