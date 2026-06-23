@@ -15,7 +15,7 @@ import { STORAGE_KEYS, usePageSize } from '@/hooks/usePersistentState';
 import { useResponsive } from '@/hooks/useResponsive';
 import { api } from '@/lib/api';
 import { adminTopup } from '@/lib/services/recharge';
-import { cn, renderQuota } from '@/lib/utils';
+import { cn } from '@/lib/utils';
 import { zodResolver } from '@hookform/resolvers/zod';
 import type { ColumnDef } from '@tanstack/react-table';
 import { Ban, CheckCircle, CreditCard, Settings, Trash2 } from 'lucide-react';
@@ -581,14 +581,14 @@ function TopUpDialog({
   const [pools, setPools] = useState<{ id: number; name: string; available_quota: number }[]>([]);
   const [poolsLoading, setPoolsLoading] = useState(false);
   const schema = z.object({
-    quota: z.coerce.number().int(),
+    amount: z.coerce.number().positive('Amount must be greater than 0'),
     remark: z.string().optional(),
     pool_id: z.coerce.number().int().optional(),
   });
   type FormT = z.infer<typeof schema>;
   const form = useForm<FormT>({
     resolver: zodResolver(schema),
-    defaultValues: { quota: 0, remark: '', pool_id: 0 },
+    defaultValues: { amount: 0, remark: '', pool_id: 0 },
   });
   const watchPoolId = form.watch('pool_id');
   const { t } = useTranslation();
@@ -632,7 +632,7 @@ function TopUpDialog({
               if (!userId) return;
               const res = await adminTopup({
                 user_id: userId,
-                quota: values.quota,
+                amount: values.amount,
                 remark: values.remark,
                 pool_id: values.pool_id || 0,
               });
@@ -667,14 +667,14 @@ function TopUpDialog({
                         <SelectItem value="0">{tr('fields.pool_id.direct', 'Direct top-up')}</SelectItem>
                         {pools.map((pool) => (
                           <SelectItem key={pool.id} value={String(pool.id)}>
-                            {pool.name} ({renderQuota(pool.available_quota)})
+                            {pool.name} (¥{pool.available_quota.toFixed(2)})
                           </SelectItem>
                         ))}
                       </SelectContent>
                     </Select>
                     {watchPoolId > 0 && (
                       <p className="text-xs text-muted-foreground mt-1">
-                        {tr('fields.pool_id.hint', 'Quota will be deducted from the selected budget pool')}
+                        {tr('fields.pool_id.hint', 'Amount will be deducted from the selected budget pool')}
                       </p>
                     )}
                   </FormItem>
@@ -683,12 +683,12 @@ function TopUpDialog({
             )}
             <FormField
               control={form.control}
-              name="quota"
+              name="amount"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>{tr('fields.quota.label', 'Quota')}</FormLabel>
+                  <FormLabel>{tr('fields.amount.label', 'Amount (¥)')}</FormLabel>
                   <FormControl>
-                    <Input type="number" placeholder={tr('fields.quota.placeholder', 'Enter quota change')} {...field} />
+                    <Input type="number" step="0.01" min="0.01" placeholder={tr('fields.amount.placeholder', 'e.g. 50.00')} {...field} />
                   </FormControl>
                   <FormMessage />
                 </FormItem>

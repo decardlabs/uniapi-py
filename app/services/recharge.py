@@ -185,27 +185,77 @@ async def admin_topup(
     db: AsyncSession,
     admin_id: int,
     user_id: int,
-    quota: int,
+    amount: float,
     pool_id: int,
     remark: Optional[str] = None,
 ) -> dict:
-    """Admin directly tops up a user's quota. Returns user info dict."""
+    """Admin directly tops up a user's balance (in yuan). Returns user info dict.
+
+    When ``pool_id > 0``, the amount is also deducted from the selected budget
+    pool's available allocation to keep pool accounting consistent.
+    """
     result = await db.execute(select(User).where(User.id == user_id))
     user = result.scalar_one_or_none()
     if user is None:
         raise ValueError(f"User {user_id} not found")
 
     now = int(time.time() * 1000)
-    # Convert admin topup quota (old token units) to micro-yuan
-    admin_micro = quota * 2
-    user.balance = (user.balance or 0) + admin_micro
+    # Convert yuan → micro-yuan
+    amount_micro = int(amount * 1_000_000)
+    user.balance = (user.balance or 0) + amount_micro
+
+    # Pool deduction
+    if pool_id > 0:
+        from app.models.budget import BudgetPool, PoolAllocation, PoolTransaction
+
+        pool = await db.get(BudgetPool, pool_id)
+        if pool is None:
+            raise ValueError(f"Budget pool {pool_id} not found")
+        if pool.status != "active":
+            raise ValueError(f"Budget pool {pool_id} is not active")
+
+        # Find the user's active allocation in this pool
+        alloc_result = await db.execute(
+            select(PoolAllocation)
+            .where(
+                PoolAllocation.pool_id == pool_id,
+                PoolAllocation.user_id == user_id,
+                PoolAllocation.status == "active",
+            )
+        )
+        allocation = alloc_result.scalar_one_or_none()
+        if allocation is None:
+            raise ValueError(
+                f"User {user_id} has no active allocation in pool '{pool.name}'. "
+                "Allocate budget to the user first via the pool management page."
+            )
+
+        available = allocation.amount - allocation.consumed - allocation.recalled
+        if available < amount_micro / 1_000_000:
+            raise ValueError(
+                f"Insufficient pool allocation. Available: ¥{available:.4f}, requested: ¥{amount:.4f}"
+            )
+
+        # Record consumption against allocation
+        allocation.consumed = (allocation.consumed or 0) + amount_micro / 1_000_000
+        pool.total_consumed = (pool.total_consumed or 0) + amount_micro / 1_000_000
+
+        # Create pool transaction log
+        db.add(PoolTransaction(
+            pool_id=pool_id,
+            user_id=user_id,
+            amount=amount_micro / 1_000_000,
+            type="allocation",
+            remark=f"Admin top-up ¥{amount:.2f}" + (f" [{remark}]" if remark else ""),
+            created_at=now,
+        ))
 
     log = Log(
         user_id=user_id,
         created_at=now,
         type=1,  # TOPUP
-        content=f"Admin top-up: +{admin_micro} micro-yuan (by admin #{admin_id})" + (f" [{remark}]" if remark else ""),
-        cost=admin_micro,
+        content=f"Admin top-up: ¥{amount:.2f} (+{amount_micro} micro-yuan by admin #{admin_id})" + (f" [{remark}]" if remark else ""),
+        cost=amount_micro,
     )
     db.add(log)
     await db.flush()

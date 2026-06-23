@@ -36,6 +36,6 @@ class RechargeResponse(BaseModel):
 class TopUpRequest(BaseModel):
     """Schema for admin direct top-up."""
     user_id: int = Field(..., ge=1)
-    quota: int = Field(..., ge=1)
+    amount: float = Field(..., gt=0, description="Amount in yuan (CNY)")
     remark: Optional[str] = None
     pool_id: int = 0

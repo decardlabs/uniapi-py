@@ -77,7 +77,7 @@ export async function rejectRecharge(
 }
 
 export async function adminTopup(
-  data: { user_id: number; quota: number; remark?: string; pool_id?: number }
+  data: { user_id: number; amount: number; remark?: string; pool_id?: number }
 ): Promise<AxiosResponse<ApiResult>> {
   return api.post('/api/topup/', data);
 }

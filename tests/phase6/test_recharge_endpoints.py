@@ -124,13 +124,13 @@ class TestRechargeEndpoints:
 
         resp = await client.post(
             "/api/topup/",
-            json={"user_id": user_id, "quota": 2000000, "remark": "bonus"},
+            json={"user_id": user_id, "amount": 2.0, "remark": "bonus"},
             cookies=admin_cookies,
         )
         assert resp.status_code == 200
         data = resp.json()
         assert data["success"] is True
 
-        # Verify user quota
+        # Verify user balance increased (2 yuan = 2,000,000 micro-yuan)
         self_resp = await client.get("/api/user/self", cookies=user_cookies)
         assert self_resp.json()["data"]["balance"] >= 2000000

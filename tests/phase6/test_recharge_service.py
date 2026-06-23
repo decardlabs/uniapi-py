@@ -178,8 +178,8 @@ async def test_admin_topup():
         admin.created_time = now
         admin.updated_time = now
 
-        result = await recharge_service.admin_topup(db, admin.id, user.id, 1000000, pool_id=0)
-        assert result["balance"] == 2000000  # 500 + 1000000
+        result = await recharge_service.admin_topup(db, admin.id, user.id, 2.0, pool_id=0)
+        assert result["balance"] == 2000000  # 2 yuan = 2,000,000 micro-yuan
 
         # Verify log was created
         log_result = await db.execute(select(Log).where(Log.type == 1).where(Log.user_id == user.id))

@@ -51,13 +51,13 @@ class TestRechargeSchema:
         assert data.remark is None
 
     def test_topup_request_valid(self):
-        data = TopUpRequest(user_id=1, quota=1000000, remark="admin top-up", pool_id=3)
+        data = TopUpRequest(user_id=1, amount=50.0, remark="admin top-up", pool_id=3)
         assert data.user_id == 1
-        assert data.quota == 1000000
+        assert data.amount == 50.0
         assert data.pool_id == 3
 
     def test_topup_request_default_pool_id(self):
-        data = TopUpRequest(user_id=1, quota=1000000)
+        data = TopUpRequest(user_id=1, amount=50.0)
         assert data.pool_id == 0
 
     def test_recharge_response_from_orm(self):

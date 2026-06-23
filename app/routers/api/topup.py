@@ -29,7 +29,7 @@ async def admin_topup(
             db,
             admin_id=admin_id,
             user_id=body.user_id,
-            quota=body.quota,
+            amount=body.amount,
             remark=body.remark,
             pool_id=body.pool_id,
         )
