@@ -205,8 +205,62 @@ export default function BudgetPoolsPage() {
   const [recallRemark, setRecallRemark] = useState('');
 
   // Rollover form
+  const [rolloverPeriodType, setRolloverPeriodType] = useState('monthly');
   const [rolloverPeriodKey, setRolloverPeriodKey] = useState('');
   const [rolloverName, setRolloverName] = useState('');
+
+  // Rollover period key options
+  const rolloverPeriodKeyOptions = useMemo(() => {
+    const now = new Date();
+    const y = now.getFullYear();
+    const m = now.getMonth() + 1;
+    const q = Math.ceil(m / 3);
+    const opts: { label: string; value: string }[] = [];
+
+    switch (rolloverPeriodType) {
+      case 'monthly':
+        for (let i = 0; i < 3; i++) {
+          const ym = m + i;
+          let yy = y;
+          let mm = ym;
+          if (mm > 12) { yy++; mm -= 12; }
+          opts.push({
+            label: `${yy}-${String(mm).padStart(2, '0')}`,
+            value: `${yy}-${String(mm).padStart(2, '0')}`,
+          });
+        }
+        break;
+      case 'quarterly': {
+        const qLabels = ['Q1 (Jan-Mar)', 'Q2 (Apr-Jun)', 'Q3 (Jul-Sep)', 'Q4 (Oct-Dec)'];
+        for (let i = 0; i < 4; i++) {
+          opts.push({
+            label: `${y}-${qLabels[i]}`,
+            value: `${y}-Q${i + 1}`,
+          });
+        }
+        break;
+      }
+      case 'yearly':
+        for (let i = 0; i < 3; i++) {
+          opts.push({
+            label: String(y + i),
+            value: String(y + i),
+          });
+        }
+        break;
+    }
+    return opts;
+  }, [rolloverPeriodType]);
+
+  const generateRolloverName = useCallback((type: string, key: string): string => {
+    if (!key) return '';
+    const periodLabels: Record<string, string> = {
+      monthly: 'Monthly Budget',
+      quarterly: 'Quarterly Budget',
+      yearly: 'Yearly Budget',
+    };
+    return `${key} ${periodLabels[type] || 'Budget'}`;
+  }, []);
 
   // Reconciliation data
   const [reconcileData, setReconcileData] = useState<any>(null);
@@ -484,6 +538,7 @@ export default function BudgetPoolsPage() {
     setRecallRemark('');
   };
   const resetRolloverForm = () => {
+    setRolloverPeriodType('monthly');
     setRolloverPeriodKey('');
     setRolloverName('');
   };
@@ -633,16 +688,25 @@ export default function BudgetPoolsPage() {
               className="gap-1 text-xs"
               onClick={() => {
                 setSelectedPool(pool);
-                // Auto-fill rollover form
-                const parts = pool.period_key.split('-');
-                if (parts.length === 2) {
-                  const y = parseInt(parts[0]);
-                  const m = parseInt(parts[1]);
-                  const nextM = m === 12 ? 1 : m + 1;
-                  const nextY = m === 12 ? y + 1 : y;
-                  setRolloverPeriodKey(`${nextY}-${String(nextM).padStart(2, '0')}`);
-                  setRolloverName(pool.name.replace(parts.join('-'), `${nextY}-${String(nextM).padStart(2, '0')}`));
+                const ptype = pool.period_type || 'monthly';
+                setRolloverPeriodType(ptype);
+                // Auto-fill rollover form: next period
+                const now = new Date();
+                const y = now.getFullYear();
+                const m = now.getMonth() + 1;
+                const q = Math.ceil(m / 3);
+                let nextKey = '';
+                if (ptype === 'monthly') {
+                  const nm = m === 12 ? 1 : m + 1;
+                  const ny = m === 12 ? y + 1 : y;
+                  nextKey = `${ny}-${String(nm).padStart(2, '0')}`;
+                } else if (ptype === 'quarterly') {
+                  nextKey = `${y}-Q${q}`;
+                } else if (ptype === 'yearly') {
+                  nextKey = String(y + 1);
                 }
+                setRolloverPeriodKey(nextKey);
+                setRolloverName('');
                 setRolloverOpen(true);
               }}
               disabled={isClosed}
@@ -978,29 +1042,69 @@ export default function BudgetPoolsPage() {
           </p>
           <div className="space-y-4">
             <div>
-              <label className="text-sm font-medium">{tr('rollover_new_name', 'New Name')}</label>
+              <label className="text-sm font-medium">{tr('rollover_new_name', 'New Name (optional)')}</label>
               <Input
                 value={rolloverName}
                 onChange={(e) => setRolloverName(e.target.value)}
-                placeholder={tr('rollover_new_name_placeholder', 'e.g. May 2026 Budget Pool')}
+                placeholder={generateRolloverName(rolloverPeriodType, rolloverPeriodKey) || tr('rollover_new_name_placeholder', 'e.g. Next Budget Pool')}
                 className="mt-1"
               />
+              {!rolloverName && (
+                <p className="text-xs text-muted-foreground mt-1">
+                  {tr('rollover_name_auto_hint', 'Auto: {{name}}').replace('{{name}}', generateRolloverName(rolloverPeriodType, rolloverPeriodKey))}
+                </p>
+              )}
+            </div>
+            <div>
+              <label className="text-sm font-medium">{tr('period_type', 'Period Type')}</label>
+              <Select value={rolloverPeriodType} onValueChange={(v) => {
+                setRolloverPeriodType(v);
+                // Auto-generate period key for new type
+                const now = new Date();
+                const y = now.getFullYear();
+                const m = now.getMonth() + 1;
+                const q = Math.ceil(m / 3);
+                let key = '';
+                if (v === 'monthly') key = `${y}-${String(m).padStart(2, '0')}`;
+                else if (v === 'quarterly') key = `${y}-Q${q}`;
+                else if (v === 'yearly') key = String(y + 1);
+                setRolloverPeriodKey(key);
+                setRolloverName('');
+              }}>
+                <SelectTrigger className="mt-1">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="monthly">{tr('period_monthly', 'Monthly')}</SelectItem>
+                  <SelectItem value="quarterly">{tr('period_quarterly', 'Quarterly')}</SelectItem>
+                  <SelectItem value="yearly">{tr('period_yearly', 'Yearly')}</SelectItem>
+                </SelectContent>
+              </Select>
             </div>
             <div>
               <label className="text-sm font-medium">{tr('rollover_new_period_key', 'New Period Key')}</label>
-              <Input
-                value={rolloverPeriodKey}
-                onChange={(e) => setRolloverPeriodKey(e.target.value)}
-                placeholder={tr('rollover_new_period_key_placeholder', 'e.g. 2026-05')}
-                className="mt-1"
-              />
+              <Select value={rolloverPeriodKey} onValueChange={(v) => {
+                setRolloverPeriodKey(v);
+                setRolloverName(prev => prev || generateRolloverName(rolloverPeriodType, v));
+              }}>
+                <SelectTrigger className="mt-1">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {rolloverPeriodKeyOptions.map((opt) => (
+                    <SelectItem key={opt.value} value={opt.value}>
+                      {opt.label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             </div>
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => { setRolloverOpen(false); resetRolloverForm(); }}>
               {t('common.cancel', 'Cancel')}
             </Button>
-            <Button onClick={handleRollover} disabled={submitting || !rolloverName || !rolloverPeriodKey}>
+            <Button onClick={handleRollover} disabled={submitting || !rolloverPeriodKey}>
               {t('common.submit', 'Submit')}
             </Button>
           </DialogFooter>
