@@ -454,9 +454,10 @@ export default function BudgetPoolsPage() {
     if (!selectedPool) return;
     setSubmitting(true);
     try {
+      const newName = rolloverName || generateRolloverName(rolloverPeriodType, rolloverPeriodKey);
       const res = await api.post(`/api/pool/${selectedPool.id}/rollover`, {
         new_period_key: rolloverPeriodKey,
-        new_name: rolloverName,
+        new_name: newName,
       });
       if (res.data?.success) {
         notify({ type: 'success', message: tr('rollover_success', 'Budget pool rolled over') });
@@ -1069,7 +1070,8 @@ export default function BudgetPoolsPage() {
                 else if (v === 'quarterly') key = `${y}-Q${q}`;
                 else if (v === 'yearly') key = String(y + 1);
                 setRolloverPeriodKey(key);
-                setRolloverName('');
+                // Only clear name if user hasn't entered a custom one
+                setRolloverName(prev => prev && prev !== generateRolloverName(rolloverPeriodType, rolloverPeriodKey) ? prev : '');
               }}>
                 <SelectTrigger className="mt-1">
                   <SelectValue />
@@ -1085,7 +1087,8 @@ export default function BudgetPoolsPage() {
               <label className="text-sm font-medium">{tr('rollover_new_period_key', 'New Period Key')}</label>
               <Select value={rolloverPeriodKey} onValueChange={(v) => {
                 setRolloverPeriodKey(v);
-                setRolloverName(prev => prev || generateRolloverName(rolloverPeriodType, v));
+                // Only auto-set name if user hasn't entered a custom one
+                setRolloverName(prev => prev && prev !== generateRolloverName(rolloverPeriodType, rolloverPeriodKey) ? prev : generateRolloverName(rolloverPeriodType, v));
               }}>
                 <SelectTrigger className="mt-1">
                   <SelectValue />
