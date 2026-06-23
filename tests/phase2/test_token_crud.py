@@ -42,7 +42,7 @@ async def test_token_create(client: AsyncClient):
     cookies = await _login(client)
     resp = await client.post(
         "/api/token/",
-        json={"name": "test-token", "remain_quota": 50000, "unlimited_quota": False},
+        json={"name": "test-token"},
         cookies=cookies,
     )
     assert resp.status_code == 200
@@ -57,13 +57,12 @@ async def test_token_create_unlimited(client: AsyncClient):
     cookies = await _login(client)
     resp = await client.post(
         "/api/token/",
-        json={"name": "unlimited-token", "unlimited_quota": True},
+        json={"name": "unlimited-token"},
         cookies=cookies,
     )
     assert resp.status_code == 200
     data = resp.json()
-    assert data["data"]["unlimited_quota"] is True
-
+    
 
 @pytest.mark.asyncio
 async def test_token_create_with_models(client: AsyncClient):
@@ -84,14 +83,14 @@ async def test_token_update(client: AsyncClient):
     cookies = await _login(client)
     create_resp = await client.post(
         "/api/token/",
-        json={"name": "update-me", "remain_quota": 1000},
+        json={"name": "update-me"},
         cookies=cookies,
     )
     token_id = create_resp.json()["data"]["id"]
 
     resp = await client.put(
         "/api/token/",
-        json={"id": token_id, "name": "updated-name", "remain_quota": 9999},
+        json={"id": token_id, "name": "updated-name"},
         cookies=cookies,
     )
     assert resp.status_code == 200

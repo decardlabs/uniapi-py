@@ -19,7 +19,6 @@ class Log(Base):
     username: Mapped[Optional[str]] = mapped_column(String(64), index=True, nullable=True)
     token_name: Mapped[Optional[str]] = mapped_column(String(64), index=True, nullable=True)
     model_name: Mapped[Optional[str]] = mapped_column(String(64), index=True, nullable=True)
-    quota: Mapped[int] = mapped_column(Integer, default=0)
     cost: Mapped[int] = mapped_column(BigInteger, default=0)  # micro-yuan (10^-6 yuan)
     prompt_tokens: Mapped[int] = mapped_column(Integer, default=0)
     completion_tokens: Mapped[int] = mapped_column(Integer, default=0)

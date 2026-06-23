@@ -140,7 +140,6 @@ async def approve_recharge(
     user = result.scalar_one_or_none()
     if user is None:
         raise ValueError(f"User {req.user_id} not found")
-    user.quota = (user.quota or 0) + req.amount
     user.balance = (user.balance or 0) + req.amount
 
     # Create log entry
@@ -149,7 +148,7 @@ async def approve_recharge(
         created_at=now,
         type=1,  # TOPUP
         content=f"Recharge approved: +{req.amount} quota (request #{recharge_id})",
-        quota=req.amount,
+        cost=req.amount,
     )
     db.add(log)
     await db.flush()
@@ -197,15 +196,16 @@ async def admin_topup(
         raise ValueError(f"User {user_id} not found")
 
     now = int(time.time() * 1000)
-    user.quota = (user.quota or 0) + quota
-    user.balance = (user.balance or 0) + quota
+    # Convert admin topup quota (old token units) to micro-yuan
+    admin_micro = quota * 2
+    user.balance = (user.balance or 0) + admin_micro
 
     log = Log(
         user_id=user_id,
         created_at=now,
         type=1,  # TOPUP
-        content=f"Admin top-up: +{quota} quota (by admin #{admin_id})" + (f" [{remark}]" if remark else ""),
-        quota=quota,
+        content=f"Admin top-up: +{admin_micro} micro-yuan (by admin #{admin_id})" + (f" [{remark}]" if remark else ""),
+        cost=admin_micro,
     )
     db.add(log)
     await db.flush()
@@ -214,5 +214,5 @@ async def admin_topup(
     return {
         "id": user.id,
         "username": user.username,
-        "quota": user.quota,
+        "balance": user.balance,
     }

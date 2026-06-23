@@ -74,9 +74,6 @@ class TokenResponse(BaseModel):
     name: str
     key: str
     status: int
-    remain_quota: int
-    unlimited_quota: bool
-    used_quota: int
     created_time: int
     accessed_time: int
     expired_time: int

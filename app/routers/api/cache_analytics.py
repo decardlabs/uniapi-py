@@ -174,7 +174,7 @@ async def _query_summary(
             func.sum(Log.cached_prompt_tokens).label("cached_prompt_tokens"),
             func.sum(Log.completion_tokens).label("completion_tokens"),
             func.sum(Log.cached_completion_tokens).label("cached_completion_tokens"),
-            func.sum(Log.quota).label("quota"),
+            func.coalesce(func.sum(Log.cost), 0).label("quota"),
         )
         .where(*conditions)
     )
@@ -292,7 +292,7 @@ async def cache_analytics(
             func.sum(Log.cached_prompt_tokens).label("cached_prompt_tokens"),
             func.sum(Log.completion_tokens).label("completion_tokens"),
             func.sum(Log.cached_completion_tokens).label("cached_completion_tokens"),
-            func.sum(Log.quota).label("quota"),
+            func.coalesce(func.sum(Log.cost), 0).label("quota"),
         )
         .where(*conditions)
         .group_by(text("day"))
@@ -308,7 +308,7 @@ async def cache_analytics(
             Log.model_name.label("model_name"),
             func.sum(Log.prompt_tokens).label("prompt_tokens"),
             func.sum(Log.completion_tokens).label("completion_tokens"),
-            func.sum(Log.quota).label("quota"),
+            func.coalesce(func.sum(Log.cost), 0).label("quota"),
         )
         .where(*conditions)
         .group_by(text("day"), Log.model_name)
@@ -329,7 +329,7 @@ async def cache_analytics(
             func.sum(Log.cached_prompt_tokens).label("cached_prompt_tokens"),
             func.sum(Log.completion_tokens).label("completion_tokens"),
             func.sum(Log.cached_completion_tokens).label("cached_completion_tokens"),
-            func.sum(Log.quota).label("quota"),
+            func.coalesce(func.sum(Log.cost), 0).label("quota"),
         )
         .outerjoin(Channel, Log.channel_id == Channel.id)
         .where(*conditions)

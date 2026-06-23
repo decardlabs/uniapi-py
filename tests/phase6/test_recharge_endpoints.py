@@ -91,7 +91,7 @@ class TestRechargeEndpoints:
 
         # Verify user quota increased
         self_resp = await client.get("/api/user/self", cookies=user_cookies)
-        assert self_resp.json()["data"]["quota"] >= 1000000
+        assert self_resp.json()["data"]["balance"] >= 1000000
 
     @pytest.mark.asyncio
     async def test_admin_reject_recharge(self, client: AsyncClient):
@@ -133,4 +133,4 @@ class TestRechargeEndpoints:
 
         # Verify user quota
         self_resp = await client.get("/api/user/self", cookies=user_cookies)
-        assert self_resp.json()["data"]["quota"] >= 2000000
+        assert self_resp.json()["data"]["balance"] >= 2000000

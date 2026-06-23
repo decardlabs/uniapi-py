@@ -22,7 +22,7 @@ def _log_to_dict(log: Log) -> dict:
         "username": log.username,
         "token_name": log.token_name,
         "model_name": log.model_name,
-        "quota": log.quota,
+        "quota": log.cost,
         "prompt_tokens": log.prompt_tokens,
         "completion_tokens": log.completion_tokens,
         "cached_prompt_tokens": log.cached_prompt_tokens,
@@ -56,7 +56,7 @@ async def self_log_stats(
     db: AsyncSession = Depends(get_db),
     user=Depends(user_auth),
 ):
-    base = select(func.sum(Log.quota), func.count()).where(Log.user_id == user.id)
+    base = select(func.coalesce(func.sum(Log.cost), 0), func.count()).where(Log.user_id == user.id)
     result = await db.execute(base)
     row = result.one()
     return GenericApiResponse(data={
@@ -104,7 +104,7 @@ async def all_log_stats(
     db: AsyncSession = Depends(get_db),
     _=Depends(admin_auth),
 ):
-    base = select(func.sum(Log.quota), func.count())
+    base = select(func.coalesce(func.sum(Log.cost), 0), func.count())
     result = await db.execute(base)
     row = result.one()
     return GenericApiResponse(data={

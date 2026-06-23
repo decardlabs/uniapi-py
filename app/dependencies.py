@@ -106,8 +106,7 @@ async def token_auth(
     if token.expired_time > 0 and token.expired_time < __import__("time").time():
         raise UnauthorizedException(message="Token has expired")
 
-    if not token.unlimited_quota and token.remain_quota <= 0:
-        raise QuotaExceededException(message="Token quota exhausted")
+
 
     result = await db.execute(select(User).where(User.id == token.user_id))
     user = result.scalar_one_or_none()

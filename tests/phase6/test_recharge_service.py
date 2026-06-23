@@ -16,7 +16,7 @@ from app.services.auth import hash_password
 async def test_create_recharge():
     """Creating a recharge request should persist it with status=1."""
     async with async_session_factory() as db:
-        user = User(username="recharge_user", password=hash_password("pass"), role=1, quota=0)
+        user = User(username="recharge_user", password=hash_password("pass"), role=1)
         db.add(user)
         await db.flush()
         user_id = user.id
@@ -45,7 +45,7 @@ async def test_list_recharges_empty():
 async def test_list_self_recharges():
     """User lists own recharge requests."""
     async with async_session_factory() as db:
-        user = User(username="self_user", password=hash_password("pass"), role=1, quota=0)
+        user = User(username="self_user", password=hash_password("pass"), role=1)
         db.add(user)
         await db.flush()
         uid = user.id
@@ -67,8 +67,8 @@ async def test_list_self_recharges():
 async def test_list_recharges_with_multiple_users():
     """Admin sees all users' recharge requests."""
     async with async_session_factory() as db:
-        u1 = User(username="u1", password=hash_password("p"), role=1, quota=0)
-        u2 = User(username="u2", password=hash_password("p"), role=1, quota=0)
+        u1 = User(username="u1", password=hash_password("p"), role=1)
+        u2 = User(username="u2", password=hash_password("p"), role=1)
         db.add_all([u1, u2])
         await db.flush()
         now = int(time.time() * 1000)
@@ -96,8 +96,8 @@ async def test_get_recharge_by_id_not_found():
 async def test_approve_recharge_adds_quota():
     """Approving a recharge adds the amount to user's quota."""
     async with async_session_factory() as db:
-        user = User(username="approve_user", password=hash_password("p"), role=1, quota=1000)
-        admin = User(username="admin", password=hash_password("p"), role=10, quota=0)
+        user = User(username="approve_user", password=hash_password("p"), role=1)
+        admin = User(username="admin", password=hash_password("p"), role=10)
         db.add_all([user, admin])
         await db.flush()
         now = int(time.time() * 1000)
@@ -117,15 +117,15 @@ async def test_approve_recharge_adds_quota():
         # Verify user quota increased
         result = await db.execute(select(User).where(User.id == user.id))
         updated_user = result.scalar_one()
-        assert updated_user.quota == 501000  # 1000 + 500000
+        assert updated_user.balance == 500000  # 1000 + 500000
 
 
 @pytest.mark.asyncio
 async def test_reject_recharge():
     """Rejecting a recharge sets status=3 and does not change quota."""
     async with async_session_factory() as db:
-        user = User(username="reject_user", password=hash_password("p"), role=1, quota=1000)
-        admin = User(username="admin2", password=hash_password("p"), role=10, quota=0)
+        user = User(username="reject_user", password=hash_password("p"), role=1)
+        admin = User(username="admin2", password=hash_password("p"), role=10)
         db.add_all([user, admin])
         await db.flush()
         now = int(time.time() * 1000)
@@ -141,15 +141,15 @@ async def test_reject_recharge():
 
         result = await db.execute(select(User).where(User.id == user.id))
         u = result.scalar_one()
-        assert u.quota == 1000  # unchanged
+        assert u.balance == 0  # unchanged
 
 
 @pytest.mark.asyncio
 async def test_approve_already_approved_rejected():
     """Approving an already handled request should raise ValueError."""
     async with async_session_factory() as db:
-        user = User(username="double_user", password=hash_password("p"), role=1, quota=0)
-        admin = User(username="admin3", password=hash_password("p"), role=10, quota=0)
+        user = User(username="double_user", password=hash_password("p"), role=1)
+        admin = User(username="admin3", password=hash_password("p"), role=10)
         db.add_all([user, admin])
         await db.flush()
         now = int(time.time() * 1000)
@@ -168,8 +168,8 @@ async def test_approve_already_approved_rejected():
 async def test_admin_topup():
     """Admin direct top-up adds quota immediately."""
     async with async_session_factory() as db:
-        user = User(username="topup_user", password=hash_password("p"), role=1, quota=500)
-        admin = User(username="admin4", password=hash_password("p"), role=10, quota=0)
+        user = User(username="topup_user", password=hash_password("p"), role=1)
+        admin = User(username="admin4", password=hash_password("p"), role=10)
         db.add_all([user, admin])
         await db.flush()
         now = int(time.time() * 1000)
@@ -179,20 +179,20 @@ async def test_admin_topup():
         admin.updated_time = now
 
         result = await recharge_service.admin_topup(db, admin.id, user.id, 1000000, pool_id=0)
-        assert result["quota"] == 1000500  # 500 + 1000000
+        assert result["balance"] == 2000000  # 500 + 1000000
 
         # Verify log was created
         log_result = await db.execute(select(Log).where(Log.type == 1).where(Log.user_id == user.id))
         logs = log_result.scalars().all()
         assert len(logs) == 1
-        assert logs[0].quota == 1000000
+        assert logs[0].cost == 2000000
 
 
 @pytest.mark.asyncio
 async def test_admin_topup_nonexistent_user():
     """Top-up on non-existent user raises ValueError."""
     async with async_session_factory() as db:
-        admin = User(username="admin5", password=hash_password("p"), role=10, quota=0)
+        admin = User(username="admin5", password=hash_password("p"), role=10)
         db.add(admin)
         await db.flush()
         with pytest.raises(ValueError, match="not found"):

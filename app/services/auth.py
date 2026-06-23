@@ -82,8 +82,6 @@ async def create_default_token(db: AsyncSession, user_id: int) -> Token:
         user_id=user_id,
         key=generate_token_key(),
         name="default",
-        remain_quota=0,
-        unlimited_quota=True,
         created_time=now,
         accessed_time=now,
         created_at=int(time.time() * 1000),

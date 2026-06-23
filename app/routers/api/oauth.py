@@ -155,7 +155,7 @@ async def github_oauth_callback(
                     display_name=user.display_name or user.username,
                     role=user.role,
                     status=user.status,
-                    quota=user.quota,
+                    quota=0,
                     group=user.group,
                     access_token=user.access_token,
                 ).model_dump()
@@ -213,7 +213,7 @@ async def github_oauth_callback(
                 display_name=user.display_name or user.username,
                 role=user.role,
                 status=user.status,
-                quota=user.quota,
+                quota=0,
                 group=user.group,
                 access_token=user.access_token,
             ).model_dump()

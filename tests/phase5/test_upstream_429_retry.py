@@ -226,7 +226,6 @@ class TestUpstream429Retry:
         async with async_session_factory() as db:
             token_after = await db.execute(select(Token).where(Token.id == self.token_id))
             token_after = token_after.scalar_one()
-            assert token_after.remain_quota >= 0
 
     def test_backoff_jitter_range(self):
         """Jitter formula produces delays in [0.5*base*2^t, 1.0*base*2^t] range."""

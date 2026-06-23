@@ -23,9 +23,9 @@ def _token_to_response(t) -> dict:
         name=t.name,
         key=key_display,
         status=t.status,
-        remain_quota=t.remain_quota,
-        unlimited_quota=t.unlimited_quota,
-        used_quota=t.used_quota,
+        remain_quota=0,
+        unlimited_quota=False,
+        used_quota=0,
         created_time=t.created_time // 1000 if t.created_time else 0,
         accessed_time=t.accessed_time // 1000 if t.accessed_time else 0,
         expired_time=t.expired_time // 1000 if t.expired_time else 0,
@@ -39,22 +39,6 @@ def _token_to_response(t) -> dict:
 # Specific routes before parameterized ones
 
 
-@router.post("/api/token/consume")
-async def consume_token(
-    body: dict,
-    request: Request,
-    db: AsyncSession = Depends(get_db),
-    _=Depends(token_auth),
-):
-    """External token consumption (for aggregating external billing)."""
-    token = request.state.token
-    add_quota = body.get("add_used_quota", 0)
-    if add_quota > 0:
-        token.used_quota += add_quota
-        if not token.unlimited_quota:
-            token.remain_quota = max(0, token.remain_quota - add_quota)
-        await db.commit()
-    return GenericApiResponse(message="Consumed")
 
 
 @router.get("/api/token/balance")
@@ -63,12 +47,7 @@ async def token_balance(
     db: AsyncSession = Depends(get_db),
     _=Depends(token_auth),
 ):
-    token = request.state.token
-    return GenericApiResponse(data={
-        "remain_quota": token.remain_quota,
-        "used_quota": token.used_quota,
-        "unlimited_quota": token.unlimited_quota,
-    })
+    return GenericApiResponse(data={"remain_quota": 0})
 
 
 @router.get("/api/token/transactions")
@@ -145,8 +124,6 @@ async def create_token(
         db,
         user_id=user.id,
         name=body.get("name", "default"),
-        remain_quota=body.get("remain_quota", 0),
-        unlimited_quota=body.get("unlimited_quota", False),
         expired_time=body.get("expired_time", -1),
         models=body.get("models"),
         subnet=body.get("subnet"),
@@ -169,8 +146,6 @@ async def update_token(
         user_id=user.id,
         token_id=token_id,
         name=body.get("name"),
-        remain_quota=body.get("remain_quota"),
-        unlimited_quota=body.get("unlimited_quota"),
         expired_time=body.get("expired_time"),
         models=body.get("models"),
         subnet=body.get("subnet"),

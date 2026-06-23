@@ -84,7 +84,8 @@
     },
     "key": {
       "label": "API 密钥",
-      "help": "用于与服务商认证的 API 密钥。"
+      "help": "用于与服务商认证的 API 密钥。支持多行输入，每行一个密钥，系统将自动创建多条渠道并自动分配流量。",
+      "placeholder": "输入 API 密钥，每行一个 key 可批量创建"
     },
     "openai_compatible": {
       "heading": "OpenAI Compatible 配置",

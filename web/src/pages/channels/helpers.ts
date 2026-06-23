@@ -301,6 +301,6 @@ export const getKeyPrompt = (type: number) => {
     case 53:
       return 'Please enter a GitHub access token (PAT or OAuth token) with an active Copilot subscription';
     default:
-      return 'Please enter your API key';
+      return 'Please enter your API key. One per line for multiple keys.';
   }
 };

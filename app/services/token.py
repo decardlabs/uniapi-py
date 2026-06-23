@@ -55,8 +55,6 @@ async def create_token(
     db: AsyncSession,
     user_id: int,
     name: str,
-    remain_quota: int = 0,
-    unlimited_quota: bool = False,
     expired_time: int = -1,
     models: Optional[str | list[str]] = None,
     subnet: Optional[str] = None,
@@ -69,9 +67,6 @@ async def create_token(
         key=generate_token_key(),
         name=name,
         status=1,
-        remain_quota=remain_quota,
-        unlimited_quota=unlimited_quota,
-        used_quota=0,
         created_time=now * 1000,
         accessed_time=now * 1000,
         expired_time=expired_time,
@@ -91,8 +86,6 @@ async def update_token(
     user_id: int,
     token_id: int,
     name: Optional[str] = None,
-    remain_quota: Optional[int] = None,
-    unlimited_quota: Optional[bool] = None,
     expired_time: Optional[int] = None,
     models: Optional[str | list[str]] = None,
     subnet: Optional[str] = None,
@@ -105,10 +98,6 @@ async def update_token(
     now = int(time.time() * 1000)
     if name is not None:
         token.name = name
-    if remain_quota is not None:
-        token.remain_quota = remain_quota
-    if unlimited_quota is not None:
-        token.unlimited_quota = unlimited_quota
     if expired_time is not None:
         token.expired_time = expired_time
     if models is not None:

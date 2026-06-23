@@ -53,31 +53,12 @@ async def test_options_requires_root(client: AsyncClient):
 
 
 @pytest.mark.asyncio
-async def test_token_consume_endpoint(client: AsyncClient):
-    """POST /api/token/consume should work with TokenAuth."""
-    cookies = await _login(client)
-    token_resp = await client.post(
-        "/api/token/",
-        json={"name": "consume-test", "unlimited_quota": True},
-        cookies=cookies,
-    )
-    token_key = token_resp.json()["data"]["key"]
-
-    resp = await client.post(
-        "/api/token/consume",
-        json={"add_used_quota": 100, "add_reason": "test"},
-        headers={"Authorization": f"Bearer {token_key}"},
-    )
-    assert resp.status_code in (200, 404)
-
-
-@pytest.mark.asyncio
 async def test_token_balance_endpoint(client: AsyncClient):
     """GET /api/token/balance should work with TokenAuth."""
     cookies = await _login(client)
     token_resp = await client.post(
         "/api/token/",
-        json={"name": "balance-test", "unlimited_quota": True},
+        json={"name": "balance-test"},
         cookies=cookies,
     )
     token_key = token_resp.json()["data"]["key"]

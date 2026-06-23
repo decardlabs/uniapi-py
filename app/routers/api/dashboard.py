@@ -67,7 +67,7 @@ async def dashboard(
             func.date(Log.created_at / 1000, "unixepoch").label("Day"),
             Log.model_name.label("ModelName"),
             func.count().label("RequestCount"),
-            func.sum(Log.quota).label("Quota"),
+            func.coalesce(func.sum(Log.cost), 0).label("Quota"),
             func.sum(Log.prompt_tokens).label("PromptTokens"),
             func.sum(Log.completion_tokens).label("CompletionTokens"),
         )
@@ -87,7 +87,7 @@ async def dashboard(
                 Log.username.label("Username"),
                 Log.user_id.label("UserId"),
                 func.count().label("RequestCount"),
-                func.sum(Log.quota).label("Quota"),
+                func.coalesce(func.sum(Log.cost), 0).label("Quota"),
                 func.sum(Log.prompt_tokens).label("PromptTokens"),
                 func.sum(Log.completion_tokens).label("CompletionTokens"),
             )
@@ -108,7 +108,7 @@ async def dashboard(
                 Log.token_name.label("TokenName"),
                 Log.user_id.label("UserId"),
                 func.count().label("RequestCount"),
-                func.sum(Log.quota).label("Quota"),
+                func.coalesce(func.sum(Log.cost), 0).label("Quota"),
                 func.sum(Log.prompt_tokens).label("PromptTokens"),
                 func.sum(Log.completion_tokens).label("CompletionTokens"),
             )
@@ -123,8 +123,8 @@ async def dashboard(
         "logs": logs,
         "user_logs": user_logs,
         "token_logs": token_logs,
-        "quota": user.quota,
-        "used_quota": user.used_quota,
+        "quota": 0,
+        "used_quota": 0,
     })
 
 

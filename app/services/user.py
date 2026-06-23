@@ -69,8 +69,7 @@ async def register_user(
         role=1,
         status=1,
         email=email,
-        quota=1000000,
-        used_quota=0,
+        balance=2000000,
         group="default",
         access_token=_uuid4(),
         aff_code=user_aff_code,
@@ -174,8 +173,7 @@ async def admin_create_user(
         role=1,
         status=1,
         email=email,
-        quota=quota or 1000000,
-        used_quota=0,
+        balance=(quota or 1000000) * 2,
         group=group or "default",
         access_token=_uuid4(),
         created_at=now,
@@ -213,7 +211,7 @@ async def admin_update_user(
     if email is not None:
         user.email = email
     if quota is not None:
-        user.quota = quota
+        user.balance = quota * 2  # old token units → micro-yuan (approximate)
     if group is not None:
         user.group = group
     if status is not None:

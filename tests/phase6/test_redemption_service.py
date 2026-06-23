@@ -13,7 +13,7 @@ from app.services.auth import hash_password
 async def test_create_single_code():
     """Creating a single redemption code generates a unique code string."""
     async with async_session_factory() as db:
-        admin = User(username="red_admin", password=hash_password("p"), role=10, quota=0)
+        admin = User(username="red_admin", password=hash_password("p"), role=10)
         db.add(admin)
         await db.flush()
 
@@ -30,7 +30,7 @@ async def test_create_single_code():
 async def test_create_multiple_codes():
     """Creating multiple codes generates unique code strings."""
     async with async_session_factory() as db:
-        admin = User(username="red_admin2", password=hash_password("p"), role=10, quota=0)
+        admin = User(username="red_admin2", password=hash_password("p"), role=10)
         db.add(admin)
         await db.flush()
 
@@ -44,7 +44,7 @@ async def test_create_multiple_codes():
 async def test_list_codes():
     """Listing codes returns all with correct total."""
     async with async_session_factory() as db:
-        admin = User(username="red_admin3", password=hash_password("p"), role=10, quota=0)
+        admin = User(username="red_admin3", password=hash_password("p"), role=10)
         db.add(admin)
         await db.flush()
         await redemption_service.create_redemption_codes(db, admin.id, "batch1", 100000, 3)
@@ -59,7 +59,7 @@ async def test_list_codes():
 async def test_search_codes():
     """Searching codes by name keyword returns matching codes."""
     async with async_session_factory() as db:
-        admin = User(username="red_admin4", password=hash_password("p"), role=10, quota=0)
+        admin = User(username="red_admin4", password=hash_password("p"), role=10)
         db.add(admin)
         await db.flush()
         await redemption_service.create_redemption_codes(db, admin.id, "promo2024", 100000, 2)
@@ -74,7 +74,7 @@ async def test_search_codes():
 async def test_delete_code():
     """Deleting a code removes it from the database."""
     async with async_session_factory() as db:
-        admin = User(username="red_admin5", password=hash_password("p"), role=10, quota=0)
+        admin = User(username="red_admin5", password=hash_password("p"), role=10)
         db.add(admin)
         await db.flush()
         codes = await redemption_service.create_redemption_codes(db, admin.id, "delete_me", 100000, 1)
@@ -89,7 +89,7 @@ async def test_delete_code():
 async def test_get_code_found():
     """get_code returns the redemption code by id."""
     async with async_session_factory() as db:
-        admin = User(username="get_admin", password=hash_password("p"), role=10, quota=0)
+        admin = User(username="get_admin", password=hash_password("p"), role=10)
         db.add(admin)
         await db.flush()
 
@@ -115,7 +115,7 @@ async def test_get_code_not_found():
 async def test_update_code():
     """update_code can change name and quota."""
     async with async_session_factory() as db:
-        admin = User(username="upd_admin", password=hash_password("p"), role=10, quota=0)
+        admin = User(username="upd_admin", password=hash_password("p"), role=10)
         db.add(admin)
         await db.flush()
 
@@ -131,7 +131,7 @@ async def test_update_code():
 async def test_update_code_status_only():
     """update_code with status_only=True changes only the status."""
     async with async_session_factory() as db:
-        admin = User(username="stat_admin", password=hash_password("p"), role=10, quota=0)
+        admin = User(username="stat_admin", password=hash_password("p"), role=10)
         db.add(admin)
         await db.flush()
 

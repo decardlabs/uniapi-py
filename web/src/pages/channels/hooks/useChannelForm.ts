@@ -563,12 +563,20 @@ export const useChannelForm = () => {
         response = await api.post('/api/channel/', payload);
       }
 
-      const { success, message } = response.data;
-      if (success) {
+      const { success, message, data: responseData } = response.data;
+      if (success && !isEdit) {
+        // Extract batch count from backend response (multi-key creation)
+        const batchCount = (responseData as any)?._batch_count || 1;
         navigate('/channels', {
           state: {
-            message: isEdit ? 'Channel updated successfully' : 'Channel created successfully',
+            message: batchCount > 1
+              ? `Channel created successfully (${batchCount} keys)`
+              : 'Channel created successfully',
           },
+        });
+      } else if (success) {
+        navigate('/channels', {
+          state: { message: 'Channel updated successfully' },
         });
       } else {
         form.setError('root', { message: message || 'Operation failed' });

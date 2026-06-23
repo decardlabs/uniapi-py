@@ -25,8 +25,6 @@ class User(Base):
     oidc_id: Mapped[Optional[str]] = mapped_column("oidc_id", String(64), index=True, nullable=True)
     access_token: Mapped[Optional[str]] = mapped_column(String(64), unique=True, nullable=True)
     totp_secret: Mapped[Optional[str]] = mapped_column(String(64), nullable=True)
-    quota: Mapped[int] = mapped_column(BigInteger, default=0)
-    used_quota: Mapped[int] = mapped_column("used_quota", BigInteger, default=0)
     balance: Mapped[int] = mapped_column(BigInteger, default=0)  # micro-yuan (10^-6 yuan), ¥1 = 1_000_000
     request_count: Mapped[int] = mapped_column(Integer, default=0)
     group: Mapped[str] = mapped_column(String(32), default="default")

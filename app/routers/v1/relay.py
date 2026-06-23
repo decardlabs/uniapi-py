@@ -186,6 +186,12 @@ async def _select_channel(
     if not matching:
         matching = channels  # fall back to any channel of this type
 
+    # ── 429 cooldown filter: skip channels in cooldown ──
+    # If ALL matching channels are in cooldown, allow all (avoid total outage).
+    available = [ch for ch in matching if not _is_channel_in_cooldown(ch.id)]
+    if available:
+        matching = available
+
     # Weighted random selection (default weight=1 ensures basic distribution)
     weights = [max(ch.weight, 1) for ch in matching]
     return random.choices(matching, weights=weights, k=1)[0]
@@ -194,8 +200,58 @@ async def _select_channel(
 # ── Channel failover & auto-disable ──
 
 # Track consecutive failures per channel (in-memory, resets on restart)
+# Only counts 5xx / connection errors — 429 is handled by the cooldown mechanism.
 _channel_failures: dict[int, int] = {}
 _CHANNEL_DISABLE_THRESHOLD = 3  # consecutive 5xx before disabling
+
+# ── 429 cooldown: slow down, don't disable ──
+
+# Map channel_id → cooldown expiry timestamp (time.monotonic())
+# A channel in cooldown is skipped by _select_channel() for a short period.
+_channel_cooldowns: dict[int, float] = {}
+
+# Map channel_id → consecutive 429 count (for progressive cooldown backoff)
+_channel_429_counts: dict[int, int] = {}
+
+# Base cooldown duration in seconds. Grows exponentially with repeated 429s.
+_COOLDOWN_BASE_SECONDS = 10.0
+_COOLDOWN_MAX_SECONDS = 120.0  # cap at 2 minutes
+
+
+def _cooldown_channel(channel_id: int) -> float:
+    """Place a channel into 429 cooldown. Returns the cooldown duration.
+
+    Cooldown grows exponentially: base → 2× → 4× → … capped at _COOLDOWN_MAX_SECONDS.
+    When the channel successfully serves a request, its 429 count resets.
+    """
+    count = _channel_429_counts.get(channel_id, 0) + 1
+    _channel_429_counts[channel_id] = count
+    duration = min(_COOLDOWN_BASE_SECONDS * (2 ** (count - 1)), _COOLDOWN_MAX_SECONDS)
+    expiry = time.monotonic() + duration
+    _channel_cooldowns[channel_id] = expiry
+    logger.warning(
+        "429 COOLDOWN | channel=%d duration=%.1fs 429_strike=%d",
+        channel_id, duration, count,
+    )
+    return duration
+
+
+def _is_channel_in_cooldown(channel_id: int) -> bool:
+    """Check if a channel is currently in 429 cooldown. Auto-cleans expired entries."""
+    expiry = _channel_cooldowns.get(channel_id)
+    if expiry is None:
+        return False
+    if time.monotonic() > expiry:
+        # Cooldown expired — clean up
+        _channel_cooldowns.pop(channel_id, None)
+        return False
+    return True
+
+
+def _reset_channel_429_count(channel_id: int):
+    """Reset 429 strike counter after a successful request."""
+    _channel_429_counts.pop(channel_id, None)
+    _channel_cooldowns.pop(channel_id, None)
 
 
 async def _find_fallback_channel(
@@ -203,14 +259,23 @@ async def _find_fallback_channel(
     channel_type: int,
     exclude_model: str,
 ) -> Channel | None:
-    """Find next available channel with same type, using different model."""
+    """Find next available channel with same type, using different model.
+    
+    Skips channels currently in 429 cooldown. Falls back to including cooldown
+    channels if no other options exist.
+    """
     result = await db.execute(
         select(Channel)
         .where(Channel.status == 1, Channel.type == channel_type)
         .order_by(Channel.priority.desc())
     )
     channels = result.scalars().all()
-    for ch in channels:
+    # Separate into available and cooldown
+    available = [ch for ch in channels if not _is_channel_in_cooldown(ch.id)]
+    if not available:
+        available = channels  # all in cooldown → allow any
+    
+    for ch in available:
         if ch.models:
             models = [m.strip() for m in ch.models.split(",")]
             for m in models:
@@ -248,8 +313,9 @@ async def _record_channel_failure(channel_id: int, db: AsyncSession) -> bool:
 
 
 def _reset_channel_failures(channel_id: int):
-    """Reset failure count after a successful call."""
+    """Reset failure count AND 429 cooldown after a successful call."""
     _channel_failures.pop(channel_id, None)
+    _reset_channel_429_count(channel_id)
 
 
 async def _handle_relay(request: Request, db: AsyncSession):
@@ -677,7 +743,7 @@ async def _handle_relay(request: Request, db: AsyncSession):
                                         "FALLBACK | 429 -> model=%s | channel_type=%d",
                                         model_name, channel_type,
                                     )
-                                    await _record_channel_failure(failed_channel_id, db)
+                                    _cooldown_channel(failed_channel_id)
                                     continue  # retry with fallback
                     else:
                         logger.info("FALLBACK skip | model=%s not allowed by token", fallback_model)
@@ -709,8 +775,11 @@ async def _handle_relay(request: Request, db: AsyncSession):
                     else:
                         logger.info("FALLBACK skip | model=%s not allowed by token", fallback_model)
 
-            # ── All retries and fallbacks exhausted → record failure, refund, raise ──
-            if is_recoverable or status == 429:
+            # ── All retries and fallbacks exhausted → record failure/cooldown, refund, raise ──
+            if status == 429:
+                # 429 is NOT a server failure — use cooldown instead of disabling
+                _cooldown_channel(_channel_id)
+            elif is_recoverable:
                 await _record_channel_failure(_channel_id, db)
 
             # Refund micro-yuan balance

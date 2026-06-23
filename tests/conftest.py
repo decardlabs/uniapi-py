@@ -79,7 +79,6 @@ async def client():
                 display_name="Root",
                 role=100,
                 status=1,
-                quota=1000000000,
                 group="default",
                 access_token="root-access-token-test",
                 created_at=now,
