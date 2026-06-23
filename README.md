@@ -8,16 +8,16 @@
 
 ## Status
 
-🚧 **All phases complete** — 502 tests, all GREEN
+🚧 **All phases complete** — 539 tests, all GREEN (11 skipped)
 
 | Phase | 内容 | 状态 | 测试数 |
 |-------|------|------|--------|
 | 1 | MVP: Auth, Status, DeepSeek Chat Completions, SSE | ✅ | 28 |
 | 2 | Management API: User/Token/Log/Options CRUD, Billing | ✅ | 128 |
 | 3 | Multi-format: NATIVE_FORMATS smart routing | ✅ | 7 |
-| 4 | Extensibility: BaseAdaptor ABC, Registry, Provider pattern | ✅ | 46 |
-| 5 | **Production**: 429重试与退路 | ✅ | 246 |
-| 6 | **Fusion + Auto**: Multi-model ensemble, price-based auto routing, load balancing | ✅ | — |
+| 4 | Extensibility: BaseAdaptor ABC, Registry, Provider pattern | ✅ | 14 |
+| 5 | Production: 429重试与退路 | ✅ | 132 |
+| 6 | Recharge & Redemption codes | ✅ | 48 |
 
 ### 已接入供应商（5 家）
 
@@ -123,11 +123,15 @@ uniapi-py/
 │   ├── models/              # SQLAlchemy ORM
 │   │   ├── user.py, token.py, channel.py, ability.py
 │   │   ├── log.py, option.py, budget.py
+│   │   ├── recharge.py, redemption.py, passkey.py
 │   │   └── base.py
 │   ├── schemas/             # Pydantic v2 validation
 │   │   ├── common.py, user.py, relay.py, error.py
+│   │   └── recharge.py, redemption.py
 │   ├── services/            # 业务逻辑
 │   │   ├── auth.py, user.py, token.py
+│   │   ├── recharge.py, redemption.py
+│   │   ├── email.py, totp.py, webauthn.py
 │   ├── budget/              # 预算系统
 │   │   ├── arbiter.py, pricing.py, redis.py
 │   ├── routers/
@@ -161,10 +165,12 @@ uniapi-py/
     ├── test_relay_comparison.py     # Relay 对比测试 (3 tests)
     ├── phase2/                      # Phase 2: 管理 API (128 tests)
     ├── phase3/                      # Phase 3: 多格式 (7 tests)
-    ├── phase4/                      # Phase 4: 可扩展性 (46 tests)
-    ├── phase5/                      # Phase 5: 429重试与退路 (246 tests)
+    ├── phase4/                      # Phase 4: 可扩展性 (14 tests)
+    ├── phase5/                      # Phase 5: 429重试与退路 (132 tests)
+    ├── phase6/                      # Phase 6: 充值 & 兑换码 (48 tests)
     ├── glm/                         # GLM adaptor (13 tests)
     ├── test_cache_analytics.py     # Cache analytics (8 tests)
+    ├── manual/                      # 手动测试工具
     └── live/                        # 实时测试框架
         ├── live_test.py             # 入口
         ├── config.py                # 环境变量配置
@@ -398,7 +404,7 @@ uniapi-py/
 
 ## 测试
 
-### 单元测试 (491 tests, 11 skipped)
+### 单元测试 (539 tests, 11 skipped)
 
 ```bash
 pytest tests/ -v
@@ -461,14 +467,16 @@ registry.register(MY_CHANNEL_TYPE, MyProviderAdaptor)
 
 ## 版本历史
 
-### v0.10.x — Token 记录精准化
+### v0.10.x — Bugfix & 功能迭代
 
 | 版本 | 日期 | 变更 |
 |------|------|------|
-| **v0.10.17** | 2026-06-22 | 修复流式日志 token 用量未写入（callback 中 `cache_hit` 引用前赋值错误、空 usage 对象误捕获、Raw passthrough 扫描器只认 `event:` 前缀）；文档全面同步修复 |
-| **v0.10.16** | 2026-06-22 | 429 exponential backoff retry（同渠道）；httpx `async with resp` 修复（`stream=True` 模式不能用 async with，需用 try/finally） |
-| **v0.10.15** | 2026-06-22 | 上游 429 错误自动重试（同一渠道，指数退避） |
-| **v0.10.14** | 2026-06-22 | 新增 `upstream_retry_max` / `upstream_retry_backoff_base` 配置项 |
+| **v0.10.19** | 2026-06-23 | 修复 relay.py `except Exception` 缺少 `as exc` 导致上游超时后 UnboundLocalError 连环崩溃；修复前端 TS 类型错误（lazy import、recharge 类型对齐） |
+| **v0.10.18** | 2026-06-23 | 新增充值 & 兑换码完整子系统（RechargeRequest/RedemptionCode model + schema + service + CRUD endpoint + 48 tests） |
+| **v0.10.17** | 2026-06-22 | 修复 GLM Coding Plan 特殊错误处理；MiniMax `prompt_tokens=0` 时 `cached_tokens` 解析错误；流式请求配额计算 bug 修复 |
+| **v0.10.16** | 2026-06-22 | 429 exponential backoff retry（同渠道）；新增 `upstream_retry_max` / `upstream_retry_backoff_base` 配置项 |
+| **v0.10.15** | 2026-06-22 | 修复流式中继请求中急切检查上游 HTTP 状态（streaming relay fix） |
+| **v0.10.14** | 2026-06-22 | 实现真实缓存分析查询（替换占位符）；修复版本号正则匹配；流式 SSE 添加 usage 字段防止 Claude Code CLI 崩溃 |
 | **v0.10.13** | 2026-06-22 | 流式请求后根据实际 token 用量Refund配额；Provider 错误码（PROVIDER_*）映射到 502 |
 | **v0.10.12** | 2026-06-22 | 修复 Claude Code 中转 GLM 时 metadata 字段导致 400 错误返回登录状态 |
 | **v0.10.11** | 2026-06-22 | 修复原生 Claude 流式(raw_passthrough)不记录实际 token 用量；GLM 适配器注释说明 Coding Plan 限制 |
@@ -538,7 +546,7 @@ git push origin main && git push origin v0.10.x
 bash deploy.sh
 ```
 
-**不需要手动改 `main.py` 或 `pyproject.toml` 的版本号。** `deploy.sh` 执行 `git describe --tags` 写入 `app/version.py`，`/health` 和 `/api/status` 均从此读取。
+版本号在 `pyproject.toml` 中维护，`deploy.sh` 自动读取并写入 `app/version.py`。Git tag 应与 `pyproject.toml` 中的版本号保持一致。`/health` 和 `/api/status` 均从 `app/version.py` 读取。
 
 ### 版本检查
 
