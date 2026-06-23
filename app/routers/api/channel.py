@@ -522,20 +522,6 @@ async def channel_default_pricing(
     })
 
 
-@router.get("/api/channel/metadata")
-async def channel_metadata(
-    type: int = Query(0, alias="type"),
-    _=Depends(admin_auth),
-):
-    """Return metadata (supported params, capabilities) for a channel type."""
-    adaptor = registry.get(type)
-    caps = list(adaptor.NATIVE_FORMATS) if adaptor else []
-    return GenericApiResponse(data={
-        "type": type,
-        "capabilities": caps,
-    })
-
-
 @router.get("/api/channel/test/{channel_id}")
 async def test_channel(
     channel_id: int,

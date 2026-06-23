@@ -471,20 +471,19 @@ registry.register(MY_CHANNEL_TYPE, MyProviderAdaptor)
 
 | 版本 | 日期 | 变更 |
 |------|------|------|
-| **v0.11.1** | 2026-06-23 | 修复 429 fallback 请求未实际执行（`continue` 退出循环）的 bug；修复 root 用户 balance=0 问题；收紧 `except Exception` 为具体 httpx 异常类型；`_record_channel_failure` 死 SELECT 清理；文档同步 |
-| **v0.11.0** | 2026-06-23 | Phase 4：移除 ModelConfig 计价比例改用 `budget/pricing.py` 统一定价；Phase 3：前端 UI 切换为人民币 (CNY) 显示；Phase F2：移除前端硬编码 USD 转换；Phase F3：从 User/Token 模型移除 `quota`/`used_quota`/`remain_quota` 遗留字段 |
+| **v0.11.1** | 2026-06-23 | 修复 429 fallback 请求未实际执行（`continue` 退出循环）的 bug；修复 root 用户 balance=0 问题；收紧 `except Exception` 为具体 httpx 异常类型；`_record_channel_failure` 死 SELECT 清理；文档同步；修复流式日志 prompt_tokens/completion_tokens 为 0 的问题；Dashboard 余额卡片 CNY 显示 |
 
 ### v0.10.x — Bugfix & 功能迭代
 
 | 版本 | 日期 | 变更 |
 |------|------|------|
+| **v0.10.20** | 2026-06-23 | 新增充值 & 兑换码完整子系统（RechargeRequest/RedemptionCode model + schema + service + CRUD endpoint + 48 tests）；MCP 服务器管理后端 CRUD；预算池管理系统 |
 | **v0.10.19** | 2026-06-23 | 修复 relay.py `except Exception` 缺少 `as exc` 导致上游超时后 UnboundLocalError 连环崩溃；修复前端 TS 类型错误（lazy import、recharge 类型对齐） |
-| **v0.10.18** | 2026-06-23 | 新增充值 & 兑换码完整子系统（RechargeRequest/RedemptionCode model + schema + service + CRUD endpoint + 48 tests） |
+| **v0.10.18** | 2026-06-23 | （版本跳号） |
 | **v0.10.17** | 2026-06-22 | 修复 GLM Coding Plan 特殊错误处理；MiniMax `prompt_tokens=0` 时 `cached_tokens` 解析错误；流式请求配额计算 bug 修复 |
 | **v0.10.16** | 2026-06-22 | 429 exponential backoff retry（同渠道）；新增 `upstream_retry_max` / `upstream_retry_backoff_base` 配置项 |
 | **v0.10.15** | 2026-06-22 | 修复流式中继请求中急切检查上游 HTTP 状态（streaming relay fix） |
 | **v0.10.14** | 2026-06-22 | 实现真实缓存分析查询（替换占位符）；修复版本号正则匹配；流式 SSE 添加 usage 字段防止 Claude Code CLI 崩溃 |
-| **v0.10.13** | 2026-06-22 | 流式请求后根据实际 token 用量Refund配额；Provider 错误码（PROVIDER_*）映射到 502 |
 | **v0.10.12** | 2026-06-22 | 修复 Claude Code 中转 GLM 时 metadata 字段导致 400 错误返回登录状态 |
 | **v0.10.11** | 2026-06-22 | 修复原生 Claude 流式(raw_passthrough)不记录实际 token 用量；GLM 适配器注释说明 Coding Plan 限制 |
 | **v0.10.10** | 2026-06-21 | 错误码体系 + Claude Messages SSE 直通修复 + 文档对齐 |

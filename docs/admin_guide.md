@@ -1,6 +1,6 @@
 # UniAPI 管理员配置手册
 
-> 版本：0.10.16 | 适用：uniapi-py Python 后端
+> 版本：0.11.1 | 适用：uniapi-py Python 后端
 
 ---
 

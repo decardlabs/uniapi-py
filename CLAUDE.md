@@ -121,7 +121,7 @@ app/
 ├── dependencies.py         # Auth DI: user_auth, admin_auth, root_auth, token_auth
 ├── exceptions.py           # AppException + handler
 ├── middleware.py            # Audit, PIIMask, RateLimit, RequestTiming, RequestID
-├── models/                 # SQLAlchemy ORM: user, token, channel, log, option, ability, budget, passkey
+├── models/                 # SQLAlchemy ORM: user, token, channel, log, option, ability, budget, passkey, mcp_server, recharge, redemption, base
 ├── schemas/                # Pydantic v2: common, user, relay, etc.
 ├── services/               # auth.py (session, password), user.py, token.py
 ├── routers/
@@ -156,8 +156,11 @@ tests/
 ├── phase3/                 # Multi-format routing (7 tests)
 ├── phase4/                 # Extensibility tests (46 tests)
 ├── phase5/                 # Upstream 429 retry + failover (246 tests)
+├── phase6/                 # Recharge & redemption (48 tests)
 ├── glm/                    # GLM adaptor tests (13 tests)
-└── live/                   # Live probe framework (real API keys)
+├── live/                   # Live probe framework (real API keys)
+│   └── test_token_accuracy.py  # Token rate accuracy (8 tests, skipped w/o keys)
+└── manual/                 # Manual test scripts
 ```
 
 ### Testing Conventions
