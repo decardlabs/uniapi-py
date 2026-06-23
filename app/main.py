@@ -129,8 +129,7 @@ async def _seed_defaults():
                 display_name="Root",
                 role=100,
                 status=1,
-                quota=1000000000,
-                used_quota=0,
+                balance=2_000_000_000,  # ¥2000 微元
                 group="default",
                 access_token="root-access-token",
                 created_at=now,

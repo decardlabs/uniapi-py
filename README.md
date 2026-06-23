@@ -8,7 +8,7 @@
 
 ## Status
 
-🚧 **All phases complete** — 539 tests, all GREEN (11 skipped)
+🚧 **All phases complete** — 570 tests, all GREEN (11 skipped)
 
 | Phase | 内容 | 状态 | 测试数 |
 |-------|------|------|--------|
@@ -404,7 +404,7 @@ uniapi-py/
 
 ## 测试
 
-### 单元测试 (539 tests, 11 skipped)
+### 单元测试 (570 tests, 11 skipped)
 
 ```bash
 pytest tests/ -v
@@ -466,6 +466,13 @@ registry.register(MY_CHANNEL_TYPE, MyProviderAdaptor)
 参考 [DeepSeek](app/relay/adaptors/deepseek/adaptor.py) 或 [GLM](app/relay/adaptors/glm/adaptor.py) 实现。
 
 ## 版本历史
+
+### v0.11.x — 负载均衡 & 计费货币化
+
+| 版本 | 日期 | 变更 |
+|------|------|------|
+| **v0.11.1** | 2026-06-23 | 修复 429 fallback 请求未实际执行（`continue` 退出循环）的 bug；修复 root 用户 balance=0 问题；收紧 `except Exception` 为具体 httpx 异常类型；`_record_channel_failure` 死 SELECT 清理；文档同步 |
+| **v0.11.0** | 2026-06-23 | Phase 4：移除 ModelConfig 计价比例改用 `budget/pricing.py` 统一定价；Phase 3：前端 UI 切换为人民币 (CNY) 显示；Phase F2：移除前端硬编码 USD 转换；Phase F3：从 User/Token 模型移除 `quota`/`used_quota`/`remain_quota` 遗留字段 |
 
 ### v0.10.x — Bugfix & 功能迭代
 

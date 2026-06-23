@@ -52,7 +52,7 @@ UniAPI is an **AI API gateway** — aggregates multiple LLM providers (DeepSeek,
 The extensibility mechanism is the `BaseAdaptor` ABC ([app/relay/adaptor.py](app/relay/adaptor.py)). Each provider implements:
 - `get_request_url()` / `setup_request_headers()` — upstream connection
 - `convert_request()` — transform incoming request to provider-native format
-- `get_supported_models()` — model names and pricing ratios (returns `dict[str, ModelConfig]`)
+- `get_supported_models()` — model names and metadata (returns `dict[str, ModelConfig]`)
 - `NATIVE_FORMATS` — declares which API formats this provider supports natively (avoids unnecessary conversion)
 
 Adaptors register themselves in the global registry ([app/relay/registry.py](app/relay/registry.py)). Each adaptor is keyed by a **channel type integer** (see [app/relay/channeltype.py](app/relay/channeltype.py)): `39=DeepSeek`, `41=GLM`, `50=Qwen`, `25=Kimi`, `27=MiniMax`.
@@ -82,11 +82,11 @@ Claude Messages→Chat conversion during streaming also requires SSE format conv
 - **Management API** (`/api/*`): Session cookie via `itsdangerous.URLSafeTimedSerializer`, with `Authorization: Bearer <access_token>` fallback
 - **Relay API** (`/v1/*`): Bearer token with optional `token_key:channel_id` pinning syntax
 - Role hierarchy: `user_auth` (role>=1) → `admin_auth` (role>=10) → `root_auth` (role>=100)
-- Token-level: `remain_quota`, `expired_time`, `status`, per-token model allowlist
+- Token-level: `expired_time`, `status`, per-token model allowlist
 
 ### Budget/Quota System
 
-- **SQL-based**: `User.quota`/`used_quota` and `Token.remain_quota`
+- **SQL-based**: `User.balance` (micro-yuan, ¥1 = 1_000_000), with ¥1 overdraft allowance
 - **Optional Redis budget arbiter**: Two-phase freeze-and-settle — `pre_check` freezes estimated cost, `post_settle` reconciles with actual token usage. Monthly budget periods via `Budget` model.
 - Tests use `FakeRedisClient` in-memory mock ([tests/conftest.py](tests/conftest.py))
 
@@ -166,7 +166,7 @@ tests/
 - The `client` fixture provides an `httpx.AsyncClient` connected via ASGITransport
 - Budget tests use `FakeRedisClient` (in-memory dict) instead of real Redis
 - Live tests in `tests/live/` connect to a running instance with real provider API keys
-- All `ModelConfig` pricing ratios are tested against known values from each adaptor's `pricing.py`
+- All pricing data (yuan/1M tokens) is tested in `test_channeltype.py` and `test_budget_pricing.py`
 
 ### Config
 

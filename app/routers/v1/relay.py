@@ -170,7 +170,6 @@ async def _select_channel(
     result = await db.execute(
         select(Channel)
         .where(Channel.status == 1, Channel.type == channel_type)
-        .order_by(Channel.priority.desc())
     )
     channels = list(result.scalars().all())
     if not channels:
@@ -299,9 +298,6 @@ async def _record_channel_failure(channel_id: int, db: AsyncSession) -> bool:
     _channel_failures[channel_id] = count
     if count >= _CHANNEL_DISABLE_THRESHOLD:
         logger.warning("Auto-disabling channel %d after %d consecutive failures", channel_id, count)
-        await db.execute(
-            select(Channel).where(Channel.id == channel_id).limit(1)
-        )
         result = await db.execute(select(Channel).where(Channel.id == channel_id))
         ch = result.scalar_one_or_none()
         if ch:
@@ -316,6 +312,49 @@ def _reset_channel_failures(channel_id: int):
     """Reset failure count AND 429 cooldown after a successful call."""
     _channel_failures.pop(channel_id, None)
     _reset_channel_429_count(channel_id)
+
+
+async def _refund_and_raise_connection_error(
+    provider_name: str,
+    exc: Exception,
+    user: Any,
+    estimated_micro: int,
+    budget_arbiter: Any | None,
+    request: Request,
+    db: AsyncSession,
+    provisional_log: Any,
+) -> None:
+    """Refund the user and raise an UpstreamException for a connection error.
+
+    Extracted so both the main ``except Exception`` handler and the inline
+    429 fallback handler can share the same refund+raise logic.
+    """
+    # Refund micro-yuan balance on failure
+    user.balance += estimated_micro
+    if budget_arbiter and settings.budget_enabled and hasattr(request.state, "budget_info") and request.state.budget_info:
+        bi = request.state.budget_info
+        from app.budget.arbiter import ActualUsage
+        await budget_arbiter.post_settle(
+            user_id=user.id, period=bi["period"], frozen_amount=bi["frozen_amount"],
+            monthly_budget=bi["monthly_budget"], request_id=provisional_log.request_id,
+            actual_usage=ActualUsage(model="", input_tokens=0, output_tokens=0),
+            db_session=db,
+        )
+    await db.commit()
+
+    # Map connection error to UniAPI code
+    from app.relay.upstream_errors import map_upstream_connection_error
+
+    error_type = "timeout" if "timeout" in str(exc).lower() else "unknown"
+    uni_code, upstream, reason = map_upstream_connection_error(provider_name, error_type)
+    details = {"reason": reason} if reason else None
+    raise UpstreamException(
+        message=f"Upstream request failed: {exc}",
+        code=uni_code,
+        upstream_provider=upstream["provider"],
+        upstream_status=upstream["status_code"],
+        details=details,
+    ) from exc
 
 
 async def _handle_relay(request: Request, db: AsyncSession):
@@ -744,7 +783,39 @@ async def _handle_relay(request: Request, db: AsyncSession):
                                         model_name, channel_type,
                                     )
                                     _cooldown_channel(failed_channel_id)
-                                    continue  # retry with fallback
+                                    # Execute fallback inline (last iteration — can't continue)
+                                    try:
+                                        upstream_response = await relay_chat_completion(
+                                            body=upstream_body,
+                                            upstream_url=upstream_url,
+                                            api_key=meta.api_key,
+                                            stream=stream,
+                                            request_headers=upstream_headers,
+                                            output_format=output_format,
+                                            on_stream_usage=stream_usage_cb,
+                                            raw_passthrough=native_claude_stream,
+                                        )
+                                        _reset_channel_failures(_channel_id)
+                                        break  # fallback succeeded
+                                    except httpx.HTTPStatusError as exc2:
+                                        exc = exc2
+                                        status = exc2.response.status_code
+                                        is_recoverable = status in (500, 502, 503)
+                                        # Fall through to refund/raise below
+                                    except (httpx.TimeoutException, httpx.ConnectError, httpx.RemoteProtocolError) as fb_exc:
+                                        # Non-HTTP error on fallback — refund before re-raising
+                                        await _refund_and_raise_connection_error(
+                                            provider_name=adaptor.provider_name if adaptor else "unknown",
+                                            exc=fb_exc,
+                                            user=user,
+                                            estimated_micro=estimated_micro,
+                                            budget_arbiter=budget_arbiter,
+                                            request=request,
+                                            db=db,
+                                            provisional_log=provisional_log,
+                                        )
+                                else:
+                                    logger.info("FALLBACK skip | prepare_fallback returned None")
                     else:
                         logger.info("FALLBACK skip | model=%s not allowed by token", fallback_model)
                 # Fall through to refund/raise code below
@@ -817,8 +888,8 @@ async def _handle_relay(request: Request, db: AsyncSession):
                 details=details,
             )
 
-        except Exception as exc:
-            # Non-HTTP error (timeout, connection error, etc.)
+        except (httpx.TimeoutException, httpx.ConnectError, httpx.RemoteProtocolError) as exc:
+            # Non-HTTP-status error (timeout, connection error, protocol error)
             if attempt == 0 and not stream:
                 fallback_channel = await _find_fallback_channel(db, channel_type, model_name)
                 if fallback_channel and fallback_channel.models:
@@ -839,33 +910,17 @@ async def _handle_relay(request: Request, db: AsyncSession):
                                     continue
                     else:
                         logger.info("FALLBACK skip | model=%s not allowed by token", fallback_model)
-            # Fall through to refund/raise code below
 
-            # Refund micro-yuan balance on failure
-            user.balance += estimated_micro
-            if budget_arbiter and settings.budget_enabled and hasattr(request.state, "budget_info") and request.state.budget_info:
-                bi = request.state.budget_info
-                await budget_arbiter.post_settle(
-                    user_id=user.id, period=bi["period"], frozen_amount=bi["frozen_amount"],
-                    monthly_budget=bi["monthly_budget"], request_id=provisional_log.request_id,
-                    actual_usage=ActualUsage(model=model_name, input_tokens=0, output_tokens=0),
-                    db_session=db,
-                )
-            await db.commit()
-
-            # Map connection error to UniAPI code
-            from app.relay.upstream_errors import map_upstream_connection_error
-
-            error_type = "timeout" if "timeout" in str(exc).lower() else "unknown"
-            provider_name = adaptor.provider_name if adaptor else "unknown"
-            uni_code, upstream, reason = map_upstream_connection_error(provider_name, error_type)
-            details = {"reason": reason} if reason else None
-            raise UpstreamException(
-                message=f"Upstream request failed: {exc}",
-                code=uni_code,
-                upstream_provider=upstream["provider"],
-                upstream_status=upstream["status_code"],
-                details=details,
+            # Refund and raise — shared helper
+            await _refund_and_raise_connection_error(
+                provider_name=adaptor.provider_name if adaptor else "unknown",
+                exc=exc,
+                user=user,
+                estimated_micro=estimated_micro,
+                budget_arbiter=budget_arbiter,
+                request=request,
+                db=db,
+                provisional_log=provisional_log,
             )
 
     if stream:
