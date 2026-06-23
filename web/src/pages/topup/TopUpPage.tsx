@@ -135,7 +135,8 @@ export function TopUpPage() {
   };
 
   // Live preview: show yuan amount (input is ¥)
-  const previewYuan = (watchAmount || 0);
+  // Ensure numeric — RHF stores raw string from <input type="number">
+  const previewYuan = Number(watchAmount) || 0;
 
   const statusBadge = (status: number) => {
     switch (status) {
@@ -204,7 +205,7 @@ export function TopUpPage() {
                           {...field}
                         />
                       </FormControl>
-                      {(field.value || 0) > 0 && (
+                      {Number(field.value) > 0 && (
                         <p className="text-xs text-muted-foreground mt-1">
                           {t('topup.request.preview', { defaultValue: 'Recharge amount: ¥{{amount}}', amount: previewYuan.toFixed(2) })}
                         </p>
