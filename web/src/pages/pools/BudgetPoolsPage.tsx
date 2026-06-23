@@ -12,6 +12,7 @@ import {
 } from '@/components/ui/dialog';
 import { EnhancedDataTable } from '@/components/ui/enhanced-data-table';
 import { Input } from '@/components/ui/input';
+import { SearchableDropdown, type SearchOption } from '@/components/ui/searchable-dropdown';
 import { useNotifications } from '@/components/ui/notifications';
 import { ResponsivePageContainer } from '@/components/ui/responsive-container';
 import {
@@ -862,22 +863,38 @@ export default function BudgetPoolsPage() {
           </DialogHeader>
           <div className="space-y-4">
             <div>
-              <label className="text-sm font-medium">{tr('allocate_user', 'User ID')}</label>
-              <Input
-                type="number"
-                value={allocateUserId}
-                onChange={(e) => setAllocateUserId(e.target.value)}
-                placeholder={tr('allocate_user_placeholder', 'Enter user ID')}
-                className="mt-1"
+              <label className="text-sm font-medium">{tr('allocate_user', 'User')}</label>
+              <SearchableDropdown
+                options={[]}
+                value={allocateUserId ? `#${allocateUserId}` : ''}
+                placeholder={tr('allocate_user_placeholder', 'Search user by name...')}
+                searchPlaceholder={tr('allocate_user_search', 'Type username...')}
+                searchEndpoint="/api/user/search"
+                transformResponse={(data: any[]) =>
+                  (data || []).map((u: any) => ({
+                    key: String(u.id),
+                    value: u.username,
+                    text: `${u.username} (#${u.id})`,
+                  }))
+                }
+                debounceMs={300}
+                minQueryLength={1}
+                onSelect={(key) => setAllocateUserId(key)}
+                noResultsMessage={tr('allocate_user_no_results', 'No users found')}
               />
+              {allocateUserId && (
+                <p className="text-xs text-muted-foreground mt-1">
+                  {tr('allocate_user_selected', 'Selected user ID: {{id}}').replace('{{id}}', allocateUserId)}
+                </p>
+              )}
             </div>
             <div>
-              <label className="text-sm font-medium">{tr('allocate_amount', 'Amount')}</label>
+              <label className="text-sm font-medium">{tr('allocate_amount', 'Amount (¥)')}</label>
               <Input
                 type="number"
                 value={allocateAmount}
                 onChange={(e) => setAllocateAmount(e.target.value)}
-                placeholder={tr('allocate_amount_placeholder', 'Enter amount to allocate')}
+                placeholder={tr('allocate_amount_placeholder', 'e.g. 500')}
                 className="mt-1"
               />
             </div>
