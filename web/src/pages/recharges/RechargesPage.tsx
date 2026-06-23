@@ -174,7 +174,7 @@ export function RechargesPage() {
       header: tr('columns.amount', 'Amount'),
       cell: ({ row }) => (
         <span className="font-mono font-medium text-primary">
-          ${renderQuota(row.original.amount)}
+          ¥{(row.original.amount / 1_000_000).toFixed(2)}
         </span>
       ),
     },

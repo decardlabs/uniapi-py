@@ -127,18 +127,18 @@ export function TopUpPage() {
   // Watch the amount field for live conversion preview
   const watchAmount = form.watch('amount');
 
-  // Input is in Millions of Tokens (M) — multiply by 1,000,000 to get actual token count
-  const TOKENS_PER_M = 1_000_000;
-  const getQuotaFromInput = (mTokenAmount: number): number => {
-    return Math.round(mTokenAmount * TOKENS_PER_M);
+  // Input is in yuan (¥) — multiply by 1,000,000 to get micro-yuan for backend
+  const YUAN_TO_MICRO = 1_000_000;
+  const getAmountFromInput = (yuanAmount: number): number => {
+    return Math.round(yuanAmount * YUAN_TO_MICRO);
   };
 
   const onSubmitRecharge = async (data: RechargeForm) => {
     setIsSubmitting(true);
     try {
-      // Convert display unit value → internal quota before sending to server
-      const quotaAmount = getQuotaFromInput(data.amount);
-      const res = await createRechargeRequest({ amount: quotaAmount, remark: data.remark || '' });
+      // Convert yuan → micro-yuan before sending to server
+      const amountMicro = getAmountFromInput(data.amount);
+      const res = await createRechargeRequest({ amount: amountMicro, remark: data.remark || '' });
       if (res.data?.success) {
         notify({ type: 'success', message: tr('request.success', 'Recharge request submitted successfully! Awaiting admin approval.') });
         form.reset();
@@ -159,10 +159,8 @@ export function TopUpPage() {
     }
   };
 
-  // Live preview: convert M tokens → actual token count (for display)
-  const previewTokenCount = Math.round((watchAmount || 0) * TOKENS_PER_M);
-  const previewQuota = previewTokenCount; // internal quota = token count in this system
-  const displayMValue = (watchAmount || 0);
+  // Live preview: show yuan amount (input is ¥)
+  const previewYuan = (watchAmount || 0);
 
   const statusBadge = (status: number) => {
     switch (status) {
@@ -221,22 +219,19 @@ export function TopUpPage() {
                   name="amount"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>{tr('request.amount_token_label', 'Amount (Million Tokens) *')}</FormLabel>
+                      <FormLabel>{tr('request.amount_label', 'Amount (¥) *')}</FormLabel>
                       <FormControl>
                         <Input
                           type="number"
                           min="0"
                           step="0.01"
-                          placeholder={tr('request.amount_token_placeholder', 'e.g. 1 = 1M tokens, 0.5 = 500K...')}
+                          placeholder={tr('request.amount_placeholder', 'e.g. 50.00 = ¥50')}
                           {...field}
                         />
                       </FormControl>
-                      {/* Live preview: show equivalent in actual tokens and USD */}
                       {(field.value || 0) > 0 && (
                         <p className="text-xs text-muted-foreground mt-1">
-                          {displayMValue >= 0.001
-                            ? `≈ ${displayMValue.toLocaleString(undefined, { maximumFractionDigits: 4 })}M tokens = ${previewTokenCount.toLocaleString()} quota (≈ $${quotaToUsd(previewQuota).toFixed(2)} USD)`
-                            : `≈ ${previewTokenCount.toLocaleString()} quota (≈ $${quotaToUsd(previewQuota).toFixed(2)} USD)`}
+                          {tr('request.preview', 'Recharge amount: ¥{{amount}}', { amount: previewYuan.toFixed(2) })}
                         </p>
                       )}
                       <FormMessage />
@@ -277,7 +272,7 @@ export function TopUpPage() {
                     <div className="flex items-center gap-3">
                       {statusBadge(req.status)}
                       <div>
-                        <span className="font-mono font-medium">{renderQuotaWithPrompt(req.amount)}</span>
+                        <span className="font-mono font-medium">¥{(req.amount / 1_000_000).toFixed(2)}</span>
                         {req.remark && <span className="text-xs text-muted-foreground ml-2">- {req.remark}</span>}
                         {req.admin_remark && (
                           <div className="text-xs text-muted-foreground mt-0.5">

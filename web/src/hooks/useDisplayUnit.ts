@@ -11,8 +11,8 @@ export type DisplayUnit = 'token' | 'usd' | 'cny';
 
 /** LocalStorage key for persisting the user's display unit preference */
 const DISPLAY_UNIT_KEY = 'display_unit';
-/** Fallback default display unit */
-const DEFAULT_DISPLAY_UNIT: DisplayUnit = 'token';
+/** Fallback default display unit — default to yuan (CNY) */
+const DEFAULT_DISPLAY_UNIT: DisplayUnit = 'cny';
 
 /** LocalStorage key for quota-per-USD conversion rate (from server) */
 const QUOTA_PER_UNIT_KEY = 'quota_per_unit';

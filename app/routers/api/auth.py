@@ -53,6 +53,7 @@ async def login(body: LoginRequest, db: AsyncSession = Depends(get_db)):
                 role=user.role,
                 status=user.status,
                 quota=user.quota,
+            balance=user.balance,
                 group=user.group,
                 access_token=user.access_token,
                 totp_required=totp_required,
@@ -110,6 +111,7 @@ async def register(
                 role=user.role,
                 status=user.status,
                 quota=user.quota,
+            balance=user.balance,
                 group=user.group,
                 access_token=user.access_token,
             ).model_dump()
@@ -152,6 +154,7 @@ async def self_info(
             role=user.role,
             status=user.status,
             quota=user.quota,
+            balance=user.balance,
             used_quota=user.used_quota,
             group=user.group,
             created_at=user.created_at // 1000 if user.created_at else 0,
@@ -231,6 +234,7 @@ async def get_by_token(
             role=user.role,
             status=user.status,
             quota=user.quota,
+            balance=user.balance,
             used_quota=user.used_quota,
             group=user.group,
         ).model_dump()

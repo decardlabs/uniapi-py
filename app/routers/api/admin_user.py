@@ -24,6 +24,7 @@ def _user_to_response(u) -> dict:
         status=u.status,
         quota=u.quota,
         used_quota=u.used_quota,
+        balance=u.balance,
         group=u.group,
         created_at=u.created_at // 1000 if u.created_at else 0,
         updated_at=u.updated_at // 1000 if u.updated_at else 0,

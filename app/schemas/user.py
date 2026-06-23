@@ -29,6 +29,7 @@ class UserResponse(BaseModel):
     status: int
     quota: int
     used_quota: int
+    balance: int = 0
     group: str
     created_at: Optional[int] = None
     updated_at: Optional[int] = None
@@ -41,6 +42,7 @@ class LoginResponse(BaseModel):
     role: int
     status: int
     quota: int
+    balance: int = 0
     group: str
     access_token: Optional[str] = None
     totp_required: Optional[bool] = None
@@ -55,6 +57,7 @@ class SelfResponse(BaseModel):
     status: int
     quota: int
     used_quota: int
+    balance: int = 0
     group: str
     created_at: Optional[int] = None
     updated_at: Optional[int] = None
