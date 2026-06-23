@@ -247,11 +247,9 @@ export function UsersPage() {
       header: tr('columns.register_time', 'Register Time'),
       accessorKey: 'created_at',
       cell: ({ row }) => {
-        // Use created_at if valid, otherwise fallback to updated_at
-        // Note: User timestamps are stored in milliseconds, convert to seconds for display
-        const timestampMs = row.original.created_at && row.original.created_at > 0 ? row.original.created_at : row.original.updated_at;
-        const timestampSec = timestampMs && timestampMs > 0 ? Math.floor(timestampMs / 1000) : undefined;
-        return <TimestampDisplay timestamp={timestampSec} className="text-sm" fallback="-" />;
+        // Backend already returns created_at/updated_at in seconds (model stores ms, //1000 in _user_to_response)
+        const timestampSec = row.original.created_at && row.original.created_at > 0 ? row.original.created_at : row.original.updated_at;
+        return <TimestampDisplay timestamp={timestampSec && timestampSec > 0 ? timestampSec : undefined} className="text-sm" fallback="-" />;
       },
     },
     {
