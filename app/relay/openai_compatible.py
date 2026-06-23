@@ -31,30 +31,32 @@ async def _capture_stream_usage(
     3. Usage-only chunk: ``choices`` is empty but ``usage`` present (GLM)
     """
     last_usage: dict[str, Any] | None = None
-    async for line in raw_stream:
-        if line.startswith("data: ") and '"usage"' in line:
-            try:
-                data = json.loads(line[6:].strip())
-                choices = data.get("choices") or []
-                usage = data.get("usage")
-                # Skip empty usage dicts — some providers send usage={} early
-                # without overwriting a previously captured valid last_usage
-                if usage and not any(usage.values()):
-                    usage = None
-                # OpenAI Chat format: final chunk has choices[0].finish_reason
-                if choices and choices[0].get("finish_reason") and usage:
-                    last_usage = usage
-                # Anthropic SSE format: message_delta carries usage at stream end
-                elif data.get("type") == "message_delta" and usage:
-                    last_usage = usage
-                # Usage-only chunk: empty choices but usage present (e.g. GLM)
-                elif usage:
-                    last_usage = usage
-            except json.JSONDecodeError:
-                pass
-        yield line
-    if last_usage is not None:
-        await on_usage(last_usage)
+    try:
+        async for line in raw_stream:
+            if line.startswith("data: ") and '"usage"' in line:
+                try:
+                    data = json.loads(line[6:].strip())
+                    choices = data.get("choices") or []
+                    usage = data.get("usage")
+                    # Skip empty usage dicts — some providers send usage={} early
+                    # without overwriting a previously captured valid last_usage
+                    if usage and not any(usage.values()):
+                        usage = None
+                    # OpenAI Chat format: final chunk has choices[0].finish_reason
+                    if choices and choices[0].get("finish_reason") and usage:
+                        last_usage = usage
+                    # Anthropic SSE format: message_delta carries usage at stream end
+                    elif data.get("type") == "message_delta" and usage:
+                        last_usage = usage
+                    # Usage-only chunk: empty choices but usage present (e.g. GLM)
+                    elif usage:
+                        last_usage = usage
+                except json.JSONDecodeError:
+                    pass
+            yield line
+    finally:
+        if last_usage is not None and on_usage is not None:
+            await on_usage(last_usage)
 
 
 def make_chat_completion_response(
@@ -146,55 +148,70 @@ async def relay_chat_completion(
             async def _eager_raw_stream():
                 """Raw byte-level SSE passthrough — preserves original wire format.
 
-                Light-scans the byte stream for Anthropic SSE message_delta
-                events to capture actual token usage.
+                Scans the byte stream for both ``message_start`` (initial input
+                tokens) and ``message_delta`` (final usage) Anthropic SSE events.
+                Captured usage is reported even if the client disconnects before
+                the final ``message_delta`` event (uses ``message_start`` as
+                fallback).
                 """
-                try:
-                    last_usage: dict[str, Any] | None = None
-                    scanner = b""
+                last_usage: dict[str, Any] | None = None
+                message_start_usage: dict[str, Any] | None = None
+                scanner = b""
 
+                def _extract_usage(marker: bytes) -> dict[str, Any] | None:
+                    """Find the ``data:`` line nearest to *marker* and return its ``usage`` key, if any."""
+                    idx = scanner.rfind(marker)
+                    if idx < 0:
+                        return None
+                    data_start = scanner.rfind(b"data: ", 0, idx)
+                    if data_start < 0:
+                        return None
+                    data_start += len(b"data: ")
+                    data_end = scanner.find(b"\n", data_start)
+                    if data_end < 0:
+                        data_end = len(scanner)
+                    try:
+                        data_line = scanner[data_start:data_end]
+                        event_data = json.loads(data_line.decode("utf-8"))
+                        usage = event_data.get("usage")
+                        if usage and any(usage.values()):
+                            return usage
+                    except (json.JSONDecodeError, UnicodeDecodeError):
+                        pass
+                    return None
+
+                try:
                     # NOTE: httpx.Response does NOT support async with when using
                     # client.send(stream=True). Use try/finally + aclose() instead.
                     try:
                         async for chunk in resp.aiter_bytes(chunk_size=4096):
                             yield chunk
 
-                            if not last_usage:
-                                scanner += chunk
-                                # Also match `"type":"message_delta"` directly for
-                                # providers whose Anthropic emulation omits the
-                                # `event:` prefix line (e.g. MiniMax).
-                                if (
-                                    b'"usage"' in scanner
-                                    and b'type":"message_delta"' in scanner
-                                ):
-                                    # Find the data: line nearest to message_delta
-                                    idx = scanner.rfind(b'type":"message_delta"')
-                                    data_prefix = b"data: "
-                                    data_start = scanner.rfind(data_prefix, 0, idx)
-                                    if data_start >= 0:
-                                        data_start += len(data_prefix)
-                                        data_end = scanner.find(b"\n", data_start)
-                                        if data_end < 0:
-                                            data_end = len(scanner)
-                                        try:
-                                            data_line = scanner[data_start:data_end]
-                                            event_data = json.loads(data_line.decode("utf-8"))
-                                            usage = event_data.get("usage")
-                                            if usage and any(usage.values()):
-                                                last_usage = usage
-                                        except (json.JSONDecodeError, UnicodeDecodeError):
-                                            pass
+                            scanner += chunk
 
-                                if len(scanner) > 16384:
-                                    scanner = scanner[-8192:]
+                            # Capture message_start usage (always has input_tokens)
+                            if message_start_usage is None:
+                                ms_usage = _extract_usage(b'type":"message_start"')
+                                if ms_usage is not None:
+                                    message_start_usage = ms_usage
 
-                        if last_usage is not None and on_stream_usage is not None:
-                            await on_stream_usage(last_usage)
+                            # Capture message_delta usage (final input+output tokens)
+                            if last_usage is None:
+                                md_usage = _extract_usage(b'type":"message_delta"')
+                                if md_usage is not None:
+                                    last_usage = md_usage
+
+                            if len(scanner) > 16384:
+                                scanner = scanner[-8192:]
                     finally:
                         await resp.aclose()
                 finally:
                     await client.aclose()
+                    # Report the best usage we have — message_delta preferred,
+                    # message_start as fallback (client may have disconnected).
+                    usage_to_report = last_usage or message_start_usage
+                    if usage_to_report is not None and on_stream_usage is not None:
+                        await on_stream_usage(usage_to_report)
 
             return StreamingResponse(
                 _eager_raw_stream(),
