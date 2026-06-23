@@ -518,7 +518,7 @@ export function EditUserPage() {
                           {tr('fields.created_at.label', 'Register Time')}
                         </label>
                         <div className="p-2 bg-muted rounded-md">
-                          <TimestampDisplay timestamp={Math.floor(createdAt / 1000)} className="text-sm" fallback="-" />
+                          <TimestampDisplay timestamp={createdAt} className="text-sm" fallback="-" />
                         </div>
                       </div>
                     )}
@@ -528,7 +528,7 @@ export function EditUserPage() {
                           {tr('fields.updated_at.label', 'Last Modified')}
                         </label>
                         <div className="p-2 bg-muted rounded-md">
-                          <TimestampDisplay timestamp={Math.floor(updatedAt / 1000)} className="text-sm" fallback="-" />
+                          <TimestampDisplay timestamp={updatedAt} className="text-sm" fallback="-" />
                         </div>
                       </div>
                     )}
