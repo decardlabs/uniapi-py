@@ -180,7 +180,7 @@ export function MCPServersPage() {
   const load = async (p = 0, size = pageSize) => {
     setLoading(true);
     try {
-      const url = `/api/mcp_servers?p=${p}&size=${size}&sort=${sortBy}&order=${sortOrder}`;
+      const url = `/api/mcp_servers/?p=${p}&size=${size}&sort=${sortBy}&order=${sortOrder}`;
       const response = await api.get(url);
       const { success, data: payload, total: totalCount, message } = response.data;
       if (success) {
