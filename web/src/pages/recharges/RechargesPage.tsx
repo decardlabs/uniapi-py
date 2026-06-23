@@ -7,7 +7,6 @@ import { ResponsivePageContainer } from '@/components/ui/responsive-container';
 import { STORAGE_KEYS, usePageSize } from '@/hooks/usePersistentState';
 import { getRechargeRequests, approveRecharge, rejectRecharge } from '@/lib/services/recharge';
 import type { TopUpRequest } from '@/lib/services/recharge';
-import { renderQuotaWithUsd } from '@/lib/utils';
 import type { ColumnDef } from '@tanstack/react-table';
 import {
   CheckCircle,
@@ -70,16 +69,13 @@ export function RechargesPage() {
     initializedRef.current = true;
   }, []);
 
-  // Helper to render quota (with USD equivalent)
-  const renderQuota = (quota: number) => renderQuotaWithUsd(quota);
-
   // ── Approve action ──────────────────────────────
   const handleApprove = async (id: number) => {
     setSubmittingId(id);
     try {
       const res = await approveRecharge(id);
       if (res.data?.success) {
-        notify({ type: 'success', message: tr('notifications.approved', '✅ Request approved! User balance updated.') });
+        notify({ type: 'success', message: tr('notifications.approved', 'Request approved. User balance updated.') });
         setReviewingId(null);
         load(pageIndex, pageSize);
       } else {
@@ -103,7 +99,7 @@ export function RechargesPage() {
     try {
       const res = await rejectRecharge(id, reason);
       if (res.data?.success) {
-        notify({ type: 'success', message: tr('notifications.rejected', '❌ Request rejected') });
+        notify({ type: 'success', message: tr('notifications.rejected', 'Request rejected') });
         setReviewingId(null);
         setRejectReasons(prev => { const next = { ...prev }; delete next[id]; return next; });
         load(pageIndex, pageSize);
