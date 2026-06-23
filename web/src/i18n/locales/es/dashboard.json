@@ -3,7 +3,9 @@
     "cards": {
       "avg_cost": "Costo promedio por solicitud",
       "avg_daily": "Promedio diario: {{value}}",
-      "quota_used": "Cuota utilizada",
+      "current_balance": "Saldo actual",
+      "balance_low": "Saldo bajo — recargue pronto",
+      "balance_available": "Saldo disponible",
       "tokens_consumed": "Tokens consumidos",
       "tokens_per_request": "{{value}} tokens por solicitud",
       "total_requests": "Solicitudes totales"

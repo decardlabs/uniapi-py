@@ -3,7 +3,9 @@
     "cards": {
       "avg_cost": "Avg Cost / Request",
       "avg_daily": "Avg daily: {{value}}",
-      "quota_used": "Quota Used",
+      "current_balance": "Current Balance",
+      "balance_low": "Balance low — top up soon",
+      "balance_available": "Available balance",
       "tokens_consumed": "Tokens Consumed",
       "tokens_per_request": "{{value}} tokens per request",
       "total_requests": "Total Requests"

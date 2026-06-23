@@ -1,43 +1,31 @@
 import { cn } from '@/lib/utils';
-import { formatNumber, renderQuotaWithUsd } from '@/lib/utils';
+import { formatNumber } from '@/lib/utils';
 import { useTranslation } from 'react-i18next';
-import { BarChart3, Coins, MousePointerClick, TrendingUp } from 'lucide-react';
-import { getDisplayInCurrency, getQuotaPerUnit } from '../types';
+import { Banknote, BarChart3, MousePointerClick, TrendingUp } from 'lucide-react';
 
 interface OverviewCardsProps {
   totalRequests: number;
-  totalQuota: number;
   totalTokens: number;
   avgDailyRequests: number;
-  avgDailyQuotaRaw: number;
   avgDailyTokens: number;
   avgCostPerRequestRaw: number;
   avgTokensPerRequest: number;
+  balance: number;
 }
 
-const renderQuota = (quota: number, precision: number = 2): string => {
-  const displayInCurrency = getDisplayInCurrency();
-  const quotaPerUnit = getQuotaPerUnit();
-
-  if (displayInCurrency) {
-    const amount = (quota / quotaPerUnit).toFixed(precision);
-    return `$${amount}`;
-  }
-
-  return formatNumber(quota);
-};
+const COST_PER_USD = 1_000_000; // 1 USD = 1,000,000 micro-yuan
 
 export function OverviewCards({
   totalRequests,
-  totalQuota,
   totalTokens,
   avgDailyRequests,
-  avgDailyQuotaRaw,
   avgDailyTokens,
   avgCostPerRequestRaw,
   avgTokensPerRequest,
+  balance,
 }: OverviewCardsProps) {
   const { t } = useTranslation();
+  const balanceCny = balance / COST_PER_USD;
 
   const cards = [
     {
@@ -50,13 +38,13 @@ export function OverviewCards({
       iconColor: 'text-primary',
     },
     {
-      title: t('dashboard.cards.quota_used'),
-      value: renderQuotaWithUsd(totalQuota),
-      subtitle: t('dashboard.cards.avg_daily', { value: renderQuotaWithUsd(avgDailyQuotaRaw) }),
-      icon: Coins,
-      accent: 'border-l-accent',
-      iconBg: 'bg-accent/10',
-      iconColor: 'text-accent',
+      title: t('dashboard.cards.current_balance'),
+      value: `¥${balanceCny.toFixed(2)}`,
+      subtitle: balanceCny < 10 ? t('dashboard.cards.balance_low') : t('dashboard.cards.balance_available'),
+      icon: Banknote,
+      accent: balanceCny < 10 ? 'border-l-warning' : 'border-l-accent',
+      iconBg: balanceCny < 10 ? 'bg-warning/10' : 'bg-accent/10',
+      iconColor: balanceCny < 10 ? 'text-warning' : 'text-accent',
     },
     {
       title: t('dashboard.cards.tokens_consumed'),
@@ -69,7 +57,7 @@ export function OverviewCards({
     },
     {
       title: t('dashboard.cards.avg_cost'),
-      value: renderQuota(avgCostPerRequestRaw, 4),
+      value: `¥${(avgCostPerRequestRaw / COST_PER_USD).toFixed(4)}`,
       subtitle: t('dashboard.cards.tokens_per_request', { value: Math.round(avgTokensPerRequest || 0) }),
       icon: TrendingUp,
       accent: 'border-l-chart-2',

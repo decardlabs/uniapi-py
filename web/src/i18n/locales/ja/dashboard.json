@@ -3,7 +3,9 @@
     "cards": {
       "avg_cost": "リクエスト当たり平均コスト",
       "avg_daily": "1日平均: {{value}}",
-      "quota_used": "使用済みクォータ",
+      "current_balance": "現在の残高",
+      "balance_low": "残高が少ないです——すぐにチャージしてください",
+      "balance_available": "利用可能残高",
       "tokens_consumed": "消費トークン",
       "tokens_per_request": "1リクエストあたり {{value}} トークン",
       "total_requests": "総リクエスト数"

@@ -3,7 +3,9 @@
     "cards": {
       "avg_cost": "单次请求平均成本",
       "avg_daily": "日均：{{value}}",
-      "quota_used": "已用配额",
+      "current_balance": "当前余额",
+      "balance_low": "余额不足——请尽快充值",
+      "balance_available": "可用余额",
       "tokens_consumed": "消耗 Tokens",
       "tokens_per_request": "每次请求 {{value}} 个 token",
       "total_requests": "请求总数"

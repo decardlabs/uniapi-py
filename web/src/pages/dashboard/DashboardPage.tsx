@@ -135,13 +135,12 @@ export function DashboardPage() {
 
             <OverviewCards
               totalRequests={rangeTotals.requests}
-              totalQuota={rangeTotals.quota}
               totalTokens={rangeTotals.tokens}
               avgDailyRequests={rangeTotals.avgDailyRequests}
-              avgDailyQuotaRaw={rangeTotals.avgDailyQuotaRaw}
               avgDailyTokens={rangeTotals.avgDailyTokens}
               avgCostPerRequestRaw={rangeTotals.avgCostPerRequestRaw}
               avgTokensPerRequest={rangeTotals.avgTokensPerRequest}
+              balance={user?.balance ?? 0}
             />
 
             {isAdmin && <PoolSummaryCards />}
