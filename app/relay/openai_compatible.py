@@ -200,10 +200,6 @@ async def relay_chat_completion(
             async def _reader():
                 nonlocal last_usage, message_start_usage, scanner
                 try:
-                    import os
-                    os.environ.get("HOME")  # force module available
-                    with open("/tmp/_reader_debug.log", "a") as f:
-                        f.write(f"_reader: started\n")
                     async for chunk in resp.aiter_bytes(chunk_size=4096):
                         await queue.put(chunk)
                         scanner += chunk
@@ -225,16 +221,18 @@ async def relay_chat_completion(
                     await queue.put(None)
                     await client.aclose()
                     # Report usage from the reader task (safe to await)
-                    usage_data = last_usage or message_start_usage
-                    with open("/tmp/_reader_debug.log", "a") as f:
-                        f.write(f"_reader: usage_data={usage_data!r}\n")
-                    if usage_data is not None and on_stream_usage is not None:
-                        try:
-                            await on_stream_usage(usage_data)
-                        except Exception:
-                            pass
+                    if on_stream_usage is not None:
+                        usage_data = last_usage or message_start_usage
+                        if usage_data is not None:
+                            try:
+                                await on_stream_usage(usage_data)
+                            except Exception as exc:
+                                import logging as _lg
+                                _lg.getLogger(__name__).warning(
+                                    "_reader: on_stream_usage failed: %s", exc,
+                                )
 
-            asyncio.ensure_future(_reader())
+            reader_task = asyncio.create_task(_reader())
 
             async def _client_stream():
                 try:
