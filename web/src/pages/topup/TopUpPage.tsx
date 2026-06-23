@@ -175,7 +175,7 @@ export function TopUpPage() {
           </CardHeader>
           <CardContent>
             <div className="text-center">
-              <div className="text-3xl font-bold text-primary mb-2">¥{userBalance.toFixed(2)}</div>
+              <div className="text-3xl font-bold text-primary mb-2">¥{(userBalance / MICRO_PER_YUAN).toFixed(2)}</div>
               <p className="text-sm text-muted-foreground">{tr('balance.available', 'Available balance (CNY)')}</p>
               <Button variant="outline" className="mt-4" onClick={loadUserData}>
                 {tr('balance.refresh', 'Refresh Balance')}
