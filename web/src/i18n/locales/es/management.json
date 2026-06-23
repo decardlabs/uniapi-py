@@ -613,13 +613,9 @@
         "copied": "¡Copiado!",
         "copy": "Copiar token"
       },
-      "quota": {
-        "unlimited": "Ilimitado"
-      },
       "search": {
         "id_label": "ID: {{id}}",
-        "placeholder": "Buscar tokens por nombre...",
-        "quota_label": "Cuota: {{quota}}"
+        "placeholder": "Buscar tokens por nombre..."
       },
       "status": {
         "disabled": "Deshabilitado",

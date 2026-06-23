@@ -613,13 +613,9 @@
         "copied": "已复制！",
         "copy": "复制令牌"
       },
-      "quota": {
-        "unlimited": "无限"
-      },
       "search": {
         "id_label": "ID: {{id}}",
-        "placeholder": "按名称搜索令牌...",
-        "quota_label": "额度: {{quota}}"
+        "placeholder": "按名称搜索令牌..."
       },
       "status": {
         "disabled": "已禁用",

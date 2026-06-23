@@ -613,13 +613,9 @@
         "copied": "コピーしました！",
         "copy": "トークンをコピー"
       },
-      "quota": {
-        "unlimited": "無制限"
-      },
       "search": {
         "id_label": "ID: {{id}}",
-        "placeholder": "名前でトークンを検索...",
-        "quota_label": "クォータ: {{quota}}"
+        "placeholder": "名前でトークンを検索..."
       },
       "status": {
         "disabled": "無効",

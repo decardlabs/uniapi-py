@@ -13,7 +13,7 @@ import { api } from '@/lib/api';
 import { fromDateTimeLocal, toDateTimeLocal } from '@/lib/utils';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { Info } from 'lucide-react';
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import type { AxiosResponse } from 'axios';
 import { useTranslation } from 'react-i18next';
@@ -58,6 +58,7 @@ export function EditTokenPage() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [modelOptions, setModelOptions] = useState<Model[]>([]);
   const [modelSearchTerm, setModelSearchTerm] = useState('');
+  const originalRef = useRef<BackendToken | null>(null);
   const { notify } = useNotifications();
 
   const form = useForm<TokenForm>({
@@ -103,12 +104,7 @@ export function EditTokenPage() {
         if (data.subnet == null) data.subnet = '';
 
         form.reset(data);
-        // Persist original id/status for submission logic
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        (form as any)._original = {
-          id: data.id as number,
-          status: data.status as number,
-        } as BackendToken;
+        originalRef.current = { id: data.id as number, status: data.status as number };
       } else {
         throw new Error(message || 'Failed to load token');
       }
@@ -137,6 +133,11 @@ export function EditTokenPage() {
       }
     } catch (error) {
       console.error('Error loading models:', error);
+      notify({
+        type: 'error',
+        title: tr('errors.request_failed_title', 'Request failed'),
+        message: tr('models.load_failed', 'Failed to load available models'),
+      });
     }
   };
 
@@ -209,9 +210,7 @@ export function EditTokenPage() {
       (payload as Record<string, unknown>).models = modelsString;
 
       let response: AxiosResponse<{ success: boolean; message?: string }>;
-      // Include current status and auto-adjust so Unlimited or new expiry takes effect
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const original: BackendToken | undefined = (form as any)._original;
+      const original = originalRef.current;
       if (original) {
         let nextStatus = original.status;
         const nowSec = Math.floor(Date.now() / 1000);
@@ -390,18 +389,26 @@ export function EditTokenPage() {
                       onChange={(e) => setModelSearchTerm(e.target.value)}
                     />
                     <div className="relative isolate max-h-48 overflow-y-auto border rounded-md p-4 space-y-2">
-                      {filteredModels.map((model) => (
-                        <div key={model.value} className="relative flex items-center space-x-2">
-                          <Checkbox
-                            id={model.value}
-                            checked={selectedModels.includes(model.value)}
-                            onCheckedChange={() => toggleModel(model.value)}
-                          />
-                          <Label htmlFor={model.value} className="flex-1 cursor-pointer">
-                            {model.text}
-                          </Label>
-                        </div>
-                      ))}
+                      {filteredModels.length === 0 ? (
+                        <p className="text-sm text-muted-foreground text-center py-4">
+                          {modelSearchTerm
+                            ? tr('models.no_search_results', 'No models match "{{keyword}}"', { keyword: modelSearchTerm })
+                            : tr('models.loading', 'Loading models...')}
+                        </p>
+                      ) : (
+                        filteredModels.map((model) => (
+                          <div key={model.value} className="relative flex items-center space-x-2">
+                            <Checkbox
+                              id={model.value}
+                              checked={selectedModels.includes(model.value)}
+                              onCheckedChange={() => toggleModel(model.value)}
+                            />
+                            <Label htmlFor={model.value} className="flex-1 cursor-pointer">
+                              {model.text}
+                            </Label>
+                          </div>
+                        ))
+                      )}
                     </div>
                     <div className="flex flex-wrap gap-1">
                       {selectedModels

@@ -613,13 +613,9 @@
         "copied": "Copié !",
         "copy": "Copier le jeton"
       },
-      "quota": {
-        "unlimited": "Illimité"
-      },
       "search": {
         "id_label": "ID : {{id}}",
-        "placeholder": "Rechercher des jetons par nom...",
-        "quota_label": "Quota : {{quota}}"
+        "placeholder": "Rechercher des jetons par nom..."
       },
       "status": {
         "disabled": "Désactivé",
