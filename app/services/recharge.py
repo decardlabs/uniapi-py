@@ -7,6 +7,8 @@ from typing import Optional
 from sqlalchemy import select, func
 from sqlalchemy.ext.asyncio import AsyncSession
 
+import uuid
+
 from app.models.log import Log
 from app.models.recharge import RechargeRequest
 from app.models.user import User
@@ -35,6 +37,19 @@ async def create_recharge(
     db.add(req)
     await db.flush()
     await db.refresh(req)
+
+    # Log: recharge request created
+    amount_yuan = amount / 1_000_000
+    log = Log(
+        user_id=user_id,
+        username=user.username,
+        created_at=now,
+        type=1,  # TOPUP
+        content=f"Recharge request #{req.id}: ¥{amount_yuan:.2f} (pending approval)" + (f" [{remark}]" if remark else ""),
+        cost=amount,
+        request_id=uuid.uuid4().hex,
+    )
+    db.add(log)
     await db.commit()
     return req
 
@@ -142,13 +157,16 @@ async def approve_recharge(
         raise ValueError(f"User {req.user_id} not found")
     user.balance = (user.balance or 0) + req.amount
 
-    # Create log entry
+    # Log: recharge approved
+    amount_yuan = req.amount / 1_000_000
     log = Log(
         user_id=req.user_id,
+        username=user.username,
         created_at=now,
         type=1,  # TOPUP
-        content=f"Recharge approved: +{req.amount} quota (request #{recharge_id})",
+        content=f"Recharge approved: ¥{amount_yuan:.2f} (request #{recharge_id} by admin #{admin_id})",
         cost=req.amount,
+        request_id=uuid.uuid4().hex,
     )
     db.add(log)
     await db.flush()
@@ -175,6 +193,17 @@ async def reject_recharge(
     req.reviewed_time = now
     req.admin_remark = admin_remark
 
+    # Log: recharge rejected
+    amount_yuan = req.amount / 1_000_000
+    log = Log(
+        user_id=req.user_id,
+        created_at=now,
+        type=1,  # TOPUP
+        content=f"Recharge rejected: ¥{amount_yuan:.2f} (request #{recharge_id} by admin #{admin_id})" + (f" [{admin_remark}]" if admin_remark else ""),
+        cost=0,
+        request_id=uuid.uuid4().hex,
+    )
+    db.add(log)
     await db.flush()
     await db.refresh(req)
     await db.commit()
@@ -252,10 +281,12 @@ async def admin_topup(
 
     log = Log(
         user_id=user_id,
+        username=user.username,
         created_at=now,
         type=1,  # TOPUP
         content=f"Admin top-up: ¥{amount:.2f} (+{amount_micro} micro-yuan by admin #{admin_id})" + (f" [{remark}]" if remark else ""),
         cost=amount_micro,
+        request_id=uuid.uuid4().hex,
     )
     db.add(log)
     await db.flush()
