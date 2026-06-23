@@ -1,6 +1,7 @@
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
+import { useConfirmDialog } from '@/components/ui/confirm-dialog';
 import {
   Dialog,
   DialogContent,
@@ -38,12 +39,15 @@ import { useTranslation } from 'react-i18next';
 interface Pool {
   id: number;
   name: string;
-  total_quota: number;
-  used_quota: number;
+  total_funded: number;
+  total_allocated: number;
+  total_consumed: number;
+  available: number;       // computed: total_funded - total_consumed
+  used_quota: number;      // alias for total_allocated (frontend compat)
   period_type: string;
   period_key: string;
   status: string;
-  created_at: number;
+  created_at: number;      // ms timestamp
   closed_at?: number;
 }
 
@@ -52,8 +56,12 @@ interface PoolAllocation {
   pool_id: number;
   user_id: number;
   username?: string;
-  allocated_quota: number;
-  recalled_quota: number;
+  amount: number;
+  consumed: number;
+  recalled: number;
+  net_allocated: number;
+  remaining: number;
+  status: string;
   created_at: number;
   updated_at: number;
 }
@@ -62,6 +70,7 @@ interface PoolAllocation {
 export default function BudgetPoolsPage() {
   const { t } = useTranslation();
   const { notify } = useNotifications();
+  const [confirmAction, ConfirmDialog] = useConfirmDialog();
 
   const tr = (key: string, defaultValue: string) =>
     t(`pool.${key}`, { defaultValue });
@@ -92,7 +101,7 @@ export default function BudgetPoolsPage() {
   // Create form
   const [createForm, setCreateForm] = useState({
     name: '',
-    total_quota: '',
+    total_funded: '',
     period_type: 'monthly',
     period_key: '',
   });
@@ -126,16 +135,21 @@ export default function BudgetPoolsPage() {
       setLoading(true);
       try {
         const params: Record<string, string | number> = {
-          page: p + 1,
-          page_size: size,
+          p,
+          size,
         };
         if (filterPeriod && filterPeriod !== '__all__') params.period_type = filterPeriod;
         if (filterStatus && filterStatus !== '__all__') params.status = filterStatus;
 
         const res = await api.get('/api/pool/', { params });
         if (res.data?.success) {
-          setData(res.data.data?.items || []);
-          setTotal(res.data.data?.total || 0);
+          // Backend returns { success, data: Pool[], total: N }
+          const pools: Pool[] = (res.data.data || []).map((p: any) => ({
+            ...p,
+            available: Math.max(0, p.total_funded - p.total_consumed),
+          }));
+          setData(pools);
+          setTotal(res.data.total || 0);
           setPageIndex(p);
         }
       } catch (error) {
@@ -160,7 +174,7 @@ export default function BudgetPoolsPage() {
     try {
       const res = await api.post('/api/pool/', {
         name: createForm.name,
-        total_quota: Number(createForm.total_quota),
+        total_funded: Number(createForm.total_funded),
         period_type: createForm.period_type,
         period_key: createForm.period_key,
       });
@@ -275,7 +289,12 @@ export default function BudgetPoolsPage() {
   };
 
   const handleClosePool = async (pool: Pool) => {
-    if (!window.confirm(tr('close_confirm', 'Are you sure you want to close this budget pool?'))) return;
+    const confirmed = await confirmAction({
+      title: tr('close_confirm', 'Close Budget Pool'),
+      description: tr('close_confirm_desc', `Are you sure you want to close "${pool.name}"? Unused balance will be returned.`),
+      variant: 'destructive',
+    });
+    if (!confirmed) return;
     try {
       const res = await api.post(`/api/pool/${pool.id}/close`, {});
       if (res.data?.success) {
@@ -345,30 +364,26 @@ export default function BudgetPoolsPage() {
   };
 
   const handleRecallAll = async () => {
-    if (!selectedPool) return;
-    try {
-      const res = await api.post(`/api/pool/${selectedPool.id}/recall_all`, {});
-      if (res.data?.success) {
-        notify({ type: 'success', message: tr('recall_success', 'Recall successful') });
-        handleReconcile(selectedPool);
-        loadPools(pageIndex, pageSize);
-      } else {
-        notify({
-          type: 'error',
-          message: res.data?.message || 'Recall all failed',
+    if (!selectedPool || !reconcileData?.allocations?.length) return;
+
+    for (const a of reconcileData.allocations) {
+      if (a.remaining <= 0) continue;
+      try {
+        await api.post(`/api/pool/${selectedPool.id}/recall_all`, {
+          user_id: a.user_id,
         });
+      } catch {
+        // continue recalling from other users
       }
-    } catch (error) {
-      notify({
-        type: 'error',
-        message: error instanceof Error ? error.message : 'Recall all failed',
-      });
     }
+    notify({ type: 'success', message: tr('recall_success', 'Recall successful') });
+    handleReconcile(selectedPool);
+    loadPools(pageIndex, pageSize);
   };
 
   // ── Form resets ─────────────────────────────────────
   const resetCreateForm = () =>
-    setCreateForm({ name: '', total_quota: '', period_type: 'monthly', period_key: '' });
+    setCreateForm({ name: '', total_funded: '', period_type: 'monthly', period_key: '' });
   const resetPurchaseForm = () => {
     setPurchaseAmount('');
     setPurchaseRemark('');
@@ -430,30 +445,27 @@ export default function BudgetPoolsPage() {
       cell: ({ row }) => <span className="font-mono text-sm">{row.original.period_key}</span>,
     },
     {
-      accessorKey: 'total_quota',
-      header: tr('total_quota', 'Total Quota'),
+      accessorKey: 'total_funded',
+      header: tr('total_funded', 'Total Funded'),
       cell: ({ row }) => (
-        <span className="font-mono font-medium">${renderQuotaWithUsd(row.original.total_quota)}</span>
+        <span className="font-mono font-medium">${renderQuotaWithUsd(row.original.total_funded)}</span>
       ),
     },
     {
-      id: 'used_quota',
+      id: 'total_allocated',
       header: tr('allocated', 'Allocated'),
       cell: ({ row }) => (
-        <span className="font-mono">${renderQuotaWithUsd(row.original.used_quota)}</span>
+        <span className="font-mono">${renderQuotaWithUsd(row.original.total_allocated)}</span>
       ),
     },
     {
-      id: 'available_quota',
-      header: tr('available_quota', 'Available'),
-      cell: ({ row }) => {
-        const available = row.original.total_quota - row.original.used_quota;
-        return (
-          <span className="font-mono text-emerald-600 dark:text-emerald-400">
-            ${renderQuotaWithUsd(available)}
-          </span>
-        );
-      },
+      id: 'available',
+      header: tr('available', 'Available'),
+      cell: ({ row }) => (
+        <span className="font-mono text-emerald-600 dark:text-emerald-400">
+          ${renderQuotaWithUsd(row.original.available)}
+        </span>
+      ),
     },
     {
       accessorKey: 'status',
@@ -476,11 +488,15 @@ export default function BudgetPoolsPage() {
     {
       accessorKey: 'created_at',
       header: tr('created_at', 'Created At'),
-      cell: ({ row }) => (
-        <span className="font-mono text-sm">
-          {new Date(row.original.created_at * 1000).toLocaleDateString()}
-        </span>
-      ),
+      cell: ({ row }) => {
+        // Backend uses ms timestamps
+        const ts = row.original.created_at > 1e12 ? row.original.created_at : row.original.created_at * 1000;
+        return (
+          <span className="font-mono text-sm">
+            {new Date(ts).toLocaleDateString()}
+          </span>
+        );
+      },
     },
     {
       id: 'actions',
@@ -625,6 +641,8 @@ export default function BudgetPoolsPage() {
         </Card>
       </ResponsivePageContainer>
 
+      <ConfirmDialog />
+
       {/* ── Create Pool Dialog ────────────────────────── */}
       <Dialog open={createOpen} onOpenChange={(open) => { setCreateOpen(open); if (!open) resetCreateForm(); }}>
         <DialogContent>
@@ -645,12 +663,12 @@ export default function BudgetPoolsPage() {
               />
             </div>
             <div>
-              <label className="text-sm font-medium">{tr('total_quota', 'Total Quota')}</label>
+              <label className="text-sm font-medium">{tr('total_funded', 'Total Funded')}</label>
               <Input
                 type="number"
-                value={createForm.total_quota}
-                onChange={(e) => setCreateForm({ ...createForm, total_quota: e.target.value })}
-                placeholder={tr('total_quota_placeholder', 'Enter purchase amount')}
+                value={createForm.total_funded}
+                onChange={(e) => setCreateForm({ ...createForm, total_funded: e.target.value })}
+                placeholder={tr('total_funded_placeholder', 'Enter initial amount')}
                 className="mt-1"
               />
             </div>
@@ -682,7 +700,7 @@ export default function BudgetPoolsPage() {
             <Button variant="outline" onClick={() => { setCreateOpen(false); resetCreateForm(); }}>
               {t('common.cancel', 'Cancel')}
             </Button>
-            <Button onClick={handleCreate} disabled={submitting || !createForm.name || !createForm.total_quota || !createForm.period_key}>
+            <Button onClick={handleCreate} disabled={submitting || !createForm.name || !createForm.total_funded || !createForm.period_key}>
               {t('common.submit', 'Submit')}
             </Button>
           </DialogFooter>
@@ -883,17 +901,17 @@ export default function BudgetPoolsPage() {
               {/* Summary cards */}
               <div className="grid grid-cols-3 gap-4">
                 <div className="rounded-lg border p-3 text-center">
-                  <div className="text-xs text-muted-foreground">{tr('total_quota', 'Total Quota')}</div>
-                  <div className="text-lg font-bold font-mono">${renderQuotaWithUsd(reconcileData.pool?.total_quota || 0)}</div>
+                  <div className="text-xs text-muted-foreground">{tr('total_funded', 'Total Funded')}</div>
+                  <div className="text-lg font-bold font-mono">${renderQuotaWithUsd(reconcileData.pool?.total_funded || 0)}</div>
                 </div>
                 <div className="rounded-lg border p-3 text-center">
                   <div className="text-xs text-muted-foreground">{tr('reconciliation_allocated', 'Total Allocated')}</div>
-                  <div className="text-lg font-bold font-mono">${renderQuotaWithUsd(reconcileData.pool?.used_quota || 0)}</div>
+                  <div className="text-lg font-bold font-mono">${renderQuotaWithUsd(reconcileData.pool?.total_allocated || 0)}</div>
                 </div>
                 <div className="rounded-lg border p-3 text-center">
                   <div className="text-xs text-muted-foreground">{tr('reconciliation_available', 'Available')}</div>
                   <div className="text-lg font-bold font-mono text-emerald-600 dark:text-emerald-400">
-                    ${renderQuotaWithUsd((reconcileData.pool?.total_quota || 0) - (reconcileData.pool?.used_quota || 0))}
+                    ${renderQuotaWithUsd(reconcileData.pool?.available || 0)}
                   </div>
                 </div>
               </div>
@@ -913,23 +931,21 @@ export default function BudgetPoolsPage() {
                       </tr>
                     </thead>
                     <tbody>
-                      {reconcileData.allocations.map((a: any) => {
-                        const netAlloc = (a.allocated_quota || 0) - (a.recalled_quota || 0);
-                        const remaining = Math.max(0, netAlloc - (a.consumed || 0));
+                      {reconcileData.allocations.map((a: PoolAllocation) => {
                         return (
                           <tr key={a.id} className="border-b last:border-0">
                             <td className="px-3 py-2">{a.username || `User #${a.user_id}`}</td>
-                            <td className="px-3 py-2 text-right font-mono">${renderQuotaWithUsd(netAlloc)}</td>
-                            <td className="px-3 py-2 text-right font-mono">${renderQuotaWithUsd(a.consumed || 0)}</td>
-                            <td className="px-3 py-2 text-right font-mono">${renderQuotaWithUsd(remaining)}</td>
-                            <td className="px-3 py-2 text-right font-mono">${renderQuotaWithUsd(remaining)}</td>
+                            <td className="px-3 py-2 text-right font-mono">${renderQuotaWithUsd(a.net_allocated)}</td>
+                            <td className="px-3 py-2 text-right font-mono">${renderQuotaWithUsd(a.consumed)}</td>
+                            <td className="px-3 py-2 text-right font-mono">${renderQuotaWithUsd(a.remaining)}</td>
+                            <td className="px-3 py-2 text-right font-mono">${renderQuotaWithUsd(a.remaining)}</td>
                             <td className="px-3 py-2 text-right">
                               <Button
                                 variant="outline"
                                 size="sm"
                                 className="text-xs"
-                                onClick={() => openAllocateDialog(selectedPool!, a.user_id, remaining)}
-                                disabled={remaining <= 0}
+                                onClick={() => openAllocateDialog(selectedPool!, a.user_id, a.remaining)}
+                                disabled={a.remaining <= 0}
                               >
                                 {tr('recall', 'Recall')}
                               </Button>

@@ -24,6 +24,8 @@ from app.relay.mode import RelayMode, relay_mode_from_path
 from app.relay.registry import registry
 from app.relay.openai_compatible import relay_chat_completion
 from app.budget.arbiter import BudgetArbiter, ActualUsage
+from app.budget.pricing import calculate_cost
+from app.models.budget import CostRecord
 from app.config import settings
 
 logger = logging.getLogger(__name__)
@@ -510,6 +512,7 @@ async def _handle_relay(request: Request, db: AsyncSession):
         request.state.budget_info = {
             "period": budget_arbiter._compute_period(),
             "frozen_amount": decision.estimated_cost,
+            "monthly_budget": decision.monthly_budget,
         }
 
     # Pre-consume quota
@@ -746,7 +749,7 @@ async def _handle_relay(request: Request, db: AsyncSession):
                 bi = request.state.budget_info
                 await budget_arbiter.post_settle(
                     user_id=user.id, period=bi["period"], frozen_amount=bi["frozen_amount"],
-                    monthly_budget=0, request_id=provisional_log.request_id,
+                    monthly_budget=bi["monthly_budget"], request_id=provisional_log.request_id,
                     actual_usage=ActualUsage(model=model_name, input_tokens=0, output_tokens=0),
                     db_session=db,
                 )
@@ -805,7 +808,7 @@ async def _handle_relay(request: Request, db: AsyncSession):
                 bi = request.state.budget_info
                 await budget_arbiter.post_settle(
                     user_id=user.id, period=bi["period"], frozen_amount=bi["frozen_amount"],
-                    monthly_budget=0, request_id=provisional_log.request_id,
+                    monthly_budget=bi["monthly_budget"], request_id=provisional_log.request_id,
                     actual_usage=ActualUsage(model=model_name, input_tokens=0, output_tokens=0),
                     db_session=db,
                 )
@@ -893,7 +896,7 @@ async def _handle_relay(request: Request, db: AsyncSession):
         bi = request.state.budget_info
         await budget_arbiter.post_settle(
             user_id=user.id, period=bi["period"], frozen_amount=bi["frozen_amount"],
-            monthly_budget=0, request_id=provisional_log.request_id,
+            monthly_budget=bi["monthly_budget"], request_id=provisional_log.request_id,
             actual_usage=ActualUsage(
                 model=model_name,
                 input_tokens=prompt_tokens,
@@ -902,6 +905,25 @@ async def _handle_relay(request: Request, db: AsyncSession):
             ),
             db_session=db,
         )
+
+    # Lightweight cost recording (runs regardless of BUDGET_ENABLED)
+    # Used by Budget Pool reconciliation to track actual consumption.
+    if provisional_log.request_id:
+        try:
+            yuan_cost = calculate_cost(model_name, prompt_tokens, completion_tokens, cache_hit)
+        except Exception:
+            yuan_cost = 0.0
+        db.add(CostRecord(
+            request_id=provisional_log.request_id,
+            user_id=user.id,
+            model=model_name,
+            input_tokens=prompt_tokens,
+            output_tokens=completion_tokens,
+            cache_hit_tokens=cache_hit,
+            cost=round(yuan_cost, 6),
+            status="success",
+            created_at=int(time.time() * 1000),
+        ))
 
     await db.commit()
 

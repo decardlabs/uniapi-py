@@ -284,6 +284,7 @@ def create_app() -> FastAPI:
     from app.routers.api.cache_analytics import router as cache_analytics_router
     from app.routers.api.mcp_servers import router as mcp_servers_router
     from app.routers.api.verification import router as verification_router
+    from app.routers.api.pool import router as pool_router
     from app.routers.api.oauth import router as oauth_router
     from app.routers.api.totp import router as totp_router
     from app.routers.api.passkey import router as passkey_router
@@ -305,6 +306,7 @@ def create_app() -> FastAPI:
     app.include_router(channel_router)
     app.include_router(budget_router)
     app.include_router(admin_budget_router)
+    app.include_router(pool_router)
     app.include_router(mcp_servers_router)
     app.include_router(verification_router)
     app.include_router(oauth_router)

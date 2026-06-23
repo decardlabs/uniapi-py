@@ -47,3 +47,51 @@ class BudgetResetLog(Base):
     total_consumed: Mapped[float] = mapped_column(Float, default=0.0)
     total_requests: Mapped[int] = mapped_column(Integer, default=0)
     reset_at: Mapped[int] = mapped_column(BigInteger, default=0)
+
+
+class BudgetPool(Base):
+    """A shared budget pool for allocating budgets to users."""
+
+    __tablename__ = "budget_pools"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
+    name: Mapped[str] = mapped_column(String(128), default="")
+    total_funded: Mapped[float] = mapped_column(Float, default=0.0)
+    total_allocated: Mapped[float] = mapped_column(Float, default=0.0)
+    total_consumed: Mapped[float] = mapped_column(Float, default=0.0)
+    period_type: Mapped[str] = mapped_column(String(16), default="monthly")
+    period_key: Mapped[str] = mapped_column(String(16), default="")
+    status: Mapped[str] = mapped_column(String(16), default="active")
+    created_at: Mapped[int] = mapped_column(BigInteger, default=0)
+    closed_at: Mapped[int] = mapped_column(BigInteger, nullable=True, default=None)
+
+
+class PoolAllocation(Base):
+    """An allocation from a budget pool to a specific user."""
+
+    __tablename__ = "pool_allocations"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
+    pool_id: Mapped[int] = mapped_column(Integer, index=True)
+    user_id: Mapped[int] = mapped_column(Integer, index=True)
+    amount: Mapped[float] = mapped_column(Float, default=0.0)
+    consumed: Mapped[float] = mapped_column(Float, default=0.0)
+    recalled: Mapped[float] = mapped_column(Float, default=0.0)
+    status: Mapped[str] = mapped_column(String(16), default="active")
+    created_at: Mapped[int] = mapped_column(BigInteger, default=0)
+    updated_at: Mapped[int] = mapped_column(BigInteger, default=0)
+
+
+class PoolTransaction(Base):
+    """Transaction log for a budget pool."""
+
+    __tablename__ = "pool_transactions"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
+    pool_id: Mapped[int] = mapped_column(Integer, index=True)
+    type: Mapped[str] = mapped_column(String(16), default="")
+    amount: Mapped[float] = mapped_column(Float, default=0.0)
+    user_id: Mapped[int] = mapped_column(Integer, nullable=True, default=None)
+    allocation_id: Mapped[int] = mapped_column(Integer, nullable=True, default=None)
+    remark: Mapped[str] = mapped_column(String(256), default="")
+    created_at: Mapped[int] = mapped_column(BigInteger, default=0)

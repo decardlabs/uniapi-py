@@ -26,6 +26,7 @@ class BudgetDecision:
     estimated_cost: float = 0.0
     available: float = 0.0
     remaining_after: float = 0.0
+    monthly_budget: float = 0.0
     error_code: int | None = None
     error_message: str = ""
 
@@ -100,7 +101,7 @@ class BudgetArbiter:
         try:
             pricing = get_model_pricing(model)
             if pricing["input"] == 0 and pricing["output"] == 0:
-                return BudgetDecision(status="approved", estimated_cost=0.0, available=available)
+                return BudgetDecision(status="approved", estimated_cost=0.0, available=available, monthly_budget=budget.monthly_budget)
         except KeyError:
             pass
 
@@ -113,6 +114,7 @@ class BudgetArbiter:
                 estimated_cost=estimated,
                 available=available,
                 remaining_after=remaining_after,
+                monthly_budget=budget.monthly_budget,
             )
 
         # Step 5: rejected
@@ -120,6 +122,7 @@ class BudgetArbiter:
             status="rejected",
             estimated_cost=estimated,
             available=available,
+            monthly_budget=budget.monthly_budget,
             error_code=402,
             error_message=(
                 f"月度预算不足。当前可用 ¥{available:.2f}，"
@@ -250,15 +253,12 @@ class BudgetArbiter:
             return
 
         # Period changed: archive old period
+        old_period = budget.budget_period
         async with self.db_session_factory() as session:
-            # Count requests from cost_records for the old period
-            from sqlalchemy import func, select
-            from app.models.budget import CostRecord
-
             # Create reset log
             reset_log = BudgetResetLog(
                 user_id=user_id,
-                period=budget.budget_period,
+                period=old_period,
                 total_consumed=budget.consumed,
                 total_requests=0,
                 reset_at=int(time.time() * 1000),
@@ -274,7 +274,7 @@ class BudgetArbiter:
             await session.commit()
 
         # Clear Redis keys for old period
-        await self.redis.settle(user_id, budget.budget_period, 0, 0)
+        await self.redis.settle(user_id, old_period, 0, 0)
 
     async def _write_cost_record(
         self,
