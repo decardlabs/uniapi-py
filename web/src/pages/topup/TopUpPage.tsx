@@ -7,8 +7,9 @@ import { Badge } from '@/components/ui/badge';
 import { ResponsivePageContainer } from '@/components/ui/responsive-container';
 import { useNotifications } from '@/components/ui/notifications';
 import { api } from '@/lib/api';
-import { getSelfRechargeRequests, createRechargeRequest, type TopUpRequest } from '@/lib/services/recharge';
+import { getSelfRechargeRequests, createRechargeRequest } from '@/lib/services/recharge';
 import { useAuthStore } from '@/lib/stores/auth';
+import { useDisplayUnit } from '@/hooks/useDisplayUnit'; // for balance display only
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useEffect, useState } from 'react';
 import { useForm } from 'react-hook-form';
@@ -16,33 +17,53 @@ import { useTranslation } from 'react-i18next';
 import * as z from 'zod';
 
 interface UserInfo {
-  id: number;
+  id: number; // eslint-disable-line @typescript-eslint/no-explicit-any
   username: string;
   display_name?: string;
+  quota: number;
+}
+
+interface TopUpRequest {
+  id: number;
+  user_id: number;
+  amount: number;
+  quota: number;
+  status: number;
+  remark: string;
+  admin_remark: string;
+  created_time: number;
 }
 
 export function TopUpPage() {
   const { user, updateUser } = useAuthStore();
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [userBalance, setUserBalance] = useState(user?.balance || 0);
+  const [userQuota, setUserQuota] = useState(user?.quota || 0);
   const [topUpLink, setTopUpLink] = useState('');
   const [userData, setUserData] = useState<UserInfo | null>(null);
   const [myRequests, setMyRequests] = useState<TopUpRequest[]>([]);
+  // Use the new display unit hook for balance rendering only (input is always tokens)
+  const { renderQuota: renderQuotaHook } = useDisplayUnit();
+
+  // USD conversion for preview — always use quota/500000 regardless of user's display unit
+  const QUOTA_PER_USD = 500000; // sync with backend ratio.QuotaPerUsd
+  const quotaToUsd = (quota: number): number => quota / QUOTA_PER_USD;
   const { t } = useTranslation();
   const { notify } = useNotifications();
 
   const tr = (key: string, defaultValue: string) =>
     t(`topup.${key}`, { defaultValue });
 
-  // Format balance in micro-yuan → yuan (¥) — always shows CNY regardless of display unit preference
-  const formatBalance = (micro: number): string => `¥${(micro / 1_000_000).toFixed(2)}`;
+  // Render quota using the unified display unit system (for balance display)
+  const renderQuotaWithPrompt = (quota: number): string => {
+    return renderQuotaHook(quota);
+  };
 
   const loadUserData = async () => {
     try {
       const res = await api.get('/api/user/self');
       const { success, data } = res.data;
       if (success) {
-        setUserBalance(data.balance ?? 0);
+        setUserQuota(data.quota);
         setUserData(data);
         updateUser(data);
       }
@@ -67,7 +88,7 @@ export function TopUpPage() {
 
   const loadMyRequests = async () => {
     try {
-      const res = await getSelfRechargeRequests({ p: 0, size: 10 });
+      const res = await getSelfRechargeRequests({ p: 1, size: 10 });
       if (res.data?.success) {
         setMyRequests(res.data.data || []);
       }
@@ -105,15 +126,18 @@ export function TopUpPage() {
   // Watch the amount field for live conversion preview
   const watchAmount = form.watch('amount');
 
-  /** Convert yuan → micro-yuan before sending to backend */
-  const yuanToMicro = (yuan: number): number => Math.round(yuan * 1_000_000);
+  // Input is in Millions of Tokens (M) — multiply by 1,000,000 to get actual token count
+  const TOKENS_PER_M = 1_000_000;
+  const getQuotaFromInput = (mTokenAmount: number): number => {
+    return Math.round(mTokenAmount * TOKENS_PER_M);
+  };
 
   const onSubmitRecharge = async (data: RechargeForm) => {
     setIsSubmitting(true);
     try {
-      // Convert yuan → micro-yuan before sending to server
-      const amountMicro = yuanToMicro(data.amount);
-      const res = await createRechargeRequest({ amount: amountMicro, remark: data.remark || '' });
+      // Convert display unit value → internal quota before sending to server
+      const quotaAmount = getQuotaFromInput(data.amount);
+      const res = await createRechargeRequest({ amount: quotaAmount, remark: data.remark || '' });
       if (res.data?.success) {
         notify({ type: 'success', message: tr('request.success', 'Recharge request submitted successfully! Awaiting admin approval.') });
         form.reset();
@@ -134,9 +158,10 @@ export function TopUpPage() {
     }
   };
 
-  // Live preview: show yuan amount (input is ¥)
-  // Ensure numeric — RHF stores raw string from <input type="number">
-  const previewYuan = Number(watchAmount) || 0;
+  // Live preview: convert M tokens → actual token count (for display)
+  const previewTokenCount = Math.round((watchAmount || 0) * TOKENS_PER_M);
+  const previewQuota = previewTokenCount; // internal quota = token count in this system
+  const displayMValue = (watchAmount || 0);
 
   const statusBadge = (status: number) => {
     switch (status) {
@@ -168,12 +193,12 @@ export function TopUpPage() {
         <Card>
           <CardHeader>
             <CardTitle>{tr('balance.title', 'Current Balance')}</CardTitle>
-            <CardDescription>{tr('balance.description', 'Your current balance (CNY)')}</CardDescription>
+            <CardDescription>{tr('balance.description', 'Your current quota balance')}</CardDescription>
           </CardHeader>
           <CardContent>
             <div className="text-center">
-              <div className="text-3xl font-bold text-primary mb-2">{formatBalance(userBalance)}</div>
-              <p className="text-sm text-muted-foreground">{tr('balance.available', 'Available balance for API usage (CNY)')}</p>
+              <div className="text-3xl font-bold text-primary mb-2">{renderQuotaWithPrompt(userQuota)}</div>
+              <p className="text-sm text-muted-foreground">{tr('balance.available', 'Available quota for API usage')}</p>
               <Button variant="outline" className="mt-4" onClick={loadUserData}>
                 {tr('balance.refresh', 'Refresh Balance')}
               </Button>
@@ -195,19 +220,22 @@ export function TopUpPage() {
                   name="amount"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>{tr('request.amount_label', 'Amount (¥) *')}</FormLabel>
+                      <FormLabel>{tr('request.amount_token_label', 'Amount (Million Tokens) *')}</FormLabel>
                       <FormControl>
                         <Input
                           type="number"
                           min="0"
                           step="0.01"
-                          placeholder={tr('request.amount_placeholder', 'e.g. 50.00 = ¥50')}
+                          placeholder={tr('request.amount_token_placeholder', 'e.g. 1 = 1M tokens, 0.5 = 500K...')}
                           {...field}
                         />
                       </FormControl>
-                      {Number(field.value) > 0 && (
+                      {/* Live preview: show equivalent in actual tokens and USD */}
+                      {(field.value || 0) > 0 && (
                         <p className="text-xs text-muted-foreground mt-1">
-                          {t('topup.request.preview', { defaultValue: 'Recharge amount: ¥{{amount}}', amount: previewYuan.toFixed(2) })}
+                          {displayMValue >= 0.001
+                            ? `≈ ${displayMValue.toLocaleString(undefined, { maximumFractionDigits: 4 })}M tokens = ${previewTokenCount.toLocaleString()} quota (≈ $${quotaToUsd(previewQuota).toFixed(2)} USD)`
+                            : `≈ ${previewTokenCount.toLocaleString()} quota (≈ $${quotaToUsd(previewQuota).toFixed(2)} USD)`}
                         </p>
                       )}
                       <FormMessage />
@@ -248,7 +276,7 @@ export function TopUpPage() {
                     <div className="flex items-center gap-3">
                       {statusBadge(req.status)}
                       <div>
-                        <span className="font-mono font-medium">¥{(req.amount / 1_000_000).toFixed(2)}</span>
+                        <span className="font-mono font-medium">{renderQuotaWithPrompt(req.amount)}</span>
                         {req.remark && <span className="text-xs text-muted-foreground ml-2">- {req.remark}</span>}
                         {req.admin_remark && (
                           <div className="text-xs text-muted-foreground mt-0.5">

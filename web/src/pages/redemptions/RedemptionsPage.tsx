@@ -369,3 +369,5 @@ export function RedemptionsPage() {
     </ResponsivePageContainer>
   );
 }
+
+export default RedemptionsPage;

@@ -9,11 +9,16 @@ import type { AxiosResponse } from 'axios';
 export interface TopUpRequest {
   id: number;
   user_id: number;
-  amount: number;  // micro-yuan
+  amount: number;
+  quota: number;
   status: number;
-  remark?: string;
-  admin_remark?: string;
+  remark: string;
+  admin_remark: string;
   created_time: number;
+  reviewed_time: number;
+  reviewer_id: number;
+  username?: string;
+  user?: { id: number; username: string };
 }
 
 export interface CreateRechargeRequest {
@@ -75,7 +80,7 @@ export async function rejectRecharge(
 }
 
 export async function adminTopup(
-  data: { user_id: number; amount: number; remark?: string; pool_id?: number }
+  data: { user_id: number; quota: number; remark?: string; pool_id?: number }
 ): Promise<AxiosResponse<ApiResult>> {
   return api.post('/api/topup/', data);
 }
