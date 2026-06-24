@@ -158,6 +158,7 @@ RestartSec=5
 StandardOutput=append:$REMOTE_DIR/logs/access.log
 StandardError=append:$REMOTE_DIR/logs/error.log
 EnvironmentFile=$REMOTE_DIR/.env
+ExecStopPost=/bin/sleep 1
 
 [Install]
 WantedBy=multi-user.target

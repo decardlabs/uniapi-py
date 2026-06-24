@@ -495,6 +495,8 @@ async def channel_default_pricing(
 ):
     """Return default pricing for a given channel type, including model_configs as JSON string."""
     from app.relay.registry import registry
+    from app.budget.pricing import get_model_pricing
+
     adaptor = registry.get(type)
     if not adaptor:
         return GenericApiResponse(data={})
@@ -503,14 +505,21 @@ async def channel_default_pricing(
     pricing = {}
     model_configs = {}
     for name, cfg in models.items():
+        try:
+            yuan = get_model_pricing(name)
+        except KeyError:
+            try:
+                yuan = get_model_pricing(name.lower())
+            except KeyError:
+                continue
         pricing[name] = {
-            "input_price": cfg.input_ratio,
-            "output_price": cfg.output_ratio,
-            "cached_input_price": cfg.cached_input_ratio,
+            "input_price": yuan["input"],
+            "output_price": yuan["output"],
+            "cached_input_price": yuan["cache_hit"],
         }
         model_configs[name] = {
-            "ratio": cfg.input_ratio,
-            "completion_ratio": cfg.output_ratio,
+            "ratio": yuan["input"],
+            "completion_ratio": yuan["output"],
             "max_tokens": cfg.max_tokens,
         }
 

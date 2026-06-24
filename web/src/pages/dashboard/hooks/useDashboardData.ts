@@ -163,6 +163,21 @@ export const useDashboardData = () => {
 
         setLastUpdated(Math.floor(Date.now() / 1000));
         setDateError('');
+
+        // ── Sync latest balance to auth store ──
+        // Dashboard shows user?.balance from cached auth store; Users page
+        // reads from the live API. After any relay activity the cached value
+        // goes stale. Refresh it here so both pages stay consistent.
+        try {
+          const selfRes = await api.get('/api/user/self', {
+            signal: abortController.signal,
+          });
+          if (selfRes.data?.success && selfRes.data.data?.balance !== undefined) {
+            useAuthStore.getState().updateUser({ balance: selfRes.data.data.balance });
+          }
+        } catch {
+          // Non-critical — dashboard data is already loaded
+        }
       } else {
         setDateError(message || t('dashboard.errors.fetch_failed'));
         setRows([]);

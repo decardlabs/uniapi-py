@@ -249,24 +249,32 @@ async def user_available_models(
 
     Used by the frontend playground to populate the model selector.
     Returns model names from all enabled channels.
+    Falls back to all registered adaptor models when no channels are configured.
     """
+    from app.relay.registry import registry
+
     result = await db.execute(select(Channel).where(Channel.status == 1))
     channels = result.scalars().all()
 
     models = set()
-    for ch in channels:
-        if ch.models:
-            for m in ch.models.split(","):
-                name = m.strip()
-                if name:
-                    models.add(name)
-        else:
-            # Channel without specific model list: add its adaptor's models
-            from app.relay.registry import registry
-            adaptor = registry.get(ch.type)
-            if adaptor:
-                for m in adaptor.get_supported_models():
-                    models.add(m)
+    if channels:
+        for ch in channels:
+            if ch.models:
+                for m in ch.models.split(","):
+                    name = m.strip()
+                    if name:
+                        models.add(name)
+            else:
+                # Channel without specific model list: add its adaptor's models
+                adaptor = registry.get(ch.type)
+                if adaptor:
+                    for m in adaptor.get_supported_models():
+                        models.add(m)
+    else:
+        # No channels configured yet — show all adaptor models as preview
+        for adaptor in registry.all_adaptors():
+            for m in adaptor.get_supported_models():
+                models.add(m)
 
     return GenericApiResponse(data=sorted(models))
 
@@ -277,6 +285,7 @@ async def models_display(db: AsyncSession = Depends(get_db)):
 
     Returns channel_name → {models: {model_name: pricing}} mapping.
     Only shows models from channels that are actually configured (status=1).
+    Falls back to all registered adaptors when no channels are configured.
     """
     from app.relay.registry import registry
     from app.budget.pricing import get_model_pricing, MODEL_PRICING_YUAN
@@ -285,38 +294,60 @@ async def models_display(db: AsyncSession = Depends(get_db)):
     channels = result.scalars().all()
 
     display = {}
-    for ch in channels:
-        adaptor = registry.get(ch.type)
-        if not adaptor:
-            continue
-        all_models = adaptor.get_supported_models()
 
-        # Determine which models to show for this channel
-        if ch.models:
-            model_names = [m.strip() for m in ch.models.split(",")]
-        else:
-            model_names = list(all_models.keys())
-
-        models_data = {}
-        for model_name in model_names:
-            if model_name not in all_models:
+    if channels:
+        for ch in channels:
+            adaptor = registry.get(ch.type)
+            if not adaptor:
                 continue
-            try:
-                pricing = get_model_pricing(model_name)
-            except KeyError:
-                # Fallback: use MODEL_PRICING_YUAN with lowercased name
-                try:
-                    pricing = get_model_pricing(model_name.lower())
-                except KeyError:
-                    continue
-            models_data[model_name] = {
-                "input_price": pricing["input"],
-                "output_price": pricing["output"],
-                "cached_input_price": pricing["cache_hit"],
-            }
+            all_models = adaptor.get_supported_models()
 
-        if models_data:
-            display[ch.name or adaptor.provider_name] = {"models": models_data}
+            # Determine which models to show for this channel
+            if ch.models:
+                model_names = [m.strip() for m in ch.models.split(",")]
+            else:
+                model_names = list(all_models.keys())
+
+            models_data = {}
+            for model_name in model_names:
+                if model_name not in all_models:
+                    continue
+                try:
+                    pricing = get_model_pricing(model_name)
+                except KeyError:
+                    # Fallback: use MODEL_PRICING_YUAN with lowercased name
+                    try:
+                        pricing = get_model_pricing(model_name.lower())
+                    except KeyError:
+                        continue
+                models_data[model_name] = {
+                    "input_price": pricing["input"],
+                    "output_price": pricing["output"],
+                    "cached_input_price": pricing["cache_hit"],
+                }
+
+            if models_data:
+                display[ch.name or adaptor.provider_name] = {"models": models_data}
+    else:
+        # No channels configured yet — show all adaptor models as preview
+        for adaptor in registry.all_adaptors():
+            all_models = adaptor.get_supported_models()
+            models_data = {}
+            for model_name, _config in all_models.items():
+                try:
+                    pricing = get_model_pricing(model_name)
+                except KeyError:
+                    try:
+                        pricing = get_model_pricing(model_name.lower())
+                    except KeyError:
+                        continue
+                models_data[model_name] = {
+                    "input_price": pricing["input"],
+                    "output_price": pricing["output"],
+                    "cached_input_price": pricing["cache_hit"],
+                }
+            if models_data:
+                display[adaptor.provider_name] = {"models": models_data}
 
     return GenericApiResponse(data=display)
 
