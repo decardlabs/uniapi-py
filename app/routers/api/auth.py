@@ -27,7 +27,23 @@ router = APIRouter(tags=["auth"])
 
 @router.post("/api/user/login")
 async def login(body: LoginRequest, db: AsyncSession = Depends(get_db)):
-    user = await login_user(db, body.username, body.password)
+    from fastapi import HTTPException
+
+    try:
+        user = await login_user(db, body.username, body.password)
+    except HTTPException as e:
+        # Return structured error with lockout info for the frontend
+        is_locked = e.status_code == 423
+        return JSONResponse(
+            status_code=e.status_code,
+            content=GenericApiResponse(
+                success=False,
+                message=e.detail,
+                data={
+                    "locked": is_locked,
+                },
+            ).model_dump(),
+        )
 
     # TOTP check
     totp_required = bool(user.totp_secret)

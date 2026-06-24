@@ -31,5 +31,7 @@ class User(Base):
     aff_code: Mapped[Optional[str]] = mapped_column(String(32), unique=True, nullable=True)
     inviter_id: Mapped[Optional[int]] = mapped_column(Integer, nullable=True, index=True)
     mcp_tool_blacklist: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
+    failed_login_attempts: Mapped[int] = mapped_column(Integer, default=0)
+    locked_until: Mapped[Optional[int]] = mapped_column(BigInteger, nullable=True, default=None)
     created_at: Mapped[int] = mapped_column(BigInteger, default=0)
     updated_at: Mapped[int] = mapped_column(BigInteger, default=0)

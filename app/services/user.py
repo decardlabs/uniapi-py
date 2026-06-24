@@ -92,21 +92,54 @@ async def register_user(
     return user
 
 
+MAX_LOGIN_ATTEMPTS = 5
+
+
 async def login_user(
     db: AsyncSession,
     username: str,
     password: str,
 ) -> User:
+    now = int(time.time() * 1000)
     result = await db.execute(select(User).where(User.username == username))
     user = result.scalar_one_or_none()
+
     if not user:
-        raise HTTPException(status_code=401, detail="Invalid username or password")
+        raise HTTPException(status_code=401, detail="用户名或密码错误")
 
     if user.status != 1:
         raise HTTPException(status_code=401, detail="Account is disabled")
 
+    # Check if account is locked
+    if user.locked_until is not None and user.locked_until > now:
+        raise HTTPException(status_code=423, detail="帐户已被锁定，请使用邮箱重置密码")
+
     if not verify_password(password, user.password):
-        raise HTTPException(status_code=401, detail="Invalid username or password")
+        user.failed_login_attempts += 1
+        remaining = MAX_LOGIN_ATTEMPTS - user.failed_login_attempts
+
+        if user.failed_login_attempts >= MAX_LOGIN_ATTEMPTS:
+            # Lock the account permanently until password reset
+            user.locked_until = now + (365 * 24 * 3600 * 1000)  # far future
+            user.updated_at = now
+            await db.commit()
+            raise HTTPException(
+                status_code=423,
+                detail="密码错误次数过多，帐户已被锁定，请使用邮箱重置密码",
+            )
+
+        user.updated_at = now
+        await db.commit()
+        raise HTTPException(
+            status_code=401,
+            detail=f"密码错误，请重新输入（还剩 {remaining} 次尝试机会）",
+        )
+
+    # Successful login: reset failed attempts counter
+    if user.failed_login_attempts > 0:
+        user.failed_login_attempts = 0
+        user.updated_at = now
+        await db.commit()
 
     return user
 

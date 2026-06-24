@@ -143,6 +143,8 @@ async def reset_password_confirm(
 
     import time
     user.password = hash_password(new_password)
+    user.failed_login_attempts = 0
+    user.locked_until = None
     user.updated_at = int(time.time() * 1000)
     await db.commit()
 

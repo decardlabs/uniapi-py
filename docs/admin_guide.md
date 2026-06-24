@@ -1,6 +1,6 @@
 # UniAPI 管理员配置手册
 
-> 版本：0.11.1 | 适用：uniapi-py Python 后端
+> 版本：0.11.5 | 适用：uniapi-py Python 后端
 
 ---
 
@@ -15,7 +15,8 @@
 7. [管理 API 参考](#七管理-api-参考)
 8. [模型定价配置](#八模型定价配置)
 9. [Fusion 融合模式](#九fusion-融合模式)
-10. [故障排查](#十故障排查)
+10. [登录安全](#十登录安全)
+11. [故障排查](#十一故障排查)
 
 ---
 
@@ -629,9 +630,55 @@ FusionConfig(
 
 ---
 
-## 十、故障排查
+## 十、登录安全
 
-### 10.1 常见问题
+### 10.1 密码锁定机制
+
+系统内置登录暴力破解防护，防止攻击者尝试猜测用户密码。
+
+**锁定规则**：
+- 用户连续输入错误密码 **5 次**后，账户被**永久锁定**
+- 锁定的账户无法通过任何密码登录（即使输入正确密码）
+- 解锁唯一方式：通过**邮箱重置密码**
+- 成功登录（在锁定前）会自动重置失败计数器
+
+**错误响应**：
+```json
+// 密码错误（第 1-4 次）
+{"success": false, "message": "密码错误，请重新输入（还剩 4 次尝试机会）", "data": {"locked": false}}
+
+// 第 5 次错误，账户锁定
+// HTTP 423 Locked
+{"success": false, "message": "密码错误次数过多，帐户已被锁定，请使用邮箱重置密码", "data": {"locked": true}}
+```
+
+**数据库字段**（`users` 表）：
+
+| 字段 | 类型 | 说明 |
+|------|------|------|
+| `failed_login_attempts` | Integer | 连续失败次数（默认 0，成功登录后清零） |
+| `locked_until` | BigInteger | 锁定截止时间戳（ms），NULL 表示未锁定 |
+
+**管理员手动解锁**：
+```sql
+-- 直接通过 SQLite 解锁指定用户
+UPDATE users SET failed_login_attempts = 0, locked_until = NULL WHERE username = '目标用户名';
+```
+
+### 10.2 密码重置流程
+
+1. 用户在登录页点击"忘记密码" → 进入密码重置页
+2. 输入注册邮箱 → 系统发送含有时效链接的邮件（**30 分钟有效**）
+3. 点击邮件中的链接 → 进入设置新密码页面
+4. 输入新密码（至少 8 位）→ 密码重置成功，`failed_login_attempts` 清零，`locked_until` 清除
+
+**前提条件**：系统已配置 SMTP 邮件服务（Options 表中的 `SMTPServer`, `SMTPPort`, `SMTPAccount`, `SMTPToken`）。
+
+---
+
+## 十一、故障排查
+
+### 11.1 常见问题
 
 | 现象 | 原因 | 解决 |
 |------|------|------|
@@ -644,7 +691,7 @@ FusionConfig(
 | SSE 流式响应卡顿 | 响应全量缓冲后转换 | 检查 `openai_compatible.py` 是否仍有 `list()` 调用 |
 | 多 worker 下限流不准 | 内存计数器不共享 | 考虑部署 Redis 共享限流状态 |
 
-### 10.2 日志查看
+### 11.2 日志查看
 
 ```bash
 # 审计日志（中间件自动记录）
@@ -662,7 +709,7 @@ Judge analysis complete | confidence=0.85
 Synthesis complete | model=deepseek-v4-pro | tokens=642
 ```
 
-### 10.3 调试端点
+### 11.3 调试端点
 
 ```bash
 # 健康检查

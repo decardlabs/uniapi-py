@@ -38,6 +38,8 @@ export function LoginPage() {
   const [totpValue, setTotpValue] = useState('');
   const [turnstileToken, setTurnstileToken] = useState('');
   const [turnstileRequired, setTurnstileRequired] = useState(false);
+  const [isLocked, setIsLocked] = useState(false);
+  const [lockedUsername, setLockedUsername] = useState('');
   const totpRef = useRef<HTMLInputElement | null>(null);
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
@@ -171,6 +173,14 @@ export function LoginPage() {
         setTurnstileToken('');
       }
 
+      // Check if account is locked
+      if (!success && respData?.locked) {
+        setIsLocked(true);
+        setLockedUsername(data.username);
+        form.setError('root', { message: message || t('auth.login.locked_message') });
+        return;
+      }
+
       if (needsTotp) {
         setTotpRequired(true);
         setTotpValue('');
@@ -267,7 +277,7 @@ export function LoginPage() {
                   <FormItem>
                     <FormLabel htmlFor="login-username">{t('common.username')}</FormLabel>
                     <FormControl>
-                      <Input id="login-username" {...field} disabled={totpRequired} />
+                      <Input id="login-username" {...field} disabled={totpRequired || isLocked} />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -280,7 +290,7 @@ export function LoginPage() {
                   <FormItem>
                     <FormLabel htmlFor="login-password">{t('common.password')}</FormLabel>
                     <FormControl>
-                      <Input id="login-password" type="password" {...field} disabled={totpRequired} />
+                      <Input id="login-password" type="password" {...field} disabled={totpRequired || isLocked} />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -322,11 +332,26 @@ export function LoginPage() {
                   {totpRequired ? t('auth.login.totp_required') : form.formState.errors.root.message}
                 </div>
               )}
+              {isLocked && (
+                <div className="p-4 rounded-md border border-destructive/30 bg-destructive/10 space-y-3">
+                  <p className="text-sm font-semibold text-destructive">{t('auth.login.locked_title')}</p>
+                  <p className="text-sm text-destructive/80">{t('auth.login.locked_message')}</p>
+                  <Button
+                    type="button"
+                    variant="destructive"
+                    size="sm"
+                    className="w-full"
+                    onClick={() => navigate('/reset')}
+                  >
+                    {t('auth.login.locked_action')}
+                  </Button>
+                </div>
+              )}
               <Button
                 type="submit"
                 className="w-full"
                 disabled={
-                  isLoading || (totpRequired && totpValue.length !== 6) || (turnstileRequired && turnstileEnabled && !turnstileToken)
+                  isLocked || isLoading || (totpRequired && totpValue.length !== 6) || (turnstileRequired && turnstileEnabled && !turnstileToken)
                 }
               >
                 {isLoading ? t('auth.login.signing_in') : totpRequired ? t('auth.login.verify_totp') : t('auth.login.title')}
