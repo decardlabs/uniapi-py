@@ -20,7 +20,7 @@ echo "========================================="
 
 # ── 1. 构建前端 ──
 echo ""
-echo "[1/6] 构建前端..."
+echo "[1/7] 构建前端..."
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 cd "$SCRIPT_DIR/web"
 yarn build
@@ -31,9 +31,15 @@ VERSION=$(git describe --tags --dirty 2>/dev/null | sed 's/^v//')
 echo "VERSION = \"${VERSION}\"" > "$SCRIPT_DIR/app/version.py"
 echo "  ✓ 版本号: ${VERSION}"
 
-# ── 2. 同步文件到服务器 ──
+# ── 2. 停止服务（防止 rsync --delete 误删 SQLite WAL/SHM）──
 echo ""
-echo "[2/6] 同步代码到服务器..."
+echo "[2/7] 停止服务..."
+ssh "$SSH_USER@$SSH_HOST" "systemctl stop $PY_SERVICE 2>/dev/null; sleep 1"
+echo "  ✓ 服务已停止"
+
+# ── 3. 同步文件到服务器 ──
+echo ""
+echo "[3/7] 同步代码到服务器..."
 cd "$SCRIPT_DIR"
 
 rsync -avz --delete --ignore-errors \
@@ -57,9 +63,9 @@ rsync -avz --delete --ignore-errors \
   ./ "$SSH_USER@$SSH_HOST:$REMOTE_DIR/"
 echo "  ✓ 代码同步完成"
 
-# ── 3. 服务器环境初始化 ──
+# ── 4. 服务器环境初始化 ──
 echo ""
-echo "[3/6] 配置服务器环境..."
+echo "[4/7] 配置服务器环境..."
 
 # 创建 logs 和 backups 目录
 ssh "$SSH_USER@$SSH_HOST" "mkdir -p $REMOTE_DIR/logs $REMOTE_DIR/backups"
@@ -120,9 +126,9 @@ ssh "$SSH_USER@$SSH_HOST" "
 	"
 echo "  ✓ 权限设置完成"
 
-# ── 4. Nginx SSE 性能优化（堡塔 extension 目录，面板不覆盖） ──
+# ── 5. Nginx SSE 性能优化（堡塔 extension 目录，面板不覆盖） ──
 echo ""
-echo "[4/6] 配置 Nginx SSE 参数..."
+echo "[5/7] 配置 Nginx SSE 参数..."
 NGINX_SSE_CONF="/www/server/panel/vhost/nginx/extension/api.ccbot.chat/proxy_sse.conf"
 ssh "$SSH_USER@$SSH_HOST" "test -f $NGINX_SSE_CONF || cat > $NGINX_SSE_CONF << 'NGINXEOF'
 # UniAPI SSE streaming optimization
@@ -139,9 +145,9 @@ ssh "$SSH_USER@$SSH_HOST" "test -f $NGINX_SSE_CONF && nginx -t && nginx -s reloa
 echo "  → 配置文件: $NGINX_SSE_CONF"
 echo "  → 说明: 首次部署自动创建，后续部署不覆盖，可手动修改"
 
-# ── 5. 配置 systemd 服务 ──
+# ── 6. 配置 systemd 服务 ──
 echo ""
-echo "[5/6] 配置系统服务..."
+echo "[6/7] 配置系统服务..."
 ssh "$SSH_USER@$SSH_HOST" "cat > /etc/systemd/system/$PY_SERVICE << 'UNITEOF'
 [Unit]
 Description=UniAPI Python Backend
@@ -166,9 +172,9 @@ UNITEOF
 "
 echo "  ✓ systemd 服务配置完成"
 
-# ── 6. 切换服务 ──
+# ── 7. 启动服务 ──
 echo ""
-echo "[6/6] 切换服务..."
+echo "[7/7] 启动服务..."
 
 # 停止旧版 Go 服务（如果存在且与新版端口冲突）
 OLD_RUNNING=$(ssh "$SSH_USER@$SSH_HOST" "systemctl is-active $OLD_GO_SERVICE 2>/dev/null || echo inactive")

@@ -85,7 +85,18 @@ class TestRechargeEndpoints:
         recharge_id = create_resp.json()["data"]["id"]
 
         admin_cookies = await _login_admin(client)
-        resp = await client.post(f"/api/recharge/{recharge_id}/approve", cookies=admin_cookies)
+
+        # Create a budget pool (no allocation — pool is the single global pool)
+        pool_resp = await client.post("/api/pool/", json={
+            "name": "test pool", "total_funded": 1000.0, "period_type": "monthly", "period_key": "2026-06",
+        }, cookies=admin_cookies)
+        pool_id = pool_resp.json()["data"]["id"]
+
+        resp = await client.post(
+            f"/api/recharge/{recharge_id}/approve",
+            json={"pool_id": pool_id},
+            cookies=admin_cookies,
+        )
         assert resp.status_code == 200
         assert resp.json()["success"] is True
 
@@ -121,6 +132,11 @@ class TestRechargeEndpoints:
         """Admin can directly top-up a user's quota via POST /api/topup/."""
         user_cookies, user_id = await _login_user(client)
         admin_cookies = await _login_admin(client)
+
+        # Ensure an active pool exists (admin_topup auto-finds it)
+        await client.post("/api/pool/", json={
+            "name": "topup pool", "total_funded": 1000.0, "period_type": "monthly", "period_key": "2026-06",
+        }, cookies=admin_cookies)
 
         resp = await client.post(
             "/api/topup/",

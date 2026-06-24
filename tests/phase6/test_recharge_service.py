@@ -8,7 +8,9 @@ from app.database import async_session_factory
 from app.models.log import Log
 from app.models.recharge import RechargeRequest
 from app.models.user import User
+from app.models.budget import BudgetPool, PoolTransaction
 from app.services import recharge as recharge_service
+from app.services.pool_sync import sync_consumption_to_pool
 from app.services.auth import hash_password
 
 
@@ -94,7 +96,7 @@ async def test_get_recharge_by_id_not_found():
 
 @pytest.mark.asyncio
 async def test_approve_recharge_adds_quota():
-    """Approving a recharge adds the amount to user's quota."""
+    """Approving a recharge adds to user balance and deducts from pool."""
     async with async_session_factory() as db:
         user = User(username="approve_user", password=hash_password("p"), role=1)
         admin = User(username="admin", password=hash_password("p"), role=10)
@@ -106,18 +108,108 @@ async def test_approve_recharge_adds_quota():
         admin.created_time = now
         admin.updated_time = now
 
+        # Create a budget pool (no allocation needed — pool is the single global pool)
+        pool = BudgetPool(
+            name="test pool", total_funded=1000.0, total_consumed=0.0,
+            period_type="monthly", period_key="2026-06", status="active", created_at=now,
+        )
+        db.add(pool)
+        await db.flush()
+
         req = await recharge_service.create_recharge(db, user.id, 500000, "please approve")
         assert req.status == 1
 
-        approved = await recharge_service.approve_recharge(db, req.id, admin.id)
+        approved = await recharge_service.approve_recharge(db, req.id, admin.id, pool_id=pool.id)
         assert approved.status == 2
         assert approved.reviewer_id == admin.id
         assert approved.reviewed_time is not None
 
-        # Verify user quota increased
+        # Verify user balance increased: 500,000 micro-yuan = ¥0.5
         result = await db.execute(select(User).where(User.id == user.id))
         updated_user = result.scalar_one()
-        assert updated_user.balance == 500000  # 1000 + 500000
+        assert updated_user.balance == 500000
+
+        # Verify pool total_consumed increased (no allocation — pool is the ledger)
+        pool_result = await db.execute(select(BudgetPool).where(BudgetPool.id == pool.id))
+        updated_pool = pool_result.scalar_one()
+        assert updated_pool.total_consumed == 0.5  # 500000 micro-yuan = ¥0.5
+
+
+@pytest.mark.asyncio
+async def test_approve_recharge_auto_find_pool():
+    """Approve without pool_id should auto-find the active pool."""
+    async with async_session_factory() as db:
+        user = User(username="auto_pool_user", password=hash_password("p"), role=1)
+        admin = User(username="admin_auto", password=hash_password("p"), role=10)
+        db.add_all([user, admin])
+        await db.flush()
+        now = int(time.time() * 1000)
+        user.created_time = now
+        user.updated_time = now
+        admin.created_time = now
+        admin.updated_time = now
+
+        pool = BudgetPool(
+            name="auto pool", total_funded=500.0, total_consumed=0.0,
+            period_type="monthly", period_key="2026-06", status="active", created_at=now,
+        )
+        db.add(pool)
+        await db.flush()
+
+        req = await recharge_service.create_recharge(db, user.id, 200000)
+        # Call without pool_id — should auto-find
+        approved = await recharge_service.approve_recharge(db, req.id, admin.id)
+        assert approved.status == 2
+
+        pool_result = await db.execute(select(BudgetPool).where(BudgetPool.id == pool.id))
+        updated_pool = pool_result.scalar_one()
+        assert updated_pool.total_consumed == 0.2  # ¥0.2
+
+
+@pytest.mark.asyncio
+async def test_approve_recharge_insufficient_pool():
+    """Approving with insufficient pool balance raises ValueError."""
+    async with async_session_factory() as db:
+        user = User(username="poor_user", password=hash_password("p"), role=1)
+        admin = User(username="admin_poor", password=hash_password("p"), role=10)
+        db.add_all([user, admin])
+        await db.flush()
+        now = int(time.time() * 1000)
+        user.created_time = now
+        user.updated_time = now
+        admin.created_time = now
+        admin.updated_time = now
+
+        # Pool has only ¥10, but recharge is ¥100
+        pool = BudgetPool(
+            name="small pool", total_funded=10.0, total_consumed=0.0,
+            period_type="monthly", period_key="2026-06", status="active", created_at=now,
+        )
+        db.add(pool)
+        await db.flush()
+
+        req = await recharge_service.create_recharge(db, user.id, 100000000)  # ¥100
+        with pytest.raises(ValueError, match="Insufficient pool balance"):
+            await recharge_service.approve_recharge(db, req.id, admin.id, pool_id=pool.id)
+
+
+@pytest.mark.asyncio
+async def test_approve_recharge_no_active_pool():
+    """Approving with no active pool raises ValueError."""
+    async with async_session_factory() as db:
+        user = User(username="no_pool_user", password=hash_password("p"), role=1)
+        admin = User(username="admin_no_pool", password=hash_password("p"), role=10)
+        db.add_all([user, admin])
+        await db.flush()
+        now = int(time.time() * 1000)
+        user.created_time = now
+        user.updated_time = now
+        admin.created_time = now
+        admin.updated_time = now
+
+        req = await recharge_service.create_recharge(db, user.id, 100000)
+        with pytest.raises(ValueError, match="No active budget pool"):
+            await recharge_service.approve_recharge(db, req.id, admin.id)
 
 
 @pytest.mark.asyncio
@@ -158,15 +250,22 @@ async def test_approve_already_approved_rejected():
         admin.created_time = now
         admin.updated_time = now
 
+        pool = BudgetPool(
+            name="test pool 2", total_funded=1000.0, total_consumed=0.0,
+            period_type="monthly", period_key="2026-06", status="active", created_at=now,
+        )
+        db.add(pool)
+        await db.flush()
+
         req = await recharge_service.create_recharge(db, user.id, 100000)
-        await recharge_service.approve_recharge(db, req.id, admin.id)
+        await recharge_service.approve_recharge(db, req.id, admin.id, pool_id=pool.id)
         with pytest.raises(ValueError, match="not pending"):
-            await recharge_service.approve_recharge(db, req.id, admin.id)
+            await recharge_service.approve_recharge(db, req.id, admin.id, pool_id=pool.id)
 
 
 @pytest.mark.asyncio
 async def test_admin_topup():
-    """Admin direct top-up adds quota immediately."""
+    """Admin direct top-up adds quota immediately and deducts from pool (auto-find)."""
     async with async_session_factory() as db:
         user = User(username="topup_user", password=hash_password("p"), role=1)
         admin = User(username="admin4", password=hash_password("p"), role=10)
@@ -178,14 +277,56 @@ async def test_admin_topup():
         admin.created_time = now
         admin.updated_time = now
 
+        # Pool is required — admin_topup auto-finds active pool even when pool_id=0
+        pool = BudgetPool(
+            name="auto pool", total_funded=500.0, total_consumed=10.0,
+            period_type="monthly", period_key="2026-06", status="active", created_at=now,
+        )
+        db.add(pool)
+        await db.flush()
+
         result = await recharge_service.admin_topup(db, admin.id, user.id, 2.0, pool_id=0)
         assert result["balance"] == 2000000  # 2 yuan = 2,000,000 micro-yuan
+
+        # Verify pool was deducted
+        pool_result = await db.execute(select(BudgetPool).where(BudgetPool.id == pool.id))
+        updated_pool = pool_result.scalar_one()
+        assert updated_pool.total_consumed == 12.0  # 10 + 2
 
         # Verify log was created
         log_result = await db.execute(select(Log).where(Log.type == 1).where(Log.user_id == user.id))
         logs = log_result.scalars().all()
         assert len(logs) == 1
         assert logs[0].cost == 2000000
+
+
+@pytest.mark.asyncio
+async def test_admin_topup_with_pool():
+    """Admin direct top-up with pool_id deducts from pool."""
+    async with async_session_factory() as db:
+        user = User(username="topup_pool_user", password=hash_password("p"), role=1)
+        admin = User(username="admin_topup_pool", password=hash_password("p"), role=10)
+        db.add_all([user, admin])
+        await db.flush()
+        now = int(time.time() * 1000)
+        user.created_time = now
+        user.updated_time = now
+        admin.created_time = now
+        admin.updated_time = now
+
+        pool = BudgetPool(
+            name="topup pool", total_funded=100.0, total_consumed=0.0,
+            period_type="monthly", period_key="2026-06", status="active", created_at=now,
+        )
+        db.add(pool)
+        await db.flush()
+
+        result = await recharge_service.admin_topup(db, admin.id, user.id, 5.0, pool_id=pool.id)
+        assert result["balance"] == 5000000  # 5 yuan = 5,000,000 micro-yuan
+
+        pool_result = await db.execute(select(BudgetPool).where(BudgetPool.id == pool.id))
+        updated_pool = pool_result.scalar_one()
+        assert updated_pool.total_consumed == 5.0  # ¥5 deducted from pool
 
 
 @pytest.mark.asyncio
@@ -197,3 +338,61 @@ async def test_admin_topup_nonexistent_user():
         await db.flush()
         with pytest.raises(ValueError, match="not found"):
             await recharge_service.admin_topup(db, admin.id, 9999, 100000, pool_id=0)
+
+
+@pytest.mark.asyncio
+async def test_sync_consumption_to_pool():
+    """sync_consumption_to_pool deducts from pool total_consumed."""
+    async with async_session_factory() as db:
+        pool = BudgetPool(
+            name="sync pool", total_funded=1000.0, total_consumed=0.0,
+            period_type="monthly", period_key="2026-06", status="active", created_at=int(time.time() * 1000),
+        )
+        db.add(pool)
+        await db.flush()
+
+        await sync_consumption_to_pool(db, user_id=1, cost_yuan=50.0, model_name="test-model")
+        await db.commit()
+
+        pool_result = await db.execute(select(BudgetPool).where(BudgetPool.id == pool.id))
+        updated_pool = pool_result.scalar_one()
+        assert updated_pool.total_consumed == 50.0
+
+        # Verify PoolTransaction was created
+        tx_result = await db.execute(
+            select(PoolTransaction).where(PoolTransaction.pool_id == pool.id)
+        )
+        txs = tx_result.scalars().all()
+        assert len(txs) == 1
+        assert txs[0].amount == 50.0
+        assert "test-model" in txs[0].remark
+
+
+@pytest.mark.asyncio
+async def test_sync_consumption_to_pool_no_pool():
+    """sync_consumption_to_pool with no active pool is a no-op (not an error)."""
+    async with async_session_factory() as db:
+        # No pool created — should not raise
+        await sync_consumption_to_pool(db, user_id=1, cost_yuan=10.0)
+        await db.commit()
+        # No assertion needed — just verify no exception
+
+
+@pytest.mark.asyncio
+async def test_sync_consumption_to_pool_insufficient():
+    """sync_consumption_to_pool with cost exceeding available deducts what it can."""
+    async with async_session_factory() as db:
+        pool = BudgetPool(
+            name="tiny pool", total_funded=1.0, total_consumed=0.0,
+            period_type="monthly", period_key="2026-06", status="active", created_at=int(time.time() * 1000),
+        )
+        db.add(pool)
+        await db.flush()
+
+        # Cost ¥50 but pool only has ¥1 — should deduct ¥1 (all remaining)
+        await sync_consumption_to_pool(db, user_id=1, cost_yuan=50.0)
+        await db.commit()
+
+        pool_result = await db.execute(select(BudgetPool).where(BudgetPool.id == pool.id))
+        updated_pool = pool_result.scalar_one()
+        assert updated_pool.total_consumed == 1.0  # capped at available

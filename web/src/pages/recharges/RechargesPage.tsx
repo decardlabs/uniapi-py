@@ -5,12 +5,14 @@ import { EnhancedDataTable } from '@/components/ui/enhanced-data-table';
 import { useNotifications } from '@/components/ui/notifications';
 import { ResponsivePageContainer } from '@/components/ui/responsive-container';
 import { STORAGE_KEYS, usePageSize } from '@/hooks/usePersistentState';
+import { api } from '@/lib/api';
 import { getRechargeRequests, approveRecharge, rejectRecharge } from '@/lib/services/recharge';
 import type { ColumnDef } from '@tanstack/react-table';
 import {
   CheckCircle,
   XCircle,
   ChevronDown,
+  Wallet,
 } from 'lucide-react';
 import { useEffect, useRef, useState, useCallback } from 'react';
 import { createPortal } from 'react-dom';
@@ -19,6 +21,7 @@ import { useTranslation } from 'react-i18next';
 interface RechargeRequest {
   id: number;
   user_id: number;
+  username?: string;
   amount: number;
   quota: number;
   status: number;
@@ -27,7 +30,6 @@ interface RechargeRequest {
   created_time: number;
   reviewed_time: number;
   reviewer_id: number;
-  user?: { id: number; username: string };
 }
 
 export function RechargesPage() {
@@ -39,6 +41,9 @@ export function RechargesPage() {
   const initializedRef = useRef(false);
   const { notify } = useNotifications();
   const { t } = useTranslation();
+
+  // ── Pool balance info (read-only, for reference) ──
+  const [poolInfo, setPoolInfo] = useState<{ name: string; total_funded: number; total_consumed: number } | null>(null);
 
   // Inline review state — which row is in "review mode"
   const [reviewingId, setReviewingId] = useState<number | null>(null);
@@ -128,6 +133,24 @@ export function RechargesPage() {
     setPortalPos(null);
   }, [reviewingId]);
 
+  // ── Load pool balance info (read-only, for reference) ──
+  const loadPoolInfo = useCallback(async () => {
+    try {
+      const res = await api.get('/api/pool/?status=active&size=1');
+      const data = res.data;
+      if (data?.success && data.data?.length > 0) {
+        const p = data.data[0];
+        setPoolInfo({
+          name: p.name,
+          total_funded: p.total_funded || 0,
+          total_consumed: p.total_consumed || 0,
+        });
+      }
+    } catch {
+      // Non-critical — pool may not be set up yet
+    }
+  }, []);
+
   // ── Open review panel with portal positioning ─────
   const openReview = useCallback((id: number, event: React.MouseEvent<HTMLButtonElement>) => {
     const btn = event.currentTarget;
@@ -139,7 +162,8 @@ export function RechargesPage() {
     });
     setReviewingId(id);
     setRejectReasons(prev => ({ ...prev, [id]: prev[id] || '' }));
-  }, []);
+    loadPoolInfo();
+  }, [loadPoolInfo]);
 
   // ── Status badge helper ─────────────────────────
   const statusBadge = (s: number) => {
@@ -167,7 +191,7 @@ export function RechargesPage() {
       header: tr('columns.user', 'User'),
       cell: ({ row }) => (
         <span className="font-medium">
-          {row.original.user?.username || `User #${row.original.user_id}`}
+          {row.original.username || `User #${row.original.user_id}`}
         </span>
       ),
     },
@@ -297,6 +321,28 @@ export function RechargesPage() {
           <div className="text-sm font-medium text-muted-foreground">
             {tr('actions.review_title', 'Review Request')} #{reviewingId}
           </div>
+
+          {/* Pool balance info — read-only reference */}
+          {poolInfo && (
+            <div className="rounded-md bg-muted/50 p-2.5 text-xs space-y-1">
+              <div className="flex items-center gap-1.5 text-muted-foreground">
+                <Wallet className="h-3.5 w-3.5" />
+                <span className="font-medium">{poolInfo.name}</span>
+              </div>
+              <div className="flex justify-between text-muted-foreground">
+                <span>{tr('actions.pool_funded', 'Funded')}:</span>
+                <span className="font-mono">¥{poolInfo.total_funded.toFixed(2)}</span>
+              </div>
+              <div className="flex justify-between text-muted-foreground">
+                <span>{tr('actions.pool_consumed', 'Consumed')}:</span>
+                <span className="font-mono">¥{poolInfo.total_consumed.toFixed(2)}</span>
+              </div>
+              <div className="flex justify-between font-medium border-t border-border/50 pt-1 mt-1">
+                <span>{tr('actions.pool_available', 'Available')}:</span>
+                <span className="font-mono">¥{(poolInfo.total_funded - poolInfo.total_consumed).toFixed(2)}</span>
+              </div>
+            </div>
+          )}
 
           {/* Reason textarea — fully free from table layout constraints */}
           <textarea

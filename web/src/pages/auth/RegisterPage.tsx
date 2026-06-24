@@ -90,8 +90,6 @@ export function RegisterPage() {
       if (success) {
         setIsEmailSent(true);
         form.clearErrors('email');
-        // Reset token after successful verification send to encourage a fresh check next action
-        if (systemStatus?.turnstile_check) setTurnstileToken('');
       } else {
         form.setError('email', {
           message: message || t('auth.register.send_code_failed'),

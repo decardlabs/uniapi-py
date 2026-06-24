@@ -69,7 +69,7 @@ export async function getSelfRechargeRequests(params?: {
 export async function approveRecharge(
   rechargeId: number
 ): Promise<AxiosResponse<ApiResult>> {
-  return api.post(`/api/recharge/${rechargeId}/approve`);
+  return api.post(`/api/recharge/${rechargeId}/approve`, {});
 }
 
 export async function rejectRecharge(

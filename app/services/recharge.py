@@ -12,6 +12,7 @@ import uuid
 from app.models.log import Log
 from app.models.recharge import RechargeRequest
 from app.models.user import User
+from app.models.budget import BudgetPool, PoolTransaction
 
 
 async def create_recharge(
@@ -134,10 +135,41 @@ async def get_recharge_by_id(db: AsyncSession, recharge_id: int) -> RechargeRequ
     return result.scalar_one_or_none()
 
 
+async def _find_active_pool(
+    db: AsyncSession,
+    pool_id: int = 0,
+    amount_yuan: float = 0.0,
+) -> BudgetPool:
+    """Find an active budget pool and check it has enough available balance.
+
+    If ``pool_id`` is provided, checks that specific pool.
+    Otherwise, finds the first active pool (there should be only one).
+
+    Raises ValueError if no active pool is found or balance is insufficient.
+    """
+    if pool_id > 0:
+        pool = await db.get(BudgetPool, pool_id)
+    else:
+        result = await db.execute(
+            select(BudgetPool).where(BudgetPool.status == "active").order_by(BudgetPool.id).limit(1)
+        )
+        pool = result.scalar_one_or_none()
+    if not pool or pool.status != "active":
+        raise ValueError("No active budget pool found")
+
+    available = pool.total_funded - pool.total_consumed
+    if amount_yuan > available:
+        raise ValueError(
+            f"Insufficient pool balance. Available: ¥{available:.4f}, requested: ¥{amount_yuan:.4f}"
+        )
+    return pool
+
+
 async def approve_recharge(
     db: AsyncSession,
     recharge_id: int,
     admin_id: int,
+    pool_id: int = 0,
 ) -> RechargeRequest:
     req = await get_recharge_by_id(db, recharge_id)
     if req is None:
@@ -146,6 +178,21 @@ async def approve_recharge(
         raise ValueError(f"Recharge request {recharge_id} is not pending")
 
     now = int(time.time() * 1000)
+
+    # Validate pool and deduct — no per-user allocation, pool is the global ledger
+    amount_yuan = req.amount / 1_000_000
+    pool = await _find_active_pool(db, pool_id, amount_yuan)
+    pool.total_consumed = round(pool.total_consumed + amount_yuan, 4)
+
+    db.add(PoolTransaction(
+        pool_id=pool.id,
+        type="consume",
+        amount=amount_yuan,
+        user_id=req.user_id,
+        remark=f"Recharge approval: request #{recharge_id}",
+        created_at=now,
+    ))
+
     req.status = 2
     req.reviewer_id = admin_id
     req.reviewed_time = now
@@ -233,51 +280,18 @@ async def admin_topup(
     amount_micro = int(amount * 1_000_000)
     user.balance = (user.balance or 0) + amount_micro
 
-    # Pool deduction
-    if pool_id > 0:
-        from app.models.budget import BudgetPool, PoolAllocation, PoolTransaction
+    # Pool deduction — auto-find active pool (pool_id=0 means auto-find)
+    pool = await _find_active_pool(db, pool_id, amount)
+    pool.total_consumed = round((pool.total_consumed or 0) + amount, 4)
 
-        pool = await db.get(BudgetPool, pool_id)
-        if pool is None:
-            raise ValueError(f"Budget pool {pool_id} not found")
-        if pool.status != "active":
-            raise ValueError(f"Budget pool {pool_id} is not active")
-
-        # Find the user's active allocation in this pool
-        alloc_result = await db.execute(
-            select(PoolAllocation)
-            .where(
-                PoolAllocation.pool_id == pool_id,
-                PoolAllocation.user_id == user_id,
-                PoolAllocation.status == "active",
-            )
-        )
-        allocation = alloc_result.scalar_one_or_none()
-        if allocation is None:
-            raise ValueError(
-                f"User {user_id} has no active allocation in pool '{pool.name}'. "
-                "Allocate budget to the user first via the pool management page."
-            )
-
-        available = allocation.amount - allocation.consumed - allocation.recalled
-        if available < amount_micro / 1_000_000:
-            raise ValueError(
-                f"Insufficient pool allocation. Available: ¥{available:.4f}, requested: ¥{amount:.4f}"
-            )
-
-        # Record consumption against allocation
-        allocation.consumed = (allocation.consumed or 0) + amount_micro / 1_000_000
-        pool.total_consumed = (pool.total_consumed or 0) + amount_micro / 1_000_000
-
-        # Create pool transaction log
-        db.add(PoolTransaction(
-            pool_id=pool_id,
-            user_id=user_id,
-            amount=amount_micro / 1_000_000,
-            type="allocation",
-            remark=f"Admin top-up ¥{amount:.2f}" + (f" [{remark}]" if remark else ""),
-            created_at=now,
-        ))
+    db.add(PoolTransaction(
+        pool_id=pool.id,
+        user_id=user_id,
+        amount=amount,
+        type="consume",
+        remark=f"Admin top-up ¥{amount:.2f}" + (f" [{remark}]" if remark else ""),
+        created_at=now,
+    ))
 
     log = Log(
         user_id=user_id,

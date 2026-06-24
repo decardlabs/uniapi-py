@@ -376,13 +376,25 @@ export function EditTokenPage() {
                   />
 
                   <div className="space-y-4">
-                    <LabelWithHelp
-                      labelKey="models.label"
-                      defaultLabel="Allowed Models"
-                      helpKey="models.help"
-                      defaultHelp="Restrict this token to specific models. Leave empty to allow all models available to the user/group."
-                      as="label"
-                    />
+                    <div className="flex items-center justify-between">
+                      <LabelWithHelp
+                        labelKey="models.label"
+                        defaultLabel="Allowed Models"
+                        helpKey="models.help"
+                        defaultHelp="Restrict this token to specific models. Leave empty to allow all models available to the user/group."
+                        as="label"
+                      />
+                      {selectedModels.length === 0 && (
+                        <span className="text-xs text-success font-medium">
+                          {tr('models.all_allowed', 'All models allowed')}
+                        </span>
+                      )}
+                    </div>
+                    {selectedModels.length === 0 && (
+                      <p className="text-xs text-muted-foreground -mt-2 mb-1">
+                        {tr('models.hint_empty', 'No restriction — this token can access any available model. Select models below to limit access.')}
+                      </p>
+                    )}
                     <Input
                       placeholder={tr('models.search_placeholder', 'Search models...')}
                       value={modelSearchTerm}

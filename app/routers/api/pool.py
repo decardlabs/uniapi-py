@@ -263,10 +263,11 @@ async def allocate_to_user(
     db: AsyncSession = Depends(get_db),
     _=Depends(admin_auth),
 ):
-    """Allocate budget from pool to a user.
+    """Allocate budget from pool to a user (legacy — not used in recharge flow).
 
     Creates a PoolAllocation record and increases the user's
-    Budget.monthly_budget so BudgetArbiter can honor the allocation.
+    Budget.monthly_budget. The recharge/approve flow does NOT use
+    PoolAllocation — it deducts directly from the pool's total_consumed.
     """
     result = await db.execute(select(BudgetPool).where(BudgetPool.id == pool_id))
     pool = result.scalar_one_or_none()

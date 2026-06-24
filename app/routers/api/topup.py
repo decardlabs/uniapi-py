@@ -130,14 +130,19 @@ async def list_recharges(
 @router.post("/api/recharge/{recharge_id}/approve")
 async def approve_recharge(
     recharge_id: int,
+    body: dict,
     request: Request,
     db: AsyncSession = Depends(get_db),
     _=Depends(admin_auth),
 ):
-    """Admin approves a pending recharge request and credits the user's quota."""
+    """Admin approves a pending recharge request and credits the user's balance.
+
+    Body: { pool_id: int } — the budget pool to deduct from.
+    """
     admin_id = request.state.user.id
+    pool_id = body.get("pool_id", 0)
     try:
-        await recharge_service.approve_recharge(db, recharge_id, admin_id)
+        await recharge_service.approve_recharge(db, recharge_id, admin_id, pool_id=pool_id)
         return GenericApiResponse(data={"approved": True})
     except ValueError as e:
         return GenericApiResponse(success=False, message=str(e))

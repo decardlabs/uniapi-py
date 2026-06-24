@@ -141,6 +141,19 @@ def _make_stream_usage_callback(
             except Exception:
                 pass
 
+            # Real-time pool consumption sync (stream path)
+            try:
+                from app.services.pool_sync import sync_consumption_to_pool
+                await sync_consumption_to_pool(
+                    session,
+                    user_id=user_id,
+                    cost_yuan=actual_micro / 1_000_000,
+                    model_name=log_entry.model_name or "",
+                    request_id=log_entry.request_id or "",
+                )
+            except Exception:
+                pass
+
     return _on_usage
 
 
@@ -1014,6 +1027,19 @@ async def _handle_relay(request: Request, db: AsyncSession):
             status="success",
             created_at=int(time.time() * 1000),
         ))
+
+        # Real-time pool consumption sync
+        try:
+            from app.services.pool_sync import sync_consumption_to_pool
+            await sync_consumption_to_pool(
+                db,
+                user_id=user.id,
+                cost_yuan=yuan_cost,
+                model_name=model_name,
+                request_id=provisional_log.request_id,
+            )
+        except Exception:
+            logger.warning("Pool sync failed (non-fatal)", exc_info=True)
 
     await db.commit()
 
