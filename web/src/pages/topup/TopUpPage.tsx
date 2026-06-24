@@ -192,7 +192,7 @@ export function TopUpPage() {
           </CardHeader>
           <CardContent>
             <Form {...form}>
-              <form onSubmit={form.handleSubmit(onSubmitRecharge)} className="space-y-4">
+              <form onSubmit={form.handleSubmit(onSubmitRecharge, (errors) => console.error('[TopUpPage] Form validation errors:', errors))} className="space-y-4">
                 <FormField
                   control={form.control}
                   name="amount"

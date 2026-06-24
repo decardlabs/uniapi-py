@@ -375,64 +375,70 @@ export function EditTokenPage() {
                     )}
                   />
 
-                  <div className="space-y-4">
-                    <div className="flex items-center justify-between">
-                      <LabelWithHelp
-                        labelKey="models.label"
-                        defaultLabel="Allowed Models"
-                        helpKey="models.help"
-                        defaultHelp="Restrict this token to specific models. Leave empty to allow all models available to the user/group."
-                        as="label"
-                      />
-                      {selectedModels.length === 0 && (
-                        <span className="text-xs text-success font-medium">
-                          {tr('models.all_allowed', 'All models allowed')}
-                        </span>
-                      )}
-                    </div>
-                    {selectedModels.length === 0 && (
-                      <p className="text-xs text-muted-foreground -mt-2 mb-1">
-                        {tr('models.hint_empty', 'No restriction — this token can access any available model. Select models below to limit access.')}
-                      </p>
+                  <FormField
+                    control={form.control}
+                    name="models"
+                    render={() => (
+                      <FormItem>
+                        <div className="flex items-center justify-between">
+                          <LabelWithHelp
+                            labelKey="models.label"
+                            defaultLabel="Allowed Models"
+                            helpKey="models.help"
+                            defaultHelp="Restrict this token to specific models. Leave empty to allow all models available to the user/group."
+                            as="form"
+                          />
+                          {selectedModels.length === 0 && (
+                            <span className="text-sm text-success font-medium">
+                              {tr('models.all_allowed', 'All models allowed')}
+                            </span>
+                          )}
+                        </div>
+                        {selectedModels.length === 0 && (
+                          <p className="text-xs text-muted-foreground pt-0.5 pb-1">
+                            {tr('models.hint_empty', 'No restriction — this token can access any available model. Select models below to limit access.')}
+                          </p>
+                        )}
+                        <Input
+                          placeholder={tr('models.search_placeholder', 'Search models...')}
+                          value={modelSearchTerm}
+                          onChange={(e) => setModelSearchTerm(e.target.value)}
+                        />
+                        <div className="relative isolate max-h-48 overflow-y-auto border rounded-md p-4 space-y-2">
+                          {filteredModels.length === 0 ? (
+                            <p className="text-sm text-muted-foreground text-center py-4">
+                              {modelSearchTerm
+                                ? tr('models.no_search_results', 'No models match "{{keyword}}"', { keyword: modelSearchTerm })
+                                : tr('models.loading', 'Loading models...')}
+                            </p>
+                          ) : (
+                            filteredModels.map((model) => (
+                              <div key={model.value} className="relative flex items-center space-x-2">
+                                <Checkbox
+                                  id={model.value}
+                                  checked={selectedModels.includes(model.value)}
+                                  onCheckedChange={() => toggleModel(model.value)}
+                                />
+                                <Label htmlFor={model.value} className="flex-1 cursor-pointer">
+                                  {model.text}
+                                </Label>
+                              </div>
+                            ))
+                          )}
+                        </div>
+                        <div className="flex flex-wrap gap-1">
+                          {selectedModels
+                            .slice()
+                            .sort()
+                            .map((model) => (
+                              <Badge key={model} variant="secondary" className="cursor-pointer" onClick={() => toggleModel(model)}>
+                                {model} ×
+                              </Badge>
+                            ))}
+                        </div>
+                      </FormItem>
                     )}
-                    <Input
-                      placeholder={tr('models.search_placeholder', 'Search models...')}
-                      value={modelSearchTerm}
-                      onChange={(e) => setModelSearchTerm(e.target.value)}
-                    />
-                    <div className="relative isolate max-h-48 overflow-y-auto border rounded-md p-4 space-y-2">
-                      {filteredModels.length === 0 ? (
-                        <p className="text-sm text-muted-foreground text-center py-4">
-                          {modelSearchTerm
-                            ? tr('models.no_search_results', 'No models match "{{keyword}}"', { keyword: modelSearchTerm })
-                            : tr('models.loading', 'Loading models...')}
-                        </p>
-                      ) : (
-                        filteredModels.map((model) => (
-                          <div key={model.value} className="relative flex items-center space-x-2">
-                            <Checkbox
-                              id={model.value}
-                              checked={selectedModels.includes(model.value)}
-                              onCheckedChange={() => toggleModel(model.value)}
-                            />
-                            <Label htmlFor={model.value} className="flex-1 cursor-pointer">
-                              {model.text}
-                            </Label>
-                          </div>
-                        ))
-                      )}
-                    </div>
-                    <div className="flex flex-wrap gap-1">
-                      {selectedModels
-                        .slice()
-                        .sort()
-                        .map((model) => (
-                          <Badge key={model} variant="secondary" className="cursor-pointer" onClick={() => toggleModel(model)}>
-                            {model} ×
-                          </Badge>
-                        ))}
-                    </div>
-                  </div>
+                  />
 
                   <FormField
                     control={form.control}
