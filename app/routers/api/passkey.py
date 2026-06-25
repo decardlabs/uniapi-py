@@ -31,9 +31,9 @@ router = APIRouter(tags=["passkey"])
 
 
 def _get_rp_id(request: Request) -> str:
-    """Get the Relying Party ID from the request host."""
-    host = request.headers.get("host", "localhost")
-    return host.split(":")[0]
+    """Get the Relying Party ID from config, not from user-supplied Host header."""
+    from app.config import settings
+    return settings.webauthn_rp_id
 
 
 def _get_origin(request: Request) -> str:

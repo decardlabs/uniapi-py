@@ -29,6 +29,9 @@ class Settings(BaseSettings):
     # TOTP
     totp_pending_ttl_seconds: int = 600  # 10 minutes
 
+    # WebAuthn (Passkey)
+    webauthn_rp_id: str = "localhost"  # Must match deployment domain
+
     # Token
     token_key_prefix: str = "sk-"
 

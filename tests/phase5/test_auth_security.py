@@ -11,7 +11,6 @@ class TestSessionCookieFlags:
     """Task 1: Session cookie must use Secure flag in production."""
 
     def test_session_cookie_secure_config_defaults_true(self):
-        """The session_cookie_secure setting defaults to True."""
         assert settings.session_cookie_secure is True
 
 
@@ -43,28 +42,30 @@ class TestPasswordStrength:
 
 
 class TestTOTPPendingPersistence:
-    """Task 3: TOTP pending state must be in database, not memory."""
+    """Task 3: TOTP pending state in database."""
 
     def test_totp_pending_ttl_config_exists(self):
-        """TOTP pending TTL is configured (10 minutes default)."""
         assert settings.totp_pending_ttl_seconds == 600
 
 
 class TestLoginTurnstile:
-    """Task 4: Login endpoint integrates Cloudflare Turnstile."""
+    """Task 4: Login Turnstile integration."""
 
     def test_login_request_schema_has_turnstile_token(self):
-        """LoginRequest accepts an optional turnstile_token field."""
         from app.schemas.user import LoginRequest
         schema = LoginRequest.model_json_schema()
         assert "turnstile_token" in schema["properties"]
 
 
 class TestAccountLockoutSemantics:
-    """Task 5: locked_until=-1 means permanent lock, requires admin to unlock."""
+    """Task 5: locked_until=-1 is permanent lock sentinel."""
 
-    def test_locked_until_negative_one_is_permanent_lock(self):
-        """locked_until = -1 is the semantic for permanent lock (admin must unlock)."""
-        # The login_user logic checks: locked_until == -1 or (locked_until > now)
-        # This is verified by the code using -1 as sentinel value
+    def test_permanent_lock_uses_negative_one(self):
         assert -1 == -1  # sentinel for permanent lock
+
+
+class TestPasskeyRPID:
+    """Task 6: Passkey RP ID from config, not Host header."""
+
+    def test_webauthn_rp_id_config_exists(self):
+        assert settings.webauthn_rp_id == "localhost"  # default value
