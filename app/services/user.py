@@ -1,16 +1,18 @@
 from __future__ import annotations
 
+import re
 import secrets
 import time
 import uuid
 from typing import Optional
 
 import httpx
+
+from app.config import settings
 from fastapi import HTTPException
 from sqlalchemy import select, func, or_
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.config import settings
 from app.models.option import Option
 from app.models.token import Token
 from app.models.user import User
@@ -42,6 +44,19 @@ async def verify_turnstile(token: str) -> bool:
         return False
 
 
+def validate_password_strength(password: str) -> Optional[str]:
+    """Validate password meets policy. Returns error message or None if valid."""
+    if len(password) < settings.password_min_length:
+        return f"Password must be at least {settings.password_min_length} characters"
+    if settings.password_require_uppercase and not re.search(r"[A-Z]", password):
+        return "Password must contain at least one uppercase letter"
+    if settings.password_require_digit and not re.search(r"\d", password):
+        return "Password must contain at least one digit"
+    if settings.password_require_special and not re.search(r"[!@#$%^&*(),.?\":{}|<>]", password):
+        return "Password must contain at least one special character"
+    return None
+
+
 async def register_user(
     db: AsyncSession,
     username: str,
@@ -55,8 +70,9 @@ async def register_user(
     if existing.scalar_one_or_none():
         raise HTTPException(status_code=400, detail="Username already taken")
 
-    if len(password) < 8:
-        raise HTTPException(status_code=400, detail="Password must be at least 8 characters")
+    strength_error = validate_password_strength(password)
+    if strength_error:
+        raise HTTPException(status_code=400, detail=strength_error)
 
     now = int(time.time() * 1000)
     # Auto-generate a unique affiliate code for the new user

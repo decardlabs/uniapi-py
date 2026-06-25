@@ -20,6 +20,12 @@ class Settings(BaseSettings):
     session_cookie_secure: bool = True  # 生产环境必须为 True
     cookie_max_age_hours: int = 168
 
+    # Password policy
+    password_min_length: int = 8
+    password_require_uppercase: bool = True
+    password_require_digit: bool = True
+    password_require_special: bool = False
+
     # Token
     token_key_prefix: str = "sk-"
 
