@@ -1093,9 +1093,9 @@ async def _handle_relay(request: Request, db: AsyncSession):
             db_session=db,
         )
 
-    # Lightweight cost recording (runs regardless of BUDGET_ENABLED)
-    # Used by Budget Pool reconciliation to track actual consumption.
-    if provisional_log.request_id:
+    # Lightweight cost recording (runs when budget is DISABLED;
+    # when budget is enabled, post_settle → _write_cost_record handles it).
+    if provisional_log.request_id and not settings.budget_enabled:
         try:
             yuan_cost = calculate_cost(model_name, prompt_tokens, completion_tokens, cache_hit)
         except Exception:

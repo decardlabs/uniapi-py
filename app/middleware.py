@@ -80,21 +80,34 @@ class RateLimitMiddleware(BaseHTTPMiddleware):
 
 
 class PIIMaskMiddleware(BaseHTTPMiddleware):
-    """Mask PII (phone, email, API keys) in request body before processing."""
+    """Mask PII (phone, email, API keys) in request body for audit logging.
 
-    _patterns = {
-        "phone": (re.compile(r"1[3-9]\d{9}"), "[PHONE]"),
-        "email": (re.compile(r"[\w.-]+@[\w.-]+\.\w+"), "[EMAIL]"),
-        "api_key": (re.compile(r"sk-[a-zA-Z0-9]{40,}"), "[API_KEY]"),
-        "id_card": (re.compile(r"\d{17}[\dXx]"), "[ID_CARD]"),
-    }
+    Stores the masked body in ``request.state.masked_body`` so downstream
+    middleware (e.g. audit loggers) can record it without exposing secrets.
+    """
+
+    # Ordered by specificity — higher-specificity patterns first to avoid
+    # false partial matches (e.g. phone pattern swallowing ID card numbers).
+    _patterns = [
+        ("id_card", re.compile(r"\b\d{17}[\dXx]\b"), "[ID_CARD]"),
+        ("phone", re.compile(r"\b1[3-9]\d{9}\b"), "[PHONE]"),
+        ("email", re.compile(r"[\w.-]+@[\w.-]+\.\w+"), "[EMAIL]"),
+        ("api_key", re.compile(r"\bsk-[a-zA-Z0-9]{40,}\b"), "[API_KEY]"),
+    ]
 
     async def dispatch(self, request: Request, call_next: RequestResponseEndpoint) -> Response:
-        return await call_next(request)
+        if request.method in ("POST", "PUT", "PATCH"):
+            try:
+                body = await request.json()
+                request.state.masked_body = self._mask_pii(body)
+            except Exception:
+                request.state.masked_body = None
+        response = await call_next(request)
+        return response
 
     def _mask_pii(self, data):
         if isinstance(data, str):
-            for name, (pattern, replacement) in self._patterns.items():
+            for _name, pattern, replacement in self._patterns:
                 data = pattern.sub(replacement, data)
             return data
         elif isinstance(data, dict):
