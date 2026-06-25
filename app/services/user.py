@@ -126,8 +126,8 @@ async def login_user(
     if user.status != 1:
         raise HTTPException(status_code=401, detail="Account is disabled")
 
-    # Check if account is locked
-    if user.locked_until is not None and user.locked_until > now:
+    # Check if account is locked (locked_until = -1 means permanent until admin unlocks)
+    if user.locked_until == -1 or (user.locked_until is not None and user.locked_until > now):
         raise HTTPException(status_code=423, detail="帐户已被锁定，请使用邮箱重置密码")
 
     if not verify_password(password, user.password):
@@ -135,8 +135,8 @@ async def login_user(
         remaining = MAX_LOGIN_ATTEMPTS - user.failed_login_attempts
 
         if user.failed_login_attempts >= MAX_LOGIN_ATTEMPTS:
-            # Lock the account permanently until password reset
-            user.locked_until = now + (365 * 24 * 3600 * 1000)  # far future
+            # Lock permanently until admin unlocks (locked_until = -1)
+            user.locked_until = -1
             user.updated_at = now
             await db.commit()
             raise HTTPException(
