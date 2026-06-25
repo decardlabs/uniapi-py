@@ -121,6 +121,11 @@ async def login_user(
     user = result.scalar_one_or_none()
 
     if not user:
+        # Perform a dummy DB write to make timing consistent with the
+        # wrong-password case (which writes failed_login_attempts).
+        # Without this, an attacker can enumerate valid usernames
+        # by measuring response time.
+        await db.flush()
         raise HTTPException(status_code=401, detail="用户名或密码错误")
 
     if user.status != 1:
