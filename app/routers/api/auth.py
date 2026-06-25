@@ -212,6 +212,9 @@ async def update_self(
         if strength_error:
             return GenericApiResponse(success=False, message=strength_error)
         user.password = hash_password(new_password)
+        # Reset lock counters — user proved ownership of old password
+        user.failed_login_attempts = 0
+        user.locked_until = None
 
     if "display_name" in body:
         user.display_name = body["display_name"]

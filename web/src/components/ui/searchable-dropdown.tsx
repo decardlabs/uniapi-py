@@ -20,7 +20,7 @@ interface SearchableDropdownProps {
   options: SearchOption[];
   onSearchChange?: (query: string) => void;
   onChange?: (value: string) => void;
-  onSelect?: (key: string) => void;
+  onSelect?: (key: string, text: string) => void;
   onAddItem?: (value: string) => void;
   loading?: boolean;
   noResultsMessage?: string;
@@ -33,6 +33,7 @@ interface SearchableDropdownProps {
   transformResponse?: (data: any[]) => SearchOption[];
   debounceMs?: number;
   minQueryLength?: number;
+  autoSearchOnOpen?: boolean;
 }
 
 export function SearchableDropdown({
@@ -54,6 +55,7 @@ export function SearchableDropdown({
   transformResponse,
   debounceMs = 300,
   minQueryLength = 2,
+  autoSearchOnOpen = false,
 }: SearchableDropdownProps) {
   const [open, setOpen] = React.useState(false);
   const [searchValue, setSearchValue] = React.useState('');
@@ -124,7 +126,7 @@ export function SearchableDropdown({
     // Find the selected option to get its key (ID)
     const selectedOption = [...initialOptions, ...apiOptions].find((option) => option.value === selectedValue);
     if (onSelect && selectedOption) {
-      onSelect(selectedOption.key);
+      onSelect(selectedOption.key, selectedOption.text);
       setOpen(false);
       setSearchValue('');
       return;
@@ -166,6 +168,32 @@ export function SearchableDropdown({
     allowAdditions && searchValue && !filteredOptions.some((option) => option.value.toLowerCase() === searchValue.toLowerCase());
 
   const currentLoading = loading || apiLoading;
+
+  // Auto-load on open — fetch initial results when dropdown opens
+  const hasAutoLoaded = React.useRef(false);
+  React.useEffect(() => {
+    if (open && autoSearchOnOpen && searchEndpoint && !hasAutoLoaded.current) {
+      hasAutoLoaded.current = true;
+      // Trigger initial fetch by simulating an empty search
+      setSearchValue('');
+      // Call API directly bypassing minQueryLength check
+      if (searchEndpoint && transformResponse) {
+        setApiLoading(true);
+        api.get(`${searchEndpoint}?keyword=`)
+          .then(resp => {
+            const result = resp.data;
+            if (result.success && result.data) {
+              setApiOptions(transformResponse(result.data));
+            }
+          })
+          .catch(() => setApiOptions([]))
+          .finally(() => setApiLoading(false));
+      }
+    }
+    if (!open) {
+      hasAutoLoaded.current = false;
+    }
+  }, [open, autoSearchOnOpen, searchEndpoint, transformResponse]);
 
   // Cleanup timeout on unmount
   React.useEffect(() => {

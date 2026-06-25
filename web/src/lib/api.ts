@@ -79,7 +79,12 @@ api.interceptors.response.use(
     // Handle proper HTTP status codes for authentication/authorization failures
     const status = error.response?.status;
     const message = (error.response?.data?.message || '').toLowerCase();
-    if (status === 401 || (status === 403 && message.includes('not logged in'))) {
+    const url = error.config?.url || '';
+
+    // Never redirect on the login endpoint — let the login page handle its own errors
+    const isLoginEndpoint = url === '/api/user/login';
+
+    if (!isLoginEndpoint && (status === 401 || (status === 403 && message.includes('not logged in')))) {
       handleAuthFailure();
     }
     return Promise.reject(error);

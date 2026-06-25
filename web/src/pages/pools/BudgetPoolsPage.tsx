@@ -194,6 +194,7 @@ export default function BudgetPoolsPage() {
 
   // Allocate form
   const [allocateUserId, setAllocateUserId] = useState('');
+  const [allocateUserText, setAllocateUserText] = useState('');
   const [allocateAmount, setAllocateAmount] = useState('');
   const [allocateRemark, setAllocateRemark] = useState('');
   const [submitting, setSubmitting] = useState(false);
@@ -529,6 +530,7 @@ export default function BudgetPoolsPage() {
   };
   const resetAllocateForm = () => {
     setAllocateUserId('');
+    setAllocateUserText('');
     setAllocateAmount('');
     setAllocateRemark('');
   };
@@ -931,7 +933,7 @@ export default function BudgetPoolsPage() {
               <label className="text-sm font-medium">{tr('allocate_user', 'User')}</label>
               <SearchableDropdown
                 options={[]}
-                value={allocateUserId ? `#${allocateUserId}` : ''}
+                value={allocateUserText}
                 placeholder={tr('allocate_user_placeholder', 'Search user by name...')}
                 searchPlaceholder={tr('allocate_user_search', 'Type username...')}
                 searchEndpoint="/api/user/search"
@@ -944,7 +946,8 @@ export default function BudgetPoolsPage() {
                 }
                 debounceMs={300}
                 minQueryLength={1}
-                onSelect={(key) => setAllocateUserId(key)}
+                autoSearchOnOpen={true}
+                onSelect={(key, text) => { setAllocateUserId(key); setAllocateUserText(text); }}
                 noResultsMessage={tr('allocate_user_no_results', 'No users found')}
               />
               {allocateUserId && (

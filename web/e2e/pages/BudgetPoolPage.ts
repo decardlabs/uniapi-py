@@ -28,7 +28,7 @@ export class BudgetPoolPage {
   constructor(page: Page) {
     this.page = page;
 
-    this.heading = page.getByRole('heading', { name: /budget pools/i });
+    this.heading = page.getByRole('heading', { name: /budget pool/i });
     this.poolTable = page.getByRole('table');
 
     // Allocate dialog selectors
@@ -43,8 +43,8 @@ export class BudgetPoolPage {
     this.allocateRemarkInput = this.allocateDialog.locator(
       'input[placeholder*="remark"], input[placeholder*="Remark"]'
     );
-    this.allocateSubmitBtn = page.getByRole('button', { name: /submit/i });
-    this.allocateCancelBtn = page.getByRole('button', { name: /cancel/i });
+    this.allocateSubmitBtn = this.allocateDialog.getByRole('button', { name: /submit/i });
+    this.allocateCancelBtn = this.allocateDialog.getByRole('button', { name: /cancel/i });
 
     this.recallDialog = page.locator('[role="dialog"]');
   }

@@ -257,6 +257,9 @@ async def admin_update_user(
         user.display_name = display_name
     if password is not None:
         user.password = hash_password(password)
+        # Reset lock counters on admin password reset
+        user.failed_login_attempts = 0
+        user.locked_until = None
     if email is not None:
         user.email = email
     if quota is not None:
