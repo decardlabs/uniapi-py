@@ -4,6 +4,12 @@ __pycache__/
 *.egg-info/
 .venv/
 .env
+.env.e2e
+
+# Playwright
+web/e2e/test-results/
+web/e2e/playwright-report/
+web/playwright-report/
 
 # Database
 *.db

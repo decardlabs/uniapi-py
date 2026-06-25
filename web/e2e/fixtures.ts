@@ -23,7 +23,7 @@ export class LoginPage {
 
     this.usernameInput = page.getByLabel(/username/i);
     this.passwordInput = page.getByLabel(/password/i);
-    this.submitButton = page.getByRole('button', { name: /sign in/i });
+    this.submitButton = page.getByRole('button', { name: 'Sign In', exact: true });
     this.form = page.getByTestId('login-form');
     this.errorMessage = page.locator('[class*="text-destructive"]');
     this.totpInput = page.getByPlaceholder(/6-digit totp code/i);

@@ -1,5 +1,7 @@
 import { test, expect, LoginPage } from './fixtures';
 
+const ORIGINAL_PASSWORD = '123456';
+
 /**
  * 登录页面 E2E 测试
  *
@@ -193,6 +195,46 @@ test.describe('登录页面', () => {
 
       // 应该跳转到 /channels 而不是默认的 /dashboard
       await expect(page).toHaveURL(/\/channels/);
+    });
+  });
+
+  test.describe('登录错误与加载状态', () => {
+    test.describe.configure({ mode: 'serial' });
+
+    test('用错误密码登录后应停留在登录页', async ({ page }) => {
+      const lp = new LoginPage(page);
+      await page.goto('/login');
+      await lp.expectLoaded();
+
+      await lp.login('root', 'definitely-wrong-password');
+
+      // 登录失败后应停留在登录页面（而不是跳转到 dashboard）
+      await expect(page).toHaveURL(/\/login/);
+    });
+
+    test('点击登录后按钮应显示 "Signing In..." 并被禁用', async ({ page }) => {
+      const lp = new LoginPage(page);
+      await page.goto('/login');
+      await lp.expectLoaded();
+
+      await lp.usernameInput.fill('root');
+      await lp.passwordInput.fill(ORIGINAL_PASSWORD);
+
+      // 延迟登录响应以便观察中间 loading 状态
+      await page.route('**/api/user/login', async (route) => {
+        await new Promise((r) => setTimeout(r, 300));
+        await route.continue();
+      });
+
+      // 用 form 中的 submit 按钮，不依赖按钮文字
+      const submitBtn = page.locator('form button[type="submit"]');
+      await submitBtn.click();
+
+      // 等待按钮变成 "Signing In..." 并禁用
+      await expect(submitBtn).toBeDisabled({ timeout: 5000 });
+      await expect(submitBtn).toContainText(/signing in/i);
+
+      await page.unroute('**/api/user/login');
     });
   });
 

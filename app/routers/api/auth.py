@@ -9,6 +9,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.database import get_db
 from app.dependencies import user_auth
+from app.config import settings
 from app.models.channel import Channel
 from app.models.option import Option
 from app.schemas.common import GenericApiResponse
@@ -204,8 +205,12 @@ async def update_self(
     new_password = body.get("password")
     if new_password:
         from app.services.auth import hash_password, verify_password
+        from app.services.user import validate_password_strength
         if not verify_password(body.get("old_password", ""), user.password):
             return GenericApiResponse(success=False, message="Old password is incorrect")
+        strength_error = validate_password_strength(new_password)
+        if strength_error:
+            return GenericApiResponse(success=False, message=strength_error)
         user.password = hash_password(new_password)
 
     if "display_name" in body:
