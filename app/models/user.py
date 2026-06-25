@@ -33,5 +33,7 @@ class User(Base):
     mcp_tool_blacklist: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
     failed_login_attempts: Mapped[int] = mapped_column(Integer, default=0)
     locked_until: Mapped[Optional[int]] = mapped_column(BigInteger, nullable=True, default=None)
+    pending_totp_secret: Mapped[Optional[str]] = mapped_column(String(64), nullable=True)
+    pending_totp_expires_at: Mapped[Optional[int]] = mapped_column(BigInteger, nullable=True)
     created_at: Mapped[int] = mapped_column(BigInteger, default=0)
     updated_at: Mapped[int] = mapped_column(BigInteger, default=0)

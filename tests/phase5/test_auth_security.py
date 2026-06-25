@@ -1,4 +1,4 @@
-"""Security-related tests for auth: session cookies, password strength, lockout."""
+"""Security-related tests for auth: session cookies, password strength, lockout, TOTP."""
 from __future__ import annotations
 
 import pytest
@@ -40,3 +40,11 @@ class TestPasswordStrength:
     def test_accepts_strong_password(self):
         result = validate_password_strength("Abc12345")
         assert result is None
+
+
+class TestTOTPPendingPersistence:
+    """Task 3: TOTP pending state must be in database, not memory."""
+
+    def test_totp_pending_ttl_config_exists(self):
+        """TOTP pending TTL is configured (10 minutes default)."""
+        assert settings.totp_pending_ttl_seconds == 600

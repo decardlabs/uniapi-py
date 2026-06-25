@@ -26,6 +26,9 @@ class Settings(BaseSettings):
     password_require_digit: bool = True
     password_require_special: bool = False
 
+    # TOTP
+    totp_pending_ttl_seconds: int = 600  # 10 minutes
+
     # Token
     token_key_prefix: str = "sk-"
 
