@@ -29,6 +29,21 @@ router = APIRouter(tags=["auth"])
 async def login(body: LoginRequest, db: AsyncSession = Depends(get_db)):
     from fastapi import HTTPException
 
+    # Turnstile check (if enabled globally)
+    turnstile_enabled_result = await db.execute(
+        select(Option).where(Option.key == "TurnstileCheckEnabled")
+    )
+    turnstile_enabled = turnstile_enabled_result.scalar_one_or_none()
+    if turnstile_enabled and turnstile_enabled.value.lower() == "true":
+        if not await verify_turnstile(body.turnstile_token or ""):
+            return JSONResponse(
+                status_code=403,
+                content=GenericApiResponse(
+                    success=False,
+                    message="Turnstile verification failed, please refresh and try again",
+                ).model_dump(),
+            )
+
     try:
         user = await login_user(db, body.username, body.password)
     except HTTPException as e:

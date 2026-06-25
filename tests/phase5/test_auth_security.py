@@ -1,4 +1,4 @@
-"""Security-related tests for auth: session cookies, password strength, lockout, TOTP."""
+"""Security-related tests for auth: session cookies, password strength, lockout, TOTP, Turnstile."""
 from __future__ import annotations
 
 import pytest
@@ -48,3 +48,13 @@ class TestTOTPPendingPersistence:
     def test_totp_pending_ttl_config_exists(self):
         """TOTP pending TTL is configured (10 minutes default)."""
         assert settings.totp_pending_ttl_seconds == 600
+
+
+class TestLoginTurnstile:
+    """Task 4: Login endpoint integrates Cloudflare Turnstile."""
+
+    def test_login_request_schema_has_turnstile_token(self):
+        """LoginRequest accepts an optional turnstile_token field."""
+        from app.schemas.user import LoginRequest
+        schema = LoginRequest.model_json_schema()
+        assert "turnstile_token" in schema["properties"]

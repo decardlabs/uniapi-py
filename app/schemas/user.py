@@ -9,6 +9,7 @@ class LoginRequest(BaseModel):
     username: str
     password: str
     totp_code: Optional[str] = None
+    turnstile_token: Optional[str] = None
 
 
 class RegisterRequest(BaseModel):
