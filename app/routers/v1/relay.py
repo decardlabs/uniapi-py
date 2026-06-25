@@ -72,11 +72,6 @@ def _make_stream_usage_callback(
     from app.models.user import User
 
     async def _on_usage(usage: dict[str, Any]) -> None:
-        if not usage or not any(usage.values()):
-            with open("/tmp/_on_usage_debug.log", "a") as f:
-                f.write(f"_on_usage: empty usage={usage!r}\n")
-            return
-
         prompt_tokens = usage.get("prompt_tokens") or usage.get("input_tokens") or 0
         completion_tokens = usage.get("completion_tokens") or usage.get("output_tokens") or 0
 
@@ -114,6 +109,15 @@ def _make_stream_usage_callback(
             log_entry.prompt_tokens = prompt_tokens
             log_entry.completion_tokens = completion_tokens
             log_entry.cached_prompt_tokens = cache_hit
+
+            # Always update type to 2 (consume), even when usage is empty.
+            # Without this, error/empty streams leave stale type=6 records.
+            log_entry.type = 2
+            if not usage or not any(usage.values()):
+                log_entry.content = f"Stream ended without usage data for {log_entry.model_name}"
+                with open("/tmp/_on_usage_debug.log", "a") as f:
+                    f.write(f"_on_usage: empty usage for log {log_id}, still patched\n")
+
             await session.commit()
             with open("/tmp/_on_usage_debug.log", "a") as f:
                 f.write(f"_on_usage: COMMITTED log {log_id}\n")
@@ -352,6 +356,13 @@ async def _refund_and_raise_connection_error(
     """
     # Refund micro-yuan balance on failure
     user.balance += estimated_micro
+
+    # Patch the provisional log so it doesn't remain as stale type=6
+    provisional_log.type = 2
+    provisional_log.content = f"Failed: {exc}"
+    import time as _time
+    provisional_log.elapsed_time = int(_time.time() * 1000)
+
     if budget_arbiter and settings.budget_enabled and hasattr(request.state, "budget_info") and request.state.budget_info:
         bi = request.state.budget_info
         from app.budget.arbiter import ActualUsage
@@ -894,6 +905,13 @@ async def _handle_relay(request: Request, db: AsyncSession):
 
             # Refund micro-yuan balance
             user.balance += estimated_micro
+
+            # Mark log as failed so it doesn't remain as stale type=6
+            provisional_log.type = 2
+            provisional_log.content = f"Upstream {status} for {model_name}"
+            import time as _time
+            provisional_log.elapsed_time = int(_time.time() * 1000)
+
             await db.commit()
 
             # Budget settlement
@@ -906,6 +924,16 @@ async def _handle_relay(request: Request, db: AsyncSession):
                     db_session=db,
                 )
 
+            # Capture upstream error body for diagnosis
+            try:
+                _upstream_err_body = exc.response.json()
+            except Exception:
+                _upstream_err_body = str(exc)
+            logger.warning(
+                "RELAY_FAILED request=%s model=%s channel=%d status=%d err=%s",
+                provisional_log.request_id, model_name, _channel_id, status,
+                _upstream_err_body,
+            )
 
             # Map upstream HTTP error to UniAPI code
             from app.relay.upstream_errors import map_upstream_http_error
