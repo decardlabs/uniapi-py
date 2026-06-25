@@ -91,13 +91,11 @@ class TestGlmInvalidKeyHandling:
         assert resp.status_code != 500, (
             f"Got 500 (unhandled exception). Response: {data}"
         )
-        # Should be a structured error with proper UniAPI error code
+        # Should be a structured error with proper error code (OpenAI format on /v1/*)
         assert "error" in data, f"No error field in response: {data}"
         error_code = data["error"].get("code", "")
-        assert error_code in (
-            "UNIAPI_CHANNEL_UNAVAILABLE",
-            "UNIAPI_INTERNAL_ERROR",
-        ), f"Unexpected error code: {error_code}"
+        # OpenAI format: UNIAPI_CHANNEL_UNAVAILABLE → server_error
+        assert error_code == "server_error", f"Unexpected error code: {error_code}"
 
     async def test_invalid_glm_key_in_fallback_channel_handled(self):
         """When fallback channel also has bad GLM key, should not crash."""

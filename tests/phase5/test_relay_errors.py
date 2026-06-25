@@ -33,11 +33,13 @@ class TestRelayBusinessErrors:
         return await self.client.post("/v1/chat/completions", json=body, headers=self._headers())
 
     async def test_model_not_supported(self):
-        """Requesting an unsupported model returns UNIAPI_MODEL_NOT_SUPPORTED."""
+        """Requesting an unsupported model returns model_not_found (OpenAI format)."""
         resp = await self._post({"model": "nonexistent-model-xyz-123", "messages": [{"role": "user", "content": "hi"}]})
         assert resp.status_code in (400, 404), f"Got {resp.status_code}"
         data = resp.json()
-        assert data["error"]["code"] == "UNIAPI_MODEL_NOT_SUPPORTED", f"Got code: {data['error']['code']}"
+        # OpenAI format: error.code = "model_not_found"
+        assert data["error"]["code"] == "model_not_found", f"Got code: {data['error']['code']}"
+        assert data["error"]["type"] == "invalid_request_error"
 
     async def test_model_not_specified_with_restricted_token(self):
         """Empty model field should trigger appropriate error."""
@@ -45,23 +47,21 @@ class TestRelayBusinessErrors:
         # May work (auto) or fail depending on channels
         assert resp.status_code < 600
 
-    async def test_all_errors_include_request_id(self):
-        """Every relay error must contain error.request_id."""
-        resp = await self._post({"model": "nonexistent-model-xyz", "messages": [{"role": "user", "content": "hi"}]})
-        data = resp.json()
-        assert "request_id" in data["error"], f"Keys: {list(data.keys())}, error keys: {list(data.get('error', {}).keys())}"
-
     async def test_all_errors_include_error_code(self):
         """Every relay error must have error.code."""
         resp = await self._post({"model": "nonexistent-model-xyz", "messages": [{"role": "user", "content": "hi"}]})
         data = resp.json()
         assert "code" in data["error"]
 
-    async def test_phase_a_compat_detail_present(self):
-        """Phase A: v1 relay errors must include top-level 'detail'."""
+    async def test_openai_format_structure(self):
+        """Phase B: v1 relay errors return pure OpenAI format (no extra fields)."""
         resp = await self._post({"model": "nonexistent-model-xyz", "messages": [{"role": "user", "content": "hi"}]})
         data = resp.json()
-        assert "detail" in data, f"Expected 'detail' in Phase A compat. Keys: {list(data.keys())}"
+        # Top level: only "error"
+        assert list(data.keys()) == ["error"], f"Unexpected keys: {list(data.keys())}"
+        # Error object: only standard OpenAI fields
+        assert set(data["error"].keys()) == {"message", "type", "param", "code"}, \
+            f"Unexpected error keys: {list(data['error'].keys())}"
 
 
 class TestMiddlewareErrors:

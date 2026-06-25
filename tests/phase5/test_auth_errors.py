@@ -31,19 +31,23 @@ class TestTokenAuthErrors:
         )
         assert resp.status_code == 401
         data = resp.json()
-        assert data["error"]["code"] == "UNIAPI_INVALID_TOKEN"
-        assert data["error"]["type"] == "authentication"
+        # OpenAI format on /v1/*
+        assert data["error"]["code"] == "invalid_api_key"
+        assert data["error"]["type"] == "authentication_error"
 
     async def test_invalid_token_returns_401(self):
         resp = await _post_relay(self.client, token="invalid-token-12345")
         assert resp.status_code == 401
         data = resp.json()
-        assert data["error"]["code"] == "UNIAPI_INVALID_TOKEN"
+        # OpenAI format on /v1/*
+        assert data["error"]["code"] == "invalid_api_key"
 
-    async def test_error_response_has_request_id(self):
+    async def test_error_response_has_no_extra_fields(self):
+        """OpenAI format on /v1/* — only standard fields."""
         resp = await _post_relay(self.client, token="invalid-token")
         data = resp.json()
-        assert "request_id" in data["error"]
+        assert set(data.keys()) == {"error"}
+        assert set(data["error"].keys()) == {"message", "type", "param", "code"}
 
     async def test_valid_token_still_works(self):
         """Ensure normal auth flow is not broken."""
