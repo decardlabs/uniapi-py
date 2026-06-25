@@ -193,17 +193,30 @@ def _infer_upstream_code(http_status: int) -> str:
 async def app_exception_handler(request, exc: AppException) -> JSONResponse:
     """FastAPI exception handler that produces standard error responses.
 
-    During Phase A (compat period), all exceptions on ``/v1/*`` paths
-    also output a top-level ``detail`` field for backwards compatibility.
+    ``/v1/*`` paths return OpenAI-compatible error format.
+    Other paths return the standard UniAPI format.
+
+    During Phase A (compat period), non-v1 RelayExceptions also output a
+    top-level ``detail`` field for backwards compatibility.
     """
     from app.schemas.error import build_compat_error_response, build_error_response
+    from app.schemas.openai_error import get_openai_error_meta, build_openai_error_response
 
-    # Extract request_id from middleware state when available
     request_id = getattr(request.state, "request_id", None) if hasattr(request, "state") else None
-
-    # Phase A compat: /v1/* paths get detail field for backwards compat
     is_v1_path = request.url.path.startswith("/v1/") if hasattr(request, "url") else False
-    use_compat = isinstance(exc, RelayException) or is_v1_path
+
+    # /v1/* endpoints → OpenAI-compatible error format
+    if is_v1_path:
+        status, openai_type, openai_code = get_openai_error_meta(exc.code)
+        resp = build_openai_error_response(
+            message=exc.message,
+            openai_type=openai_type,
+            openai_code=openai_code,
+        )
+        return JSONResponse(status_code=status, content=resp)
+
+    # Non-/v1/* endpoints → UniAPI format (unchanged)
+    use_compat = isinstance(exc, RelayException)
 
     if use_compat:
         resp = build_compat_error_response(
@@ -229,16 +242,16 @@ async def app_exception_handler(request, exc: AppException) -> JSONResponse:
 
 
 async def http_exception_handler(request, exc) -> JSONResponse:  # type: ignore[no-untyped-def]
-    """Map FastAPI's built-in ``HTTPException`` to the standard error format.
+    """Map FastAPI's built-in ``HTTPException`` to a standard error format.
 
-    This handler provides a safety net: any ``HTTPException`` that hasn't
-    been migrated to ``AppException`` / ``RelayException`` yet will still
-    produce a standard error response with a UniAPI error code.
+    ``/v1/*`` paths return OpenAI-compatible error format.
+    Other paths return the standard UniAPI format.
 
     Registered alongside ``app_exception_handler`` in ``app/main.py``.
     """
     from fastapi import HTTPException
     from app.schemas.error import build_compat_error_response
+    from app.schemas.openai_error import get_openai_error_meta, build_openai_error_response
 
     # Map HTTP status → UniAPI code
     status_code = exc.status_code if isinstance(exc, HTTPException) else 500
@@ -247,7 +260,19 @@ async def http_exception_handler(request, exc) -> JSONResponse:  # type: ignore[
     code = _http_status_to_code(status_code)
 
     request_id = getattr(request.state, "request_id", None) if hasattr(request, "state") else None
+    is_v1_path = request.url.path.startswith("/v1/") if hasattr(request, "url") else False
 
+    # /v1/* endpoints → OpenAI-compatible error format
+    if is_v1_path:
+        _, openai_type, openai_code = get_openai_error_meta(code)
+        resp = build_openai_error_response(
+            message=detail if isinstance(detail, str) else str(detail),
+            openai_type=openai_type,
+            openai_code=openai_code,
+        )
+        return JSONResponse(status_code=status_code, content=resp)
+
+    # Non-/v1/* endpoints → UniAPI format (unchanged)
     resp = build_compat_error_response(
         code=code,
         message=detail if isinstance(detail, str) else str(detail),

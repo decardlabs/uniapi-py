@@ -87,6 +87,46 @@ def _build_test_app(register_http_handler: bool = True):
     async def raise_http_500():
         raise HTTPException(status_code=500, detail="Internal server error")
 
+    # /v1/ route handlers — used by TestOpenAIFormatOnV1Paths
+    @app.get("/v1/raise/relay")
+    async def raise_v1_relay():
+        from app.exceptions import RelayException
+        raise RelayException(
+            message="Token not allowed",
+            code="UNIAPI_TOKEN_MODEL_NOT_ALLOWED",
+        )
+
+    @app.get("/v1/raise/unauthorized")
+    async def raise_v1_unauthorized():
+        from app.exceptions import UnauthorizedException
+        raise UnauthorizedException()
+
+    @app.get("/v1/raise/quota")
+    async def raise_v1_quota():
+        from app.exceptions import QuotaExceededException
+        raise QuotaExceededException(message="Insufficient quota")
+
+    @app.get("/v1/raise/upstream")
+    async def raise_v1_upstream():
+        from app.exceptions import UpstreamException
+        raise UpstreamException(
+            message="Upstream timed out",
+            upstream_provider="deepseek",
+            upstream_status=504,
+        )
+
+    @app.get("/v1/raise/http-401")
+    async def raise_v1_http_401():
+        raise HTTPException(status_code=401, detail="Not logged in")
+
+    @app.get("/v1/raise/http-403")
+    async def raise_v1_http_403():
+        raise HTTPException(status_code=403, detail="Admin required")
+
+    @app.get("/v1/raise/http-429")
+    async def raise_v1_http_429():
+        raise HTTPException(status_code=429, detail="Rate limited")
+
     return app
 
 
@@ -244,3 +284,79 @@ class TestHTTPExceptionHandler:
         assert "detail" in data
         # No standard error object
         assert "error" not in data
+
+
+class TestOpenAIFormatOnV1Paths:
+    """/v1/* paths produce OpenAI-compatible error format."""
+
+    async def test_v1_path_relay_returns_openai_format(self, client):
+        resp = await client.get("/v1/raise/relay")
+        assert resp.status_code == 404
+        data = resp.json()
+        # OpenAI format: only "error" at top level
+        assert list(data.keys()) == ["error"]
+        assert data["error"]["message"] == "Token not allowed"
+        assert data["error"]["type"] == "invalid_request_error"
+        assert data["error"]["param"] is None
+        assert data["error"]["code"] == "model_not_found"
+
+    async def test_v1_path_unauthorized_returns_openai_format(self, client):
+        resp = await client.get("/v1/raise/unauthorized")
+        assert resp.status_code == 401
+        data = resp.json()
+        assert data["error"]["code"] == "invalid_api_key"
+        assert data["error"]["type"] == "authentication_error"
+
+    async def test_v1_path_quota_returns_429(self, client):
+        resp = await client.get("/v1/raise/quota")
+        assert resp.status_code == 429
+        data = resp.json()
+        assert data["error"]["code"] == "insufficient_quota"
+        assert data["error"]["type"] == "insufficient_quota"
+
+    async def test_v1_path_upstream(self, client):
+        resp = await client.get("/v1/raise/upstream")
+        assert resp.status_code == 504
+        data = resp.json()
+        assert data["error"]["code"] == "upstream_error"
+        assert data["error"]["type"] == "api_error"
+
+    async def test_v1_path_http_401(self, client):
+        resp = await client.get("/v1/raise/http-401")
+        assert resp.status_code == 401
+        data = resp.json()
+        assert data["error"]["code"] == "invalid_api_key"
+        assert data["error"]["type"] == "authentication_error"
+
+    async def test_v1_path_http_403(self, client):
+        resp = await client.get("/v1/raise/http-403")
+        assert resp.status_code == 403
+        data = resp.json()
+        assert data["error"]["code"] == "permission_denied"
+        assert data["error"]["type"] == "authorization_error"
+
+    async def test_v1_path_http_429(self, client):
+        resp = await client.get("/v1/raise/http-429")
+        assert resp.status_code == 429
+        data = resp.json()
+        assert data["error"]["code"] == "rate_limit_exceeded"
+        assert data["error"]["type"] == "rate_limit_error"
+
+    async def test_non_v1_path_unchanged(self, client):
+        """AppException on non-/v1 path still produces UniAPI format."""
+        resp = await client.get("/raise/app")
+        assert resp.status_code == 400
+        data = resp.json()
+        assert data["success"] is False
+        assert data["error"]["code"] == "UNIAPI_INVALID_REQUEST"
+        assert data["error"]["type"] == "validation"
+        assert "request_id" in data["error"]
+
+    async def test_non_v1_relay_exception_still_has_compat(self, client):
+        """RelayException on non-/v1 path still produces compat format."""
+        resp = await client.get("/raise/relay")
+        assert resp.status_code == 403
+        data = resp.json()
+        assert "detail" in data
+        assert data["error"]["code"] == "UNIAPI_TOKEN_MODEL_NOT_ALLOWED"
+        assert data["error"]["type"] == "authorization"
