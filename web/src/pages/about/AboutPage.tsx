@@ -50,7 +50,7 @@ export function AboutPage() {
         src={about}
         className="w-full h-screen border-0"
         title={t('about.iframe_title')}
-        sandbox="allow-scripts allow-same-origin allow-popups"
+        sandbox="allow-popups"
       />
     );
   }

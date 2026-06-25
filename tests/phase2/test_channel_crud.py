@@ -10,6 +10,62 @@ async def _login(client: AsyncClient) -> dict:
     return resp.cookies
 
 
+def test_mask_api_key():
+    """API keys returned to the frontend must be masked (partial)."""
+    from app.routers.api.channel import _mask_key
+
+    full_key = "sk-abcdefghijklmnopqrstuvwxyz1234567890abcdefgh"
+    masked = _mask_key(full_key)
+    assert masked != full_key, "Key must be masked"
+    assert masked.startswith("sk-abc"), "Should show first 7 chars"
+    assert masked.endswith("fgh"), "Should show last 3 chars"
+    assert "..." in masked, "Should have ellipsis"
+
+
+def test_mask_api_key_short():
+    """Short keys should not be masked (likely already truncated or test keys)."""
+    from app.routers.api.channel import _mask_key
+
+    short_key = "sk-test"
+    assert _mask_key(short_key) == short_key, "Short keys unchanged"
+
+
+def test_mask_api_key_empty():
+    """Empty keys should stay empty."""
+    from app.routers.api.channel import _mask_key
+
+    assert _mask_key("") == ""
+    assert _mask_key(None) is None
+
+
+@pytest.mark.asyncio
+async def test_channel_list_masks_keys(client: AsyncClient):
+    """GET /api/channel/ should return masked API keys."""
+    cookies = await _login(client)
+    # First create a channel so we have data
+    await client.post("/api/channel/", json={
+        "name": "KeyMask Test",
+        "type": 39,
+        "key": "sk-test-key-masked-1234567890",
+        "models": "deepseek-v4-flash",
+        "group": "default",
+    }, cookies=cookies)
+
+    resp = await client.get("/api/channel/?p=0&size=100", cookies=cookies)
+    assert resp.status_code == 200
+    data = resp.json()
+    assert data["success"] is True
+    channels = data.get("data", [])
+    for ch in channels:
+        if ch.get("key"):
+            # The returned key should be masked (not the full value we sent)
+            assert "sk-test-key" not in ch["key"], "Key should be masked"
+            assert "..." in ch["key"] or len(ch["key"]) < 20, (
+                f"Key should be masked or truncated: {ch['key']}"
+            )
+
+
+
 @pytest.mark.asyncio
 async def test_list_channels(client: AsyncClient):
     """GET /api/channel/ should return paginated channel list."""

@@ -3,7 +3,7 @@ import ReactMarkdown from 'react-markdown';
 import rehypeHighlight from 'rehype-highlight';
 import rehypeKatex from 'rehype-katex';
 import rehypeRaw from 'rehype-raw';
-import rehypeSanitize from 'rehype-sanitize';
+import rehypeSanitize, { defaultSchema } from 'rehype-sanitize';
 import remarkEmoji from 'remark-emoji';
 import remarkGfm from 'remark-gfm';
 import remarkMath from 'remark-math';
@@ -48,7 +48,25 @@ export const MarkdownRenderer = React.memo<{
     >
       <ReactMarkdown
         remarkPlugins={[remarkMath, remarkGfm, remarkEmoji]}
-        rehypePlugins={[rehypeRaw, rehypeSanitize, rehypeHighlight, rehypeKatex]}
+        rehypePlugins={[
+          rehypeRaw,
+          [
+            rehypeSanitize,
+            {
+              ...defaultSchema,
+              // Strip event handler attributes (onclick, onerror, etc.)
+              // to prevent XSS while keeping legitimate HTML tags.
+              attributes: {
+                ...defaultSchema.attributes,
+                "*": ["className", ...(defaultSchema.attributes?.["*"] || []).filter(
+                  (attr: string) => !attr.startsWith("on")
+                )],
+              },
+            },
+          ],
+          rehypeHighlight,
+          rehypeKatex,
+        ]}
         components={{
           // Use GitHub-style task lists
           input: ({ node, ...props }) => {

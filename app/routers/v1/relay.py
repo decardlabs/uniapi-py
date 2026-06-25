@@ -650,7 +650,23 @@ async def _handle_relay(request: Request, db: AsyncSession):
                 details={"user_group": user_group, "channel_group": channel.group},
             )
 
-    # Budget arbitration pre-check
+    # Pre-consume: check micro-yuan balance FIRST (before budget freeze)
+    input_tokens_est = _estimate_input_tokens(body, model_config)
+    output_tokens_est = min(body.get("max_tokens", body.get("max_output_tokens", 256)), 4096)
+    try:
+        estimated_micro = estimate_cost_micro(model_name, input_tokens_est, output_tokens_est)
+    except KeyError:
+        logger.warning("estimate_cost_micro failed for model=%r, using default", model_name)
+        estimated_micro = 1000  # fallback: ~1k micro-yuan
+
+    # Allow ¥1 overdraft — conservative estimation is imprecise
+    if user.balance < estimated_micro and user.balance - estimated_micro < -MAX_OVERDRAFT_MICRO:
+        raise RelayException(
+            code="UNIAPI_QUOTA_EXHAUSTED",
+            message="Insufficient user balance",
+        )
+
+    # Budget arbitration pre-check (runs AFTER balance check to avoid freeze leaks)
     budget_arbiter: BudgetArbiter | None = getattr(request.app.state, "budget_arbiter", None)
     if budget_arbiter and settings.budget_enabled:
         estimated_input = _estimate_input_tokens(body, model_config)
@@ -673,22 +689,6 @@ async def _handle_relay(request: Request, db: AsyncSession):
             "frozen_amount": decision.estimated_cost,
             "monthly_budget": decision.monthly_budget,
         }
-
-    # Pre-consume: check and deduct micro-yuan balance
-    input_tokens_est = _estimate_input_tokens(body, model_config)
-    output_tokens_est = min(body.get("max_tokens", body.get("max_output_tokens", 256)), 4096)
-    try:
-        estimated_micro = estimate_cost_micro(model_name, input_tokens_est, output_tokens_est)
-    except KeyError:
-        logger.warning("estimate_cost_micro failed for model=%r, using default", model_name)
-        estimated_micro = 1000  # fallback: ~1k micro-yuan
-
-    # Allow ¥1 overdraft — conservative estimation is imprecise
-    if user.balance < estimated_micro and user.balance - estimated_micro < -MAX_OVERDRAFT_MICRO:
-        raise RelayException(
-            code="UNIAPI_QUOTA_EXHAUSTED",
-            message="Insufficient user balance",
-        )
 
     now_ms = int(time.time() * 1000)
     provisional_log = Log(

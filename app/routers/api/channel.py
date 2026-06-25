@@ -667,12 +667,22 @@ def _to_seconds(ts: int) -> int:
     return ts
 
 
+def _mask_key(key: str | None) -> str | None:
+    """Mask an API key for frontend display: show first 7 + '...' + last 3 chars.
+
+    Short keys (< 12 chars) and None are returned unchanged.
+    """
+    if key is None or len(key) < 12:
+        return key
+    return key[:7] + "..." + key[-3:]
+
+
 def _channel_to_dict(c: Channel) -> dict:
     """Convert Channel ORM to dict matching frontend Channel interface."""
     return {
         "id": c.id,
         "type": c.type,
-        "key": c.key or "",
+        "key": _mask_key(c.key) or "",
         "status": c.status,
         "name": c.name,
         "base_url": c.base_url or "",

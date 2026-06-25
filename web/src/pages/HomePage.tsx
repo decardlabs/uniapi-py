@@ -47,7 +47,7 @@ export function HomePage() {
         src={home}
         className="w-full h-screen border-0"
         title={t('home.iframe_title')}
-        sandbox="allow-scripts allow-same-origin allow-popups"
+        sandbox="allow-popups"
       />
     );
   }

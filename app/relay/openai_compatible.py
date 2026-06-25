@@ -245,7 +245,14 @@ async def relay_chat_completion(
                             break
                         yield chunk
                 except GeneratorExit:
-                    pass
+                    # Client disconnected — cancel the background reader task
+                    # to prevent leaking the upstream HTTP connection.
+                    reader_task.cancel()
+                    try:
+                        await reader_task
+                    except (asyncio.CancelledError, Exception):
+                        pass
+                    return
 
             return StreamingResponse(
                 _client_stream(),
