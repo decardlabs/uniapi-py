@@ -799,19 +799,48 @@ async def _handle_relay(request: Request, db: AsyncSession):
         except httpx.HTTPStatusError as exc:
             status = exc.response.status_code
             remaining = MAX_RETRIES - attempt - 1
+            _is_quota_exhausted = False
+            _msg_429 = ""
 
-            # ── Path A: 429 with remaining retries → exponential backoff on same channel ──
-            if status == 429 and remaining >= 1:
-                delay = BACKOFF_BASE * (2 ** attempt) * (0.5 + random.random() * 0.5)
-                logger.info(
-                    "UPSTREAM 429 | channel=%d attempt=%d/%d retry_in=%.2fs",
-                    _channel_id, attempt + 1, MAX_RETRIES, delay,
-                )
-                await asyncio.sleep(delay)
-                continue  # retry same channel — no failure count, no refund
-
-            # ── Path B: 429 with no remaining retries → try fallback channel ──
+            # ── 429 handling ──
+            # Two distinct cases:
+            #   1. Genuine rate limit → exponential backoff × remaining retries
+            #   2. Quota/credits exhausted → retrying is useless, fail fast
             if status == 429:
+                try:
+                    _body_429 = exc.response.json()
+                    _msg_429 = (
+                        _body_429.get("error", {}).get("message", "")
+                        or str(_body_429)
+                    )
+                    _quota_keywords = (
+                        "quota", "用量", "plan", "credits", "balance",
+                        "insufficient", "exhausted", "limit reached",
+                    )
+                    _is_quota_exhausted = any(kw in _msg_429.lower() for kw in _quota_keywords)
+                except Exception:
+                    _msg_429 = str(exc)
+
+                if not _is_quota_exhausted and remaining >= 1:
+                    # Path A: genuine rate limit → exponential backoff
+                    delay = BACKOFF_BASE * (2 ** attempt) * (0.5 + random.random() * 0.5)
+                    logger.info(
+                        "UPSTREAM 429 (rate limit) | channel=%d attempt=%d/%d retry_in=%.2fs",
+                        _channel_id, attempt + 1, MAX_RETRIES, delay,
+                    )
+                    await asyncio.sleep(delay)
+                    continue  # retry same channel — no failure count, no refund
+
+                # Path B: quota exhausted or no retries left → diagnostic + fall through
+                logger.warning(
+                    "UPSTREAM 429 (quota exhausted) | channel=%d model=%s err=%s",
+                    _channel_id, model_name, _msg_429,
+                )
+
+            # ── All retries and fallbacks exhausted → record failure/cooldown, refund, raise ──
+            if status == 429 and _is_quota_exhausted:
+                pass  # skip fallback, go straight to refund
+            elif status == 429:
                 fallback_channel = await _find_fallback_channel(db, channel_type, model_name)
                 if fallback_channel and fallback_channel.models:
                     fallback_model = fallback_channel.models.split(",")[0].strip()
