@@ -471,6 +471,11 @@ registry.register(MY_CHANNEL_TYPE, MyProviderAdaptor)
 
 | 版本 | 日期 | 变更 |
 |------|------|------|
+| **v0.11.6** | 2026-06-25 | 服务器错误修复：GLM API key 格式错误→结构化异常；流式 5xx 故障转移；httpx.Timeout 分离连接/读取超时；pricing.py 空模型名保护；channel.py 废弃 input_ratio→calculate_cost_micro()；converter.py 图片丢弃加 warning 日志；deploy.sh 加入 alembic upgrade head；服务器运维信息文档；27 新测试（604 total） |
+| **v0.11.5** | 2026-06-24 | 登录锁定：5 次失败锁定账户，邮箱重置 |
+| **v0.11.4** | 2026-06-24 | 版本号修正 |
+| **v0.11.3** | 2026-06-23 | 前端修复：MCP servers 404、TopUpPage 余额显示、models/display 废弃字段引用 |
+| **v0.11.2** | 2026-06-23 | 文档一致性修正 |
 | **v0.11.1** | 2026-06-23 | 修复 429 fallback 请求未实际执行（`continue` 退出循环）的 bug；修复 root 用户 balance=0 问题；收紧 `except Exception` 为具体 httpx 异常类型；`_record_channel_failure` 死 SELECT 清理；文档同步；修复流式日志 prompt_tokens/completion_tokens 为 0 的问题；Dashboard 余额卡片 CNY 显示 |
 
 ### v0.10.x — Bugfix & 功能迭代
