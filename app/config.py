@@ -17,6 +17,7 @@ class Settings(BaseSettings):
 
     # Session
     session_secret: str = ""
+    session_cookie_secure: bool = True  # 生产环境必须为 True
     cookie_max_age_hours: int = 168
 
     # Token
