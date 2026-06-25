@@ -61,8 +61,15 @@ def _make_stream_usage_callback(
     log_id: int,
     estimated_micro: int,
     user_id: int,
+    model_name: str = "",
+    budget_arbiter: Any | None = None,
+    period: str = "",
+    frozen_amount: float = 0.0,
+    monthly_budget: float = 0.0,
 ) -> Any:
     """Return a callback that patches the provisional log after a stream ends.
+
+    Also settles the frozen budget when budget arbitration is enabled.
 
     The callback runs in a *new* database session because the original
     request's session is already closed by the time the SSE stream finishes.
@@ -117,6 +124,38 @@ def _make_stream_usage_callback(
                 log_entry.content = f"Stream ended without usage data for {log_entry.model_name}"
                 with open("/tmp/_on_usage_debug.log", "a") as f:
                     f.write(f"_on_usage: empty usage for log {log_id}, still patched\n")
+            else:
+                log_entry.content = f"Stream: ChatCompletion with {log_entry.model_name or model_name}"
+
+            # Settle the frozen budget now that we have actual usage data.
+            # This runs in a new session, so we use the budget_arbiter directly.
+            if budget_arbiter is not None and period:
+                try:
+                    from app.budget.arbiter import ActualUsage as _ActualUsage
+
+                    # Use the model name from the log entry (persisted at pre-consume time)
+                    _stream_model = log_entry.model_name or model_name
+                    await budget_arbiter.post_settle(
+                        user_id=user_id,
+                        period=period,
+                        frozen_amount=frozen_amount,
+                        monthly_budget=monthly_budget,
+                        request_id=log_entry.request_id or "",
+                        actual_usage=_ActualUsage(
+                            model=_stream_model,
+                            input_tokens=prompt_tokens,
+                            output_tokens=completion_tokens,
+                            cache_hit_tokens=cache_hit,
+                        ),
+                        db_session=session,
+                    )
+                except Exception as _exc:
+                    import logging as _lg
+
+                    _lg.getLogger(__name__).warning(
+                        "Stream budget settle failed for log %d: %s",
+                        log_id, _exc,
+                    )
 
             await session.commit()
             with open("/tmp/_on_usage_debug.log", "a") as f:
@@ -735,10 +774,17 @@ async def _handle_relay(request: Request, db: AsyncSession):
     if stream:
         # Capture provisional_log.id from the already-flushed object
         stream_log_id = provisional_log.id
+        # Pass budget arbiter info so the callback can settle frozen budget
+        _budget_info = getattr(request.state, "budget_info", None) or {}
         stream_usage_cb = _make_stream_usage_callback(
             log_id=stream_log_id,
             estimated_micro=estimated_micro,
             user_id=user.id,
+            model_name=model_name,
+            budget_arbiter=budget_arbiter,
+            period=_budget_info.get("period", ""),
+            frozen_amount=_budget_info.get("frozen_amount", 0.0),
+            monthly_budget=_budget_info.get("monthly_budget", 0.0),
         )
 
     async def _prepare_fallback_request(next_model_name: str, next_channel: Channel) -> tuple[dict, str, dict[str, str]] | None:
