@@ -18,6 +18,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.database import get_db
 from app.dependencies import admin_auth
 from app.models.channel import Channel
+from app.budget.pricing import calculate_cost_micro
 from app.models.log import Log
 from app.models.token import Token
 from app.models.user import User
@@ -368,11 +369,10 @@ async def test_all_channels(
                         completion_tokens = usage.get("completion_tokens", 0) or 0
 
                         cost = 0
-                        if model_config:
-                            cost = int(
-                                prompt_tokens * model_config.input_ratio
-                                + completion_tokens * model_config.output_ratio
-                            )
+                        try:
+                            cost = calculate_cost_micro(model_name, prompt_tokens, completion_tokens)
+                        except KeyError:
+                            cost = 0
 
                         logger.info(
                             "TEST RESULT ok channel=%s model=%s pt=%d ct=%d cost=%d elapsed=%dms usage_keys=%s",

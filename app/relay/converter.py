@@ -6,6 +6,9 @@ Reference: docs/API中转站协议转换架构讨论.md §4
 from __future__ import annotations
 
 import copy
+import logging
+
+logger = logging.getLogger(__name__)
 
 
 # ---------------------------------------------------------------------------
@@ -49,7 +52,17 @@ def anthropic_to_chat(body: dict) -> dict:
                 elif block.get("type") == "tool_result":
                     # tool_result in user/tool messages → simple string
                     text_parts.append(str(block.get("content", "")))
-                # image blocks are stripped (OpenAI Chat format differs)
+                elif block.get("type") == "image":
+                    # Image blocks are stripped — OpenAI Chat format requires
+                    # a different content structure (not yet implemented).
+                    logger.warning(
+                        "anthropic_to_chat: image block stripped from conversion "
+                        "(source type=%s media_type=%s). "
+                        "The upstream model will NOT see the image.",
+                        block.get("source", {}).get("type", "unknown"),
+                        block.get("source", {}).get("media_type", "unknown"),
+                    )
+                # Other unknown block types are silently skipped
             msg["content"] = "".join(text_parts) if text_parts else ""
 
     result["messages"] = messages

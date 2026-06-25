@@ -141,8 +141,11 @@ async def relay_chat_completion(
         "Content-Type": "application/json",
     }
 
+    # Shared timeout: 10s connect, 300s read, 30s write, 10s pool
+    _upstream_timeout = httpx.Timeout(connect=10.0, read=300.0, write=30.0, pool=10.0)
+
     if stream:
-        client = httpx.AsyncClient()
+        client = httpx.AsyncClient(timeout=_upstream_timeout)
 
         if raw_passthrough:
             # Eagerly check upstream status so 4xx/5xx errors propagate
@@ -338,9 +341,9 @@ async def relay_chat_completion(
             },
         )
 
-    async with httpx.AsyncClient() as client:
+    async with httpx.AsyncClient(timeout=_upstream_timeout) as client:
         resp = await client.post(
-            upstream_url, json=body, headers=headers, timeout=300
+            upstream_url, json=body, headers=headers
         )
         resp.raise_for_status()
         return resp.json()

@@ -118,6 +118,17 @@ ssh "$SSH_USER@$SSH_HOST" "test -d $REMOTE_DIR/.venv || python3 -m venv $REMOTE_
 ssh "$SSH_USER@$SSH_HOST" "cd $REMOTE_DIR && source .venv/bin/activate && pip install -e . -q"
 echo "  ✓ Python 依赖安装完成"
 
+# 数据库迁移（防止 schema 不匹配导致启动崩溃）
+echo "  运行数据库迁移..."
+MIGRATION_OUTPUT=$(ssh "$SSH_USER@$SSH_HOST" "cd $REMOTE_DIR && source .venv/bin/activate && alembic upgrade head 2>&1")
+MIGRATION_EXIT=$?
+echo "  → $MIGRATION_OUTPUT"
+if [ $MIGRATION_EXIT -ne 0 ]; then
+    echo "  ⚠ 数据库迁移失败（退出码 $MIGRATION_EXIT），请检查服务器日志"
+    echo "  → $MIGRATION_OUTPUT"
+fi
+echo "  ✓ 数据库迁移完成"
+
 # 权限设置：跳过宝塔面板的 .user.ini（带 immutable 属性）
 ssh "$SSH_USER@$SSH_HOST" "
 		find $REMOTE_DIR -not -name '.user.ini' -exec chown root:www {} + 2>/dev/null

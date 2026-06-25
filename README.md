@@ -8,7 +8,7 @@
 
 ## Status
 
-🚧 **All phases complete** — 570 tests, all GREEN (11 skipped)
+🚧 **All phases complete** — 604 tests, all GREEN (11 skipped)
 
 | Phase | 内容 | 状态 | 测试数 |
 |-------|------|------|--------|
@@ -16,7 +16,7 @@
 | 2 | Management API CRUD, Billing | ✅ | 148 |
 | 3 | Multi-format: NATIVE_FORMATS routing | ✅ | 7 |
 | 4 | Extensibility + Budget Pool Management | ✅ | 46 |
-| 5 | Upstream 429 retry + failover | ✅ | 246 |
+| 5 | Upstream 429 retry + failover | ✅ | 273 |
 | 6 | Recharge & Redemption codes | ✅ | 48 |
 
 ### 已接入供应商（5 家）
@@ -166,7 +166,7 @@ uniapi-py/
     ├── phase2/                      # Phase 2: 管理 API (128 tests)
     ├── phase3/                      # Phase 3: 多格式 (7 tests)
     ├── phase4/                      # Phase 4: 可扩展性 (14 tests)
-    ├── phase5/                      # Phase 5: 429重试与退路 (132 tests)
+    ├── phase5/                      # Phase 5: 429重试与退路 (273 tests)
     ├── phase6/                      # Phase 6: 充值 & 兑换码 (48 tests)
     ├── glm/                         # GLM adaptor (13 tests)
     ├── test_cache_analytics.py     # Cache analytics (8 tests)
@@ -404,7 +404,7 @@ uniapi-py/
 
 ## 测试
 
-### 单元测试 (570 tests, 11 skipped)
+### 单元测试 (604 tests, 11 skipped)
 
 ```bash
 pytest tests/ -v
@@ -569,6 +569,31 @@ curl https://api.ccbot.chat/api/status  # → {"success":true,"data":{"version":
 | `app/version.py` | 自动生成（gitignore），`VERSION = "0.11.x"` |
 | `/etc/systemd/system/uniapi-py.service` | systemd 服务定义 |
 | `/www/server/panel/vhost/nginx/extension/api.ccbot.chat/proxy_sse.conf` | Nginx SSE 优化参数 |
+
+### 服务器运维信息
+
+> 服务器: `api.ccbot.chat` (OpenCloudOS 9) · 项目目录: `/www/wwwroot/api.ccbot.chat` · SSH: `root@api.ccbot.chat`
+
+| 路径 | 说明 |
+|------|------|
+| **`/www/wwwroot/api.ccbot.chat/uniapi.db`** | **SQLite 数据库文件（主数据库）** |
+| `/www/wwwroot/api.ccbot.chat/uniapi.db-wal` | SQLite WAL 日志（写入缓冲，崩溃恢复用） |
+| `/www/wwwroot/api.ccbot.chat/uniapi.db-shm` | SQLite 共享内存索引（WAL 索引） |
+| `/www/wwwroot/api.ccbot.chat/logs/access.log` | 应用访问日志（stdout） |
+| `/www/wwwroot/api.ccbot.chat/logs/error.log` | 应用错误日志（stderr） |
+| `/www/wwwroot/api.ccbot.chat/.env` | 环境变量配置（首次部署生成，后续不覆盖） |
+
+**数据库备份**（手动执行）：
+
+```bash
+# 在服务器上备份（WAL 模式下安全复制）
+ssh root@api.ccbot.chat "cd /www/wwwroot/api.ccbot.chat && sqlite3 uniapi.db '.backup /www/wwwroot/api.ccbot.chat/backups/uniapi-$(date +%Y%m%d).db'"
+
+# 拉取到本地
+scp root@api.ccbot.chat:/www/wwwroot/api.ccbot.chat/uniapi.db ./uniapi-backup.db
+```
+
+**rsync 保护**: `deploy.sh` 的 `--exclude 'uniapi.db'` 确保部署时不会覆盖生产数据库。
 
 ## 技术栈
 

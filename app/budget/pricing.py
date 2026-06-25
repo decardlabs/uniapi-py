@@ -66,6 +66,8 @@ PRICING_SAFETY_MARGIN = 1.2
 
 def get_model_pricing(model_name: str) -> dict[str, float]:
     """Get pricing dict for a model. Raises KeyError if unknown."""
+    if not model_name or not model_name.strip():
+        raise KeyError(f"Unknown model: {model_name!r} (empty model name)")
     if model_name not in MODEL_PRICING_YUAN:
         raise KeyError(f"Unknown model: {model_name}")
     return MODEL_PRICING_YUAN[model_name]

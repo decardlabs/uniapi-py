@@ -98,10 +98,13 @@ def _make_stream_usage_callback(
                 return
 
             # Calculate cost using the model name stored in the log entry
-            actual_micro = calculate_cost_micro(
-                log_entry.model_name or "",
-                prompt_tokens, completion_tokens, cache_hit,
-            )
+            try:
+                actual_micro = calculate_cost_micro(
+                    log_entry.model_name or "",
+                    prompt_tokens, completion_tokens, cache_hit,
+                )
+            except KeyError:
+                actual_micro = estimated_micro  # fallback: use pre-estimate
 
             log_entry.cost = actual_micro
             log_entry.prompt_tokens = prompt_tokens
@@ -624,7 +627,11 @@ async def _handle_relay(request: Request, db: AsyncSession):
     # Pre-consume: check and deduct micro-yuan balance
     input_tokens_est = _estimate_input_tokens(body, model_config)
     output_tokens_est = min(body.get("max_tokens", body.get("max_output_tokens", 256)), 4096)
-    estimated_micro = estimate_cost_micro(model_name, input_tokens_est, output_tokens_est)
+    try:
+        estimated_micro = estimate_cost_micro(model_name, input_tokens_est, output_tokens_est)
+    except KeyError:
+        logger.warning("estimate_cost_micro failed for model=%r, using default", model_name)
+        estimated_micro = 1000  # fallback: ~1k micro-yuan
 
     # Allow ¥1 overdraft — conservative estimation is imprecise
     if user.balance < estimated_micro and user.balance - estimated_micro < -MAX_OVERDRAFT_MICRO:
@@ -683,7 +690,15 @@ async def _handle_relay(request: Request, db: AsyncSession):
             upstream_body = await adaptor.convert_request(body, meta)
         upstream_url = adaptor.get_request_url(meta, RelayMode.CHAT_COMPLETIONS)  # ChatCompletions mode
 
-    upstream_headers = adaptor.setup_request_headers(meta.api_key)
+    try:
+        upstream_headers = adaptor.setup_request_headers(meta.api_key)
+    except ValueError as e:
+        # e.g. GLM key not in "id.secret" format — channel is misconfigured
+        logger.warning("setup_request_headers failed for channel %d: %s", _channel_id, e)
+        raise RelayException(
+            message=f"渠道 {_channel_id} API key 配置错误: {e}",
+            code="UNIAPI_CHANNEL_UNAVAILABLE",
+        ) from e
 
     # Determine if SSE format conversion is needed
     needs_sse_conversion = stream and relay_mode == RelayMode.CLAUDE_MESSAGES and not adaptor.supports_native_format(relay_mode)
@@ -745,7 +760,11 @@ async def _handle_relay(request: Request, db: AsyncSession):
                 next_body = await adaptor.convert_request(body, meta)
             next_url = adaptor.get_request_url(meta, RelayMode.CHAT_COMPLETIONS)
 
-        next_headers = adaptor.setup_request_headers(meta.api_key)
+        try:
+            next_headers = adaptor.setup_request_headers(meta.api_key)
+        except ValueError:
+            logger.warning("FALLBACK skip | setup_request_headers failed for channel %d", next_channel.id)
+            return None
         return next_body, next_url, next_headers
 
     MAX_RETRIES = settings.upstream_retry_max
@@ -838,9 +857,11 @@ async def _handle_relay(request: Request, db: AsyncSession):
                         logger.info("FALLBACK skip | model=%s not allowed by token", fallback_model)
                 # Fall through to refund/raise code below
 
-            # ── Path C: 5xx recoverable, first attempt → try fallback (existing logic, keep not stream) ──
+            # ── Path C: 5xx recoverable, first attempt → try fallback ──
+            # Works for both stream and non-stream: the eager status check in
+            # relay_chat_completion() catches 4xx/5xx before streaming begins.
             is_recoverable = status in (500, 502, 503)
-            if attempt == 0 and is_recoverable and not stream:
+            if attempt == 0 and is_recoverable:
                 fallback_channel = await _find_fallback_channel(db, channel_type, model_name)
                 if fallback_channel and fallback_channel.models:
                     fallback_model = fallback_channel.models.split(",")[0].strip()
@@ -908,7 +929,9 @@ async def _handle_relay(request: Request, db: AsyncSession):
 
         except (httpx.TimeoutException, httpx.ConnectError, httpx.RemoteProtocolError) as exc:
             # Non-HTTP-status error (timeout, connection error, protocol error)
-            if attempt == 0 and not stream:
+            # Works for both stream and non-stream: connection errors are raised
+            # inside relay_chat_completion() before streaming begins.
+            if attempt == 0:
                 fallback_channel = await _find_fallback_channel(db, channel_type, model_name)
                 if fallback_channel and fallback_channel.models:
                     fallback_model = fallback_channel.models.split(",")[0].strip()
@@ -978,7 +1001,11 @@ async def _handle_relay(request: Request, db: AsyncSession):
         cache_miss = max(0, prompt_tokens - cache_hit)
 
     # Calculate actual cost in micro-yuan
-    actual_micro = calculate_cost_micro(model_name, prompt_tokens, completion_tokens, cache_hit)
+    try:
+        actual_micro = calculate_cost_micro(model_name, prompt_tokens, completion_tokens, cache_hit)
+    except KeyError:
+        logger.warning("calculate_cost_micro failed for model=%r, using estimate", model_name)
+        actual_micro = estimated_micro
 
     # Refund/charge difference to user's balance
     diff_micro = estimated_micro - actual_micro
