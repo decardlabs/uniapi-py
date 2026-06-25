@@ -8,7 +8,7 @@
 
 ## Status
 
-🚧 **All phases complete** — 604 tests, all GREEN (11 skipped)
+🚧 **All phases complete** — 634 tests, all GREEN (11 skipped)
 
 | Phase | 内容 | 状态 | 测试数 |
 |-------|------|------|--------|
@@ -41,7 +41,7 @@ python3 -m venv .venv
 source .venv/bin/activate
 pip install -e ".[dev]"
 
-uvicorn app.main:app --reload --port 8000
+python3 -m uvicorn app.main:app --port 8000 --reload
 ```
 
 ```bash

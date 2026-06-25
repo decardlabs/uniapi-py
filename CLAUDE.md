@@ -6,7 +6,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ```bash
 # Run backend (dev)
-uvicorn app.main:app --reload --port 8000
+python3 -m uvicorn app.main:app --port 8000 --reload
 
 # Run all tests
 python3 -m pytest tests/ -v --no-header
@@ -173,4 +173,4 @@ tests/
 
 ### Config
 
-All configuration via env vars ([app/config.py](app/config.py)): `SERVER_PORT`, `SQLITE_PATH`, `SQL_DSN` (for MySQL/PostgreSQL), `SESSION_SECRET`, provider API keys, `TOKEN_KEY_PREFIX`, `API_RATE_LIMIT`/`RELAY_RATE_LIMIT`, optional `BUDGET_REDIS_URL` + `BUDGET_ENABLED`, `debug`, `cookie_max_age_hours`, `upstream_retry_max`, `upstream_retry_backoff_base`, `default_monthly_budget`, `turnstile_secret_key`, `smtp_token`, `github_client_secret`.
+All configuration via env vars ([app/config.py](app/config.py)): `SERVER_PORT`, `SQLITE_PATH`, `SQL_DSN` (for MySQL/PostgreSQL), `SESSION_SECRET`, `session_cookie_secure`, `cookie_max_age_hours`, `password_min_length`, `password_require_uppercase`, `password_require_digit`, `password_require_special`, `totp_pending_ttl_seconds`, `webauthn_rp_id`, provider API keys, `TOKEN_KEY_PREFIX`, `API_RATE_LIMIT`/`RELAY_RATE_LIMIT`, optional `BUDGET_REDIS_URL` + `BUDGET_ENABLED`, `debug`, `upstream_retry_max`, `upstream_retry_backoff_base`, `default_monthly_budget`, `turnstile_secret_key`, `smtp_token`, `github_client_secret`.

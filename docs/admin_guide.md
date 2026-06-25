@@ -1,6 +1,6 @@
 # UniAPI 管理员配置手册
 
-> 版本：0.11.5 | 适用：uniapi-py Python 后端
+> 版本：0.11.10 | 适用：uniapi-py Python 后端
 
 ---
 
@@ -79,8 +79,25 @@ uvicorn app.main:app --reload --port 8000
 | 变量 | 默认值 | 说明 |
 |------|--------|------|
 | `SESSION_SECRET` | 随机生成 | Session cookie 签名密钥（生产务必设置固定值） |
+| `SESSION_COOKIE_SECURE` | true | Session cookie 仅通过 HTTPS 传输（生产环境必须为 true） |
 | `COOKIE_MAX_AGE_HOURS` | 168 | 登录会话有效期（小时） |
 | `TOKEN_KEY_PREFIX` | sk- | API Token 密钥前缀 |
+
+### 2.3.1 密码策略
+
+| 变量 | 默认值 | 说明 |
+|------|--------|------|
+| `PASSWORD_MIN_LENGTH` | 8 | 密码最小长度 |
+| `PASSWORD_REQUIRE_UPPERCASE` | true | 是否要求至少一个大写字母 |
+| `PASSWORD_REQUIRE_DIGIT` | true | 是否要求至少一个数字 |
+| `PASSWORD_REQUIRE_SPECIAL` | false | 是否要求至少一个特殊字符 |
+
+### 2.3.2 多因素认证
+
+| 变量 | 默认值 | 说明 |
+|------|--------|------|
+| `TOTP_PENDING_TTL_SECONDS` | 600 | TOTP 绑定确认超时（秒） |
+| `WEB_AUTHN_RP_ID` | localhost | WebAuthn/Passkey 的 RP ID（必须匹配部署域名） |
 
 ### 2.4 速率限制
 
@@ -637,10 +654,11 @@ FusionConfig(
 系统内置登录暴力破解防护，防止攻击者尝试猜测用户密码。
 
 **锁定规则**：
-- 用户连续输入错误密码 **5 次**后，账户被**永久锁定**
+- 用户连续输入错误密码 **5 次**后，账户被**永久锁定**（`locked_until = -1`）
 - 锁定的账户无法通过任何密码登录（即使输入正确密码）
-- 解锁唯一方式：通过**邮箱重置密码**
+- 解锁方式：**1) 通过邮箱重置密码** **2) 用户在个人设置中修改密码**（需验证旧密码） **3) 管理员修改密码** **4) 管理员在 `POST /api/admin/users/{id}/unlock` 手动解锁**
 - 成功登录（在锁定前）会自动重置失败计数器
+- 修改密码（任何方式）会自动清除锁定状态（`failed_login_attempts` 清零，`locked_until` 设为 NULL）
 
 **错误响应**：
 ```json
