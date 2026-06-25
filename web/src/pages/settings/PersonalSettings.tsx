@@ -361,7 +361,10 @@ export function PersonalSettings() {
   // Update password
   const updatePassword = async () => {
     setPasswordError('');
-    if (!newPassword) return;
+    if (!newPassword || !currentPassword) {
+      setPasswordError(t('personal_settings.security.password.required'));
+      return;
+    }
     if (newPassword !== confirmPassword) {
       setPasswordError(t('personal_settings.security.password.mismatch'));
       return;
@@ -887,7 +890,7 @@ export function PersonalSettings() {
               </div>
             </div>
             </div>
-            <Button onClick={updatePassword} disabled={passwordLoading || !newPassword || !currentPassword} className="w-full md:w-auto">
+            <Button onClick={updatePassword} disabled={passwordLoading} className="w-full md:w-auto">
               {passwordLoading ? t('personal_settings.security.password.updating') : t('personal_settings.security.password.update_button')}
             </Button>
           </div>
