@@ -41,3 +41,4 @@ web/node_modules/
 
 # Test data
 DeepSeek-Reasonix/
+.claude/
