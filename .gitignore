@@ -42,3 +42,21 @@ web/node_modules/
 # Test data
 DeepSeek-Reasonix/
 .claude/
+
+# Coverage
+.coverage
+web/.coverage
+coverage.xml
+htmlcov/
+
+# npx artifacts (root-level, not project deps)
+package-lock.json
+package.json
+
+# Playwright
+node_modules/
+/test-results/
+/playwright-report/
+/blob-report/
+/playwright/.cache/
+/playwright/.auth/

@@ -1,0 +1,184 @@
+name: CI
+
+on:
+  push:
+    branches: [main, develop]
+  pull_request:
+    branches: [main]
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  backend:
+    name: Backend Tests (Python)
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python 3.11
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: "pip"
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -e ".[dev]"
+
+      - name: Lint with ruff
+        run: |
+          pip install ruff
+          ruff check app/ tests/
+
+      - name: Run tests with coverage
+        run: |
+          python -m pytest tests/ -v --no-header --cov=app --cov-report=xml --cov-report=term -q
+
+      - name: Upload coverage to Codecov
+        uses: codecov/codecov-action@v4
+        with:
+          file: ./coverage.xml
+          flags: backend
+          fail_ci_if_error: false
+
+  frontend:
+    name: Frontend Tests (TypeScript / React)
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+
+      - name: Install dependencies
+        run: |
+          cd web
+          npm install -g yarn
+          yarn install --frozen-lockfile
+
+      - name: Type check
+        run: |
+          cd web
+          yarn type-check
+
+      - name: Run unit tests
+        run: |
+          cd web
+          yarn test --run
+
+      - name: Lint
+        run: |
+          cd web
+          yarn lint
+
+  e2e:
+    name: E2E Tests (Playwright)
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    needs: [backend, frontend]
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python 3.11
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: "pip"
+
+      - name: Install backend dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -e ".[dev]"
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+
+      - name: Install frontend dependencies
+        run: |
+          cd web
+          npm install -g yarn
+          yarn install --frozen-lockfile
+
+      - name: Install Playwright browsers
+        run: |
+          cd web
+          npx playwright install chromium --with-deps
+
+      - name: Start backend
+        run: |
+          SQLITE_PATH=/tmp/uniapi_ci.db python -m uvicorn app.main:app --port 8000 &
+          sleep 3
+          # Seed root user via test fixture
+          python -c "
+import asyncio, os
+os.environ['SQLITE_PATH'] = '/tmp/uniapi_ci.db'
+from app.database import engine, async_session_factory
+from app.models.base import Base
+from app.models.user import User
+from app.services.auth import hash_password
+async def seed():
+    async with engine.begin() as conn:
+        await conn.run_sync(Base.metadata.create_all)
+    async with async_session_factory() as db:
+        from sqlalchemy import select
+        result = await db.execute(select(User).where(User.username == 'root'))
+        if not result.scalar_one_or_none():
+            import time
+            now = int(time.time() * 1000)
+            root = User(
+                username='root',
+                password=hash_password('123456'),
+                display_name='Root',
+                role=100,
+                status=1,
+                group='default',
+                access_token='root-access-token-ci',
+                created_at=now,
+                updated_at=now,
+            )
+            db.add(root)
+            from app.services.auth import create_default_token
+            await create_default_token(db, root.id)
+            from app.models.option import Option
+            for key, value in {'SystemName': 'UniAPI', 'PasswordLoginEnabled': 'true', 'RegisterEnabled': 'true', 'LogConsumeEnabled': 'true', 'QuotaPerUnit': '500000'}.items():
+                db.add(Option(key=key, value=value, created_at=now))
+            await db.commit()
+asyncio.run(seed())
+"
+          curl -s http://localhost:8000/api/status
+
+      - name: Start frontend
+        run: |
+          cd web
+          yarn dev > /tmp/vite.log 2>&1 &
+          sleep 5
+          curl -s -o /dev/null -w "%{http_code}" http://localhost:3001
+
+      - name: Run E2E tests
+        run: |
+          cd web
+          CI=true BASE_URL=http://localhost:3001 npx playwright test \
+            e2e/channel-crud.spec.ts \
+            e2e/token-crud.spec.ts \
+            e2e/smoke.spec.ts \
+            --project=chromium
+
+      - name: Upload Playwright report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-report
+          path: web/playwright-report/
+          retention-days: 7
