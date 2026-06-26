@@ -118,16 +118,12 @@ def calculate_cost_micro(
     output_tokens: int,
     cache_hit_tokens: int = 0,
 ) -> int:
-    """Calculate actual cost in micro-yuan (Integer)."""
-    pricing = get_model_pricing(model)
-    input_miss = input_tokens - cache_hit_tokens
+    """Calculate actual cost in micro-yuan (Integer).
 
-    cost = (
-        (input_miss / 1_000_000) * pricing["input"]
-        + (cache_hit_tokens / 1_000_000) * pricing["cache_hit"]
-        + (output_tokens / 1_000_000) * pricing["output"]
-    )
-    return max(1, int(round(cost * 1_000_000)))
+    Delegates to calculate_cost() to avoid duplicating the formula.
+    """
+    yuan = calculate_cost(model, input_tokens, output_tokens, cache_hit_tokens)
+    return max(1, int(round(yuan * 1_000_000)))
 
 
 def estimate_cost_micro(
@@ -135,13 +131,12 @@ def estimate_cost_micro(
     input_tokens: int,
     output_tokens: int = 1000,
 ) -> int:
-    """Conservative cost estimate in micro-yuan (includes 20% safety margin)."""
-    pricing = get_model_pricing(model)
-    base = (
-        (input_tokens / 1_000_000) * pricing["input"]
-        + (output_tokens / 1_000_000) * pricing["output"]
-    )
-    return max(1, int(round(base * PRICING_SAFETY_MARGIN * 1_000_000)))
+    """Conservative cost estimate in micro-yuan (includes 20% safety margin).
+
+    Delegates to estimate_cost() to avoid duplicating the formula.
+    """
+    yuan = estimate_cost(model, input_tokens, output_tokens)
+    return max(1, int(round(yuan * 1_000_000)))
 
 
 # Default overdraft in micro-yuan: ¥1.00
