@@ -107,3 +107,205 @@ class TestComputePeriod:
         assert len(parts) == 2
         assert len(parts[0]) == 4  # year
         assert 1 <= int(parts[1]) <= 12  # month
+
+
+class TestChannelModelConfigsPricing:
+    """Channel-level model_configs should override global pricing."""
+
+    def test_get_model_pricing_with_channel_overrides(self):
+        """Channel model_configs should take precedence over global pricing."""
+        from app.budget.pricing import get_model_pricing
+
+        channel_configs = {
+            "deepseek-v4-flash": {
+                "input_price": 5.0,
+                "output_price": 10.0,
+                "cache_hit_price": 0.5,
+            }
+        }
+        result = get_model_pricing("deepseek-v4-flash", channel_model_configs=channel_configs)
+        assert result["input"] == 5.0
+        assert result["output"] == 10.0
+        assert result["cache_hit"] == 0.5
+
+    def test_get_model_pricing_falls_back_to_global(self):
+        """If model not in channel_model_configs, fall back to global MODEL_PRICING_YUAN."""
+        from app.budget.pricing import get_model_pricing
+
+        channel_configs = {
+            "some-other-model": {"input_price": 1.0, "output_price": 2.0, "cache_hit_price": 0.1}
+        }
+        result = get_model_pricing("deepseek-v4-flash", channel_model_configs=channel_configs)
+        assert result["input"] == 1.0  # from MODEL_PRICING_YUAN
+        assert result["output"] == 2.0
+
+    def test_get_model_pricing_uses_channel_even_for_unknown_model(self):
+        """Channel override should work even if model is not in global pricing at all."""
+        from app.budget.pricing import get_model_pricing
+
+        channel_configs = {
+            "brand-new-model": {
+                "input_price": 8.0,
+                "output_price": 16.0,
+                "cache_hit_price": 1.0,
+            }
+        }
+        result = get_model_pricing("brand-new-model", channel_model_configs=channel_configs)
+        assert result["input"] == 8.0
+        assert result["output"] == 16.0
+        assert result["cache_hit"] == 1.0
+
+    def test_calculate_cost_with_channel_overrides(self):
+        """calculate_cost should use channel overrides when provided."""
+        from app.budget.pricing import calculate_cost
+
+        channel_configs = {
+            "custom-model": {
+                "input_price": 10.0,
+                "output_price": 20.0,
+                "cache_hit_price": 1.0,
+            }
+        }
+        cost = calculate_cost(
+            "custom-model",
+            input_tokens=1000,
+            output_tokens=500,
+            channel_model_configs=channel_configs,
+        )
+        # input: 1000/1M * 10 = 0.01
+        # output: 500/1M * 20 = 0.01
+        # total = 0.02
+        assert cost == pytest.approx(0.02, rel=1e-3)
+
+    def test_calculate_cost_with_cache_hit_and_overrides(self):
+        """Cache-hit should use override cache_hit_price."""
+        from app.budget.pricing import calculate_cost
+
+        channel_configs = {
+            "custom-model": {
+                "input_price": 10.0,
+                "output_price": 20.0,
+                "cache_hit_price": 2.0,
+            }
+        }
+        cost = calculate_cost(
+            "custom-model",
+            input_tokens=2000,
+            output_tokens=500,
+            cache_hit_tokens=1000,
+            channel_model_configs=channel_configs,
+        )
+        # input_miss: 1000/1M * 10 = 0.01
+        # cache_hit: 1000/1M * 2 = 0.002
+        # output: 500/1M * 20 = 0.01
+        # total ≈ 0.022
+        assert cost == pytest.approx(0.022, rel=1e-3)
+
+    def test_estimate_cost_with_channel_overrides(self):
+        """estimate_cost should use channel overrides."""
+        from app.budget.pricing import estimate_cost
+
+        channel_configs = {
+            "custom-model": {
+                "input_price": 10.0,
+                "output_price": 20.0,
+                "cache_hit_price": 2.0,
+            }
+        }
+        estimated = estimate_cost(
+            "custom-model",
+            input_tokens=1000,
+            output_tokens=500,
+            channel_model_configs=channel_configs,
+        )
+        # base = 1000/1M*10 + 500/1M*20 = 0.02
+        # with 1.2x = 0.024
+        assert estimated == pytest.approx(0.024, rel=1e-3)
+
+    def test_calculate_cost_micro_with_channel_overrides(self):
+        """calculate_cost_micro should use channel overrides."""
+        from app.budget.pricing import calculate_cost_micro
+
+        channel_configs = {
+            "custom-model": {
+                "input_price": 10.0,
+                "output_price": 20.0,
+                "cache_hit_price": 1.0,
+            }
+        }
+        micro = calculate_cost_micro(
+            "custom-model",
+            input_tokens=1000,
+            output_tokens=500,
+            channel_model_configs=channel_configs,
+        )
+        # yuan = 0.02, micro = 20000
+        assert micro == 20000
+
+    def test_estimate_cost_micro_with_channel_overrides(self):
+        """estimate_cost_micro should use channel overrides."""
+        from app.budget.pricing import estimate_cost_micro
+
+        channel_configs = {
+            "custom-model": {
+                "input_price": 10.0,
+                "output_price": 20.0,
+                "cache_hit_price": 1.0,
+            }
+        }
+        micro = estimate_cost_micro(
+            "custom-model",
+            input_tokens=1000,
+            output_tokens=500,
+            channel_model_configs=channel_configs,
+        )
+        # yuan = 0.024, micro = 24000
+        assert micro == 24000
+
+    def test_old_field_names_ratio_completion_ratio(self):
+        """Legacy field names (ratio/completion_ratio) should still work."""
+        from app.budget.pricing import get_model_pricing
+
+        channel_configs = {
+            "deepseek-v4-flash": {
+                "ratio": 5.0,
+                "completion_ratio": 10.0,
+                "cached_input_price": 0.5,
+            }
+        }
+        result = get_model_pricing("deepseek-v4-flash", channel_model_configs=channel_configs)
+        assert result["input"] == 5.0
+        assert result["output"] == 10.0
+        assert result["cache_hit"] == 0.5
+
+    def test_old_field_names_mixed_with_new(self):
+        """When both old and new field names are present, new names win."""
+        from app.budget.pricing import get_model_pricing
+
+        channel_configs = {
+            "deepseek-v4-flash": {
+                "ratio": 1.0,
+                "completion_ratio": 2.0,
+                "input_price": 5.0,
+                "output_price": 10.0,
+                "cache_hit_price": 0.5,
+            }
+        }
+        result = get_model_pricing("deepseek-v4-flash", channel_model_configs=channel_configs)
+        assert result["input"] == 5.0  # input_price wins over ratio
+        assert result["output"] == 10.0  # output_price wins over completion_ratio
+        assert result["cache_hit"] == 0.5  # cache_hit_price wins
+
+    def test_no_override_falls_back_to_global_calculate(self):
+        """Without channel_model_configs, calculate_cost behaves as before."""
+        from app.budget.pricing import calculate_cost
+
+        cost = calculate_cost("deepseek-v4-pro", input_tokens=1000, output_tokens=500)
+        assert cost == pytest.approx(0.006, rel=1e-3)
+
+    def test_no_override_falls_back_to_global_estimate(self):
+        """Without channel_model_configs, estimate_cost behaves as before."""
+        from app.budget.pricing import estimate_cost
+
+        estimated = estimate_cost("deepseek-v4-pro", input_tokens=1000, output_tokens=500)
+        assert estimated == pytest.approx(0.0072, rel=1e-3)

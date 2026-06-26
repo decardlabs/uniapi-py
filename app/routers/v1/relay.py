@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import asyncio
+import json
 import logging
 import random
 import time
@@ -66,6 +67,7 @@ def _make_stream_usage_callback(
     period: str = "",
     frozen_amount: float = 0.0,
     monthly_budget: float = 0.0,
+    channel_model_configs: dict | None = None,
 ) -> Any:
     """Return a callback that patches the provisional log after a stream ends.
 
@@ -104,6 +106,7 @@ def _make_stream_usage_callback(
                 actual_micro = calculate_cost_micro(
                     log_entry.model_name or "",
                     prompt_tokens, completion_tokens, cache_hit,
+                    channel_model_configs=channel_model_configs,
                 )
             except KeyError:
                 actual_micro = estimated_micro  # fallback: use pre-estimate
@@ -559,8 +562,15 @@ async def _handle_relay(request: Request, db: AsyncSession):
                 if m_name not in supported:
                     continue
                 # Use combined yuan price as sort key (lower = cheaper)
+                # Respect per-channel model_configs pricing overrides
                 try:
-                    p = get_model_pricing(m_name)
+                    ch_model_configs = {}
+                    if ch.model_configs:
+                        try:
+                            ch_model_configs = json.loads(ch.model_configs)
+                        except (json.JSONDecodeError, TypeError, ValueError):
+                            pass
+                    p = get_model_pricing(m_name, channel_model_configs=ch_model_configs)
                     price = p["input"] + p["output"]
                 except KeyError:
                     price = 999.0
@@ -613,6 +623,14 @@ async def _handle_relay(request: Request, db: AsyncSession):
     _channel_api_key = channel.key or _get_channel_api_key(channel_type)
     _channel_base_url = channel.base_url or ""
 
+    # Parse channel-level pricing overrides from model_configs JSON
+    _channel_model_configs: dict = {}
+    if channel and channel.model_configs:
+        try:
+            _channel_model_configs = json.loads(channel.model_configs)
+        except (json.JSONDecodeError, TypeError, ValueError):
+            logger.warning("Failed to parse model_configs for channel %d", _channel_id)
+
     adaptor = _get_adaptor(channel_type)
     if adaptor is None:
         raise RelayException(
@@ -647,7 +665,10 @@ async def _handle_relay(request: Request, db: AsyncSession):
     input_tokens_est = _estimate_input_tokens(body, model_config)
     output_tokens_est = min(body.get("max_tokens", body.get("max_output_tokens", 256)), 4096)
     try:
-        estimated_micro = estimate_cost_micro(model_name, input_tokens_est, output_tokens_est)
+        estimated_micro = estimate_cost_micro(
+            model_name, input_tokens_est, output_tokens_est,
+            channel_model_configs=_channel_model_configs,
+        )
     except KeyError:
         logger.warning("estimate_cost_micro failed for model=%r, using default", model_name)
         estimated_micro = 1000  # fallback: ~1k micro-yuan
@@ -778,6 +799,7 @@ async def _handle_relay(request: Request, db: AsyncSession):
             period=_budget_info.get("period", ""),
             frozen_amount=_budget_info.get("frozen_amount", 0.0),
             monthly_budget=_budget_info.get("monthly_budget", 0.0),
+            channel_model_configs=_channel_model_configs,
         )
 
     async def _prepare_fallback_request(next_model_name: str, next_channel: Channel) -> tuple[dict, str, dict[str, str]] | None:

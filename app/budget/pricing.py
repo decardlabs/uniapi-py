@@ -64,8 +64,38 @@ MODEL_PRICING_YUAN.update(_MODEL_ALIASES)
 PRICING_SAFETY_MARGIN = 1.2
 
 
-def get_model_pricing(model_name: str) -> dict[str, float]:
-    """Get pricing dict for a model. Raises KeyError if unknown."""
+def get_model_pricing(
+    model_name: str,
+    channel_model_configs: dict | None = None,
+) -> dict[str, float]:
+    """Get pricing dict for a model.
+
+    Channel-level ``channel_model_configs`` (parsed from the channel's
+    ``model_configs`` JSON field) take precedence over the global
+    ``MODEL_PRICING_YUAN`` table.
+
+    The override dict format per model::
+
+        {"input_price": 1.0, "output_price": 2.0, "cache_hit_price": 0.02}
+
+    Legacy field names ``ratio`` / ``completion_ratio`` / ``cached_input_price``
+    are also accepted for backward compatibility with the default-pricing API.
+
+    ``cache_hit_price`` (or ``cached_input_price``) defaults to 0 when not
+    explicitly set in an override.
+
+    Raises ``KeyError`` when no pricing source covers the model.
+    """
+    # 1. Channel-level override (if provided and model is present)
+    if channel_model_configs and model_name in channel_model_configs:
+        ov = channel_model_configs[model_name]
+        return {
+            "input": ov.get("input_price") or ov.get("ratio", 0),
+            "output": ov.get("output_price") or ov.get("completion_ratio", 0),
+            "cache_hit": ov.get("cache_hit_price") or ov.get("cached_input_price", 0),
+        }
+
+    # 2. Fall back to global pricing
     if not model_name or not model_name.strip():
         raise KeyError(f"Unknown model: {model_name!r} (empty model name)")
     if model_name not in MODEL_PRICING_YUAN:
@@ -78,12 +108,14 @@ def calculate_cost(
     input_tokens: int,
     output_tokens: int,
     cache_hit_tokens: int = 0,
+    channel_model_configs: dict | None = None,
 ) -> float:
     """Calculate actual cost in yuan for a completed request.
 
     cache_hit_tokens is a subset of input_tokens (not additive).
+    Pass ``channel_model_configs`` to use channel-level pricing overrides.
     """
-    pricing = get_model_pricing(model)
+    pricing = get_model_pricing(model, channel_model_configs=channel_model_configs)
     input_miss = input_tokens - cache_hit_tokens
 
     cost = (
@@ -98,9 +130,13 @@ def estimate_cost(
     model: str,
     input_tokens: int,
     output_tokens: int = 1000,
+    channel_model_configs: dict | None = None,
 ) -> float:
-    """Conservative cost estimate for pre-check (includes safety margin)."""
-    pricing = get_model_pricing(model)
+    """Conservative cost estimate for pre-check (includes safety margin).
+
+    Pass ``channel_model_configs`` to use channel-level pricing overrides.
+    """
+    pricing = get_model_pricing(model, channel_model_configs=channel_model_configs)
     base = (
         (input_tokens / 1_000_000) * pricing["input"]
         + (output_tokens / 1_000_000) * pricing["output"]
@@ -117,12 +153,14 @@ def calculate_cost_micro(
     input_tokens: int,
     output_tokens: int,
     cache_hit_tokens: int = 0,
+    channel_model_configs: dict | None = None,
 ) -> int:
     """Calculate actual cost in micro-yuan (Integer).
 
     Delegates to calculate_cost() to avoid duplicating the formula.
+    Pass ``channel_model_configs`` to use channel-level pricing overrides.
     """
-    yuan = calculate_cost(model, input_tokens, output_tokens, cache_hit_tokens)
+    yuan = calculate_cost(model, input_tokens, output_tokens, cache_hit_tokens, channel_model_configs=channel_model_configs)
     return max(1, int(round(yuan * 1_000_000)))
 
 
@@ -130,12 +168,14 @@ def estimate_cost_micro(
     model: str,
     input_tokens: int,
     output_tokens: int = 1000,
+    channel_model_configs: dict | None = None,
 ) -> int:
     """Conservative cost estimate in micro-yuan (includes 20% safety margin).
 
     Delegates to estimate_cost() to avoid duplicating the formula.
+    Pass ``channel_model_configs`` to use channel-level pricing overrides.
     """
-    yuan = estimate_cost(model, input_tokens, output_tokens)
+    yuan = estimate_cost(model, input_tokens, output_tokens, channel_model_configs=channel_model_configs)
     return max(1, int(round(yuan * 1_000_000)))
 
 
