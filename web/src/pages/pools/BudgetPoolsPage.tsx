@@ -12,7 +12,7 @@ import {
 } from '@/components/ui/dialog';
 import { EnhancedDataTable } from '@/components/ui/enhanced-data-table';
 import { Input } from '@/components/ui/input';
-import { SearchableDropdown, type SearchOption } from '@/components/ui/searchable-dropdown';
+import type { SearchOption } from '@/components/ui/searchable-dropdown';
 import { useNotifications } from '@/components/ui/notifications';
 import { ResponsivePageContainer } from '@/components/ui/responsive-container';
 import {
@@ -199,18 +199,26 @@ export default function BudgetPoolsPage() {
   const [allocateRemark, setAllocateRemark] = useState('');
   const [submitting, setSubmitting] = useState(false);
 
-  // Auto-select first user when allocate dialog opens
+  // User list for allocate dialog
+  const [allocateUserList, setAllocateUserList] = useState<{ id: number; username: string }[]>([]);
+
+  // Load user list and auto-select first user when allocate dialog opens
   useEffect(() => {
     if (!allocateOpen) return;
+    setAllocateUserId('');
+    setAllocateUserText('');
+    setAllocateAmount('');
+    setAllocateRemark('');
     const controller = new AbortController();
     api.get('/api/user/search?keyword=', { signal: controller.signal })
       .then(resp => {
         const result = resp.data;
         if (result?.success && Array.isArray(result.data) && result.data.length > 0) {
+          setAllocateUserList(result.data);
           const first = result.data[0];
           if (first.id && first.username) {
             setAllocateUserId(String(first.id));
-            setAllocateUserText(`${first.username} (#${first.id})`);
+            setAllocateUserText(first.username);
           }
         }
       })
@@ -950,25 +958,25 @@ export default function BudgetPoolsPage() {
           <div className="space-y-4">
             <div>
               <label className="text-sm font-medium">{tr('allocate_user', 'User')}</label>
-              <SearchableDropdown
-                options={[]}
-                value={allocateUserText}
-                placeholder={tr('allocate_user_placeholder', 'Search user by name...')}
-                searchPlaceholder={tr('allocate_user_search', 'Type username...')}
-                searchEndpoint="/api/user/search"
-                transformResponse={(data: any[]) =>
-                  (data || []).map((u: any) => ({
-                    key: String(u.id),
-                    value: u.username,
-                    text: `${u.username} (#${u.id})`,
-                  }))
-                }
-                debounceMs={300}
-                minQueryLength={1}
-                autoSearchOnOpen={true}
-                onSelect={(key, text) => { setAllocateUserId(key); setAllocateUserText(text); }}
-                noResultsMessage={tr('allocate_user_no_results', 'No users found')}
-              />
+              <select
+                className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-sm transition-colors file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50"
+                value={allocateUserId}
+                onChange={(e) => {
+                  const selectedId = e.target.value;
+                  const user = allocateUserList.find(u => String(u.id) === selectedId);
+                  setAllocateUserId(selectedId);
+                  setAllocateUserText(user?.username || '');
+                }}
+              >
+                {allocateUserList.length === 0 && (
+                  <option value="">{tr('allocate_user_loading', 'Loading users...')}</option>
+                )}
+                {allocateUserList.map((u) => (
+                  <option key={u.id} value={String(u.id)}>
+                    {u.username} (#{u.id})
+                  </option>
+                ))}
+              </select>
               {allocateUserId && (
                 <p className="text-xs text-muted-foreground mt-1">
                   {tr('allocate_user_selected', 'Selected user ID: {{id}}').replace('{{id}}', allocateUserId)}
