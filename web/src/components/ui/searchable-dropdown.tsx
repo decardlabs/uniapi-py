@@ -63,8 +63,9 @@ export function SearchableDropdown({
   const [apiLoading, setApiLoading] = React.useState(false);
   const searchTimeoutRef = React.useRef<NodeJS.Timeout>();
 
-  // Use API options if available, otherwise use initial options
-  const options = searchEndpoint && searchValue.length >= minQueryLength ? apiOptions : initialOptions;
+  // Use API options if available (auto-search on open OR sufficient query length), otherwise use initial options
+  const showApiOptions = searchEndpoint && (searchValue.length >= minQueryLength || (autoSearchOnOpen && apiOptions.length > 0));
+  const options = showApiOptions ? apiOptions : initialOptions;
 
   const selectedOption = [...initialOptions, ...apiOptions].find((option) => option.value === value);
 
@@ -239,7 +240,7 @@ export function SearchableDropdown({
               <>
                 {filteredOptions.length === 0 && !showAddition ? (
                   <CommandEmpty>
-                    {searchValue.length < minQueryLength && searchEndpoint
+                    {searchValue.length < minQueryLength && searchEndpoint && !autoSearchOnOpen
                       ? `Type at least ${minQueryLength} characters to search`
                       : noResultsMessage}
                   </CommandEmpty>
