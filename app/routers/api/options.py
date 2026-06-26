@@ -8,6 +8,7 @@ from app.database import get_db
 from app.dependencies import root_auth
 from app.models.option import Option
 from app.schemas.common import GenericApiResponse
+from app.schemas.management import OptionUpdateRequest
 
 router = APIRouter(tags=["options"])
 
@@ -26,12 +27,12 @@ async def list_options(
 
 @router.put("/api/option/")
 async def update_option(
-    body: dict,
+    body: OptionUpdateRequest,
     db: AsyncSession = Depends(get_db),
     _=Depends(root_auth),
 ):
-    key = body.get("key")
-    value = body.get("value")
+    key = body.key
+    value = body.value
     if not key:
         return GenericApiResponse(success=False, message="Key required")
 

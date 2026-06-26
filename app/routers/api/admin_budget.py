@@ -13,6 +13,7 @@ from app.dependencies import admin_auth
 from app.models.budget import Budget, CostRecord, BudgetResetLog
 from app.budget.arbiter import BudgetArbiter
 from app.schemas.common import GenericApiResponse, PaginatedResponse
+from app.schemas.management import AdminBudgetUpdateRequest
 
 router = APIRouter(tags=["admin-budget"])
 
@@ -104,7 +105,7 @@ async def admin_budget_stats(
 @router.put("/api/v1/admin/budgets/{user_id}")
 async def admin_update_budget(
     user_id: int,
-    body: dict,
+    body: AdminBudgetUpdateRequest,
     db: AsyncSession = Depends(get_db),
     _=Depends(admin_auth),
 ):
@@ -114,7 +115,7 @@ async def admin_update_budget(
     if not budget:
         raise HTTPException(status_code=404, detail="Budget not found for this user")
 
-    new_budget = body.get("monthly_budget")
+    new_budget = body.monthly_budget
     if new_budget is not None and new_budget >= 0:
         budget.monthly_budget = float(new_budget)
         budget.updated_at = int(time.time() * 1000)

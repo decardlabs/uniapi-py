@@ -7,6 +7,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.database import get_db
 from app.dependencies import token_auth, user_auth
 from app.schemas.common import GenericApiResponse, PaginatedResponse
+from app.schemas.management import TokenCreateRequest, TokenUpdateRequest
 from app.schemas.user import TokenResponse
 from app.services import token as token_service
 from app.models.token import Token
@@ -114,28 +115,28 @@ async def get_token(
 
 @router.post("/api/token/")
 async def create_token(
-    body: dict,
+    body: TokenCreateRequest,
     db: AsyncSession = Depends(get_db),
     user=Depends(user_auth),
 ):
     token = await token_service.create_token(
         db,
         user_id=user.id,
-        name=body.get("name", "default"),
-        expired_time=body.get("expired_time", -1),
-        models=body.get("models"),
-        subnet=body.get("subnet"),
+        name=body.name or "default",
+        expired_time=int(body.expired_time) if body.expired_time else -1,
+        models=body.models or None,
+        subnet=body.subnet or None,
     )
     return GenericApiResponse(data=_token_to_response(token))
 
 
 @router.put("/api/token/")
 async def update_token(
-    body: dict,
+    body: TokenUpdateRequest,
     db: AsyncSession = Depends(get_db),
     user=Depends(user_auth),
 ):
-    token_id = body.get("id")
+    token_id = body.id
     if not token_id:
         return GenericApiResponse(success=False, message="Token ID required")
 
@@ -143,11 +144,11 @@ async def update_token(
         db,
         user_id=user.id,
         token_id=token_id,
-        name=body.get("name"),
-        expired_time=body.get("expired_time"),
-        models=body.get("models"),
-        subnet=body.get("subnet"),
-        status=body.get("status"),
+        name=body.name,
+        expired_time=body.expired_time,
+        models=body.models,
+        subnet=body.subnet,
+        status=body.status,
     )
     return GenericApiResponse(data=_token_to_response(token))
 

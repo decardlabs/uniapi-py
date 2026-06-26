@@ -7,6 +7,11 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.database import get_db
 from app.dependencies import admin_auth, user_auth
 from app.schemas.common import GenericApiResponse, PaginatedResponse
+from app.schemas.management import (
+    ApproveRechargeRequest,
+    RejectRechargeRequest,
+    TopupActionRequest,
+)
 from app.schemas.recharge import RechargeCreate, TopUpRequest
 from app.services import recharge as recharge_service
 
@@ -52,28 +57,18 @@ async def list_topups(
 
 @router.put("/api/topup/")
 async def update_topup(
-    body: dict,
+    body: TopupActionRequest,
     request: Request,
     db: AsyncSession = Depends(get_db),
     _=Depends(admin_auth),
 ):
-    """Admin action on a recharge request via unified PUT (backward compat).
-
-    Body: { id, action: "approve"|"reject", admin_remark?: str }
-    """
-    recharge_id = body.get("id")
-    action = body.get("action")
-    admin_remark = body.get("admin_remark", "")
+    """Admin action on a recharge request via unified PUT."""
     admin_id = request.state.user.id
-
-    if not recharge_id or action not in ("approve", "reject"):
-        return GenericApiResponse(success=False, message="id and action (approve|reject) required")
-
     try:
-        if action == "approve":
-            await recharge_service.approve_recharge(db, recharge_id, admin_id)
+        if body.action == "approve":
+            await recharge_service.approve_recharge(db, body.id, admin_id)
         else:
-            await recharge_service.reject_recharge(db, recharge_id, admin_id, admin_remark or "Rejected by admin")
+            await recharge_service.reject_recharge(db, body.id, admin_id, body.admin_remark or "Rejected by admin")
         return GenericApiResponse(data={"updated": True})
     except ValueError as e:
         return GenericApiResponse(success=False, message=str(e))
@@ -130,19 +125,15 @@ async def list_recharges(
 @router.post("/api/recharge/{recharge_id}/approve")
 async def approve_recharge(
     recharge_id: int,
-    body: dict,
+    body: ApproveRechargeRequest,
     request: Request,
     db: AsyncSession = Depends(get_db),
     _=Depends(admin_auth),
 ):
-    """Admin approves a pending recharge request and credits the user's balance.
-
-    Body: { pool_id: int } — the budget pool to deduct from.
-    """
+    """Admin approves a pending recharge request and credits the user's balance."""
     admin_id = request.state.user.id
-    pool_id = body.get("pool_id", 0)
     try:
-        await recharge_service.approve_recharge(db, recharge_id, admin_id, pool_id=pool_id)
+        await recharge_service.approve_recharge(db, recharge_id, admin_id, pool_id=body.pool_id)
         return GenericApiResponse(data={"approved": True})
     except ValueError as e:
         return GenericApiResponse(success=False, message=str(e))
@@ -151,16 +142,15 @@ async def approve_recharge(
 @router.post("/api/recharge/{recharge_id}/reject")
 async def reject_recharge(
     recharge_id: int,
-    body: dict,
+    body: RejectRechargeRequest,
     request: Request,
     db: AsyncSession = Depends(get_db),
     _=Depends(admin_auth),
 ):
     """Admin rejects a pending recharge request."""
     admin_id = request.state.user.id
-    admin_remark = body.get("admin_remark", "Rejected by admin")
     try:
-        await recharge_service.reject_recharge(db, recharge_id, admin_id, admin_remark)
+        await recharge_service.reject_recharge(db, recharge_id, admin_id, body.admin_remark)
         return GenericApiResponse(data={"rejected": True})
     except ValueError as e:
         return GenericApiResponse(success=False, message=str(e))

@@ -9,6 +9,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.database import get_db
 from app.dependencies import admin_auth
 from app.schemas.common import GenericApiResponse, PaginatedResponse
+from app.schemas.management import AdminUserCreateRequest, AdminUserUpdateRequest
 from app.schemas.user import UserResponse
 from app.services import user as user_service
 from app.models.budget import CostRecord
@@ -97,42 +98,41 @@ async def get_user(
 
 @router.post("/api/user/")
 async def create_user(
-    body: dict,
+    body: AdminUserCreateRequest,
     db: AsyncSession = Depends(get_db),
     _=Depends(admin_auth),
 ):
     user = await user_service.admin_create_user(
         db,
-        username=body.get("username", ""),
-        password=body.get("password", ""),
-        display_name=body.get("display_name"),
-        email=body.get("email"),
-        quota=body.get("quota"),
-        group=body.get("group"),
+        username=body.username,
+        password=body.password,
+        display_name=body.display_name,
+        email=body.email,
+        quota=body.quota,
+        group=body.group,
     )
     return GenericApiResponse(message="User created", data=await _user_to_response_with_spent(db, user))
 
 
 @router.put("/api/user/")
 async def update_user(
-    body: dict,
+    body: AdminUserUpdateRequest,
     db: AsyncSession = Depends(get_db),
     _=Depends(admin_auth),
 ):
-    user_id = body.get("id")
+    user_id = body.id
     if not user_id:
         return GenericApiResponse(success=False, message="User ID required")
 
     user = await user_service.admin_update_user(
         db,
         user_id=user_id,
-        username=body.get("username"),
-        display_name=body.get("display_name"),
-        password=body.get("password"),
-        email=body.get("email"),
-        quota=body.get("quota"),
-        group=body.get("group"),
-        status=body.get("status"),
+        username=body.username,
+        display_name=body.display_name,
+        password=body.password,
+        email=body.email,
+        group=body.group,
+        status=body.status,
     )
     return GenericApiResponse(message="User updated", data=await _user_to_response_with_spent(db, user))
 

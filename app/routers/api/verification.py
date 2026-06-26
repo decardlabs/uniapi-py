@@ -11,6 +11,7 @@ from app.database import get_db
 from app.models.option import Option
 from app.models.user import User
 from app.schemas.common import GenericApiResponse
+from app.schemas.management import PasswordResetConfirmRequest
 from app.services.auth import hash_password
 from app.services.email import (
     send_verification_code,
@@ -113,13 +114,13 @@ async def reset_password_request(
 
 @router.post("/api/user/reset")
 async def reset_password_confirm(
-    body: dict,
+    body: PasswordResetConfirmRequest,
     db: AsyncSession = Depends(get_db),
 ):
     """Reset password using a reset token."""
-    email = body.get("email", "")
-    token = body.get("token", "")
-    new_password = body.get("password", "")
+    email = body.email
+    token = body.token
+    new_password = body.password
 
     if not email or not token or not new_password:
         return GenericApiResponse(success=False, message="缺少必要参数")

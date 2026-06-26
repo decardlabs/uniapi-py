@@ -12,6 +12,7 @@ from app.config import settings
 from app.database import get_db
 from app.dependencies import user_auth
 from app.schemas.common import GenericApiResponse
+from app.schemas.management import TOTPConfirmRequest, TOTPDisableRequest
 from app.services.totp import generate_totp_secret, get_totp_uri, verify_totp_code
 
 router = APIRouter(tags=["totp"])
@@ -102,7 +103,7 @@ async def totp_setup(
 
 @router.post("/api/user/totp/confirm")
 async def totp_confirm(
-    body: dict,
+    body: TOTPConfirmRequest,
     db: AsyncSession = Depends(get_db),
     user=Depends(user_auth),
 ):
@@ -112,7 +113,7 @@ async def totp_confirm(
     if blocked:
         return GenericApiResponse(success=False, message=msg)
 
-    totp_code = body.get("totp_code", "")
+    totp_code = body.totp_code
     if not totp_code or not isinstance(totp_code, str) or len(totp_code) != 6:
         return GenericApiResponse(success=False, message="验证码格式不正确")
 
@@ -159,7 +160,7 @@ async def totp_cancel(
 
 @router.post("/api/user/totp/disable")
 async def totp_disable(
-    body: dict,
+    body: TOTPDisableRequest,
     db: AsyncSession = Depends(get_db),
     user=Depends(user_auth),
 ):
@@ -169,7 +170,7 @@ async def totp_disable(
     if blocked:
         return GenericApiResponse(success=False, message=msg)
 
-    totp_code = body.get("totp_code", "")
+    totp_code = body.totp_code
     if not totp_code or not isinstance(totp_code, str) or len(totp_code) != 6:
         return GenericApiResponse(success=False, message="验证码格式不正确")
 

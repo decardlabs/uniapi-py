@@ -23,6 +23,7 @@ from app.models.log import Log
 from app.models.token import Token
 from app.models.user import User
 from app.schemas.common import GenericApiResponse, PaginatedResponse
+from app.schemas.management import ChannelCreateRequest, ChannelUpdateRequest
 
 router = APIRouter(tags=["channels"])
 logger = logging.getLogger(__name__)
@@ -178,13 +179,13 @@ async def create_channel(
 
 @router.put("/api/channel/")
 async def update_channel(
-    body: dict,
+    body: ChannelUpdateRequest,
     request: Request,
     db: AsyncSession = Depends(get_db),
     _=Depends(admin_auth),
 ):
-    """Update a channel. Supports full update or status-only toggle."""
-    channel_id = body.get("id")
+    """Update a channel."""
+    channel_id = body.id
     if not channel_id:
         raise HTTPException(status_code=400, detail="id is required")
 
@@ -194,34 +195,34 @@ async def update_channel(
         raise HTTPException(status_code=404, detail="Channel not found")
 
     # Status-only update (from manage action like enable/disable)
-    if request.query_params.get("status_only") == "1" or body.get("action"):
-        action = body.get("action", "")
+    if request.query_params.get("status_only") == "1" or body.action:
+        action = body.action or ""
         if action == "enable":
             channel.status = 1
         elif action == "disable":
             channel.status = 2
-        elif body.get("status") is not None:
-            channel.status = int(body["status"])
+        elif body.status is not None:
+            channel.status = body.status
         channel.updated_at = int(time.time() * 1000)
         await db.commit()
         return GenericApiResponse(data=_channel_to_dict(channel))
 
-    # Full field update
+    # Full field update — extract only non-None fields from the Pydantic model
     text_fields = {"model_mapping", "other", "model_configs", "system_prompt", "config"}
+    update_data = body.model_dump(exclude_none=True)
     for field in ("name", "type", "key", "status", "base_url", "models",
                    "group", "weight", "priority", "model_mapping", "other",
                    "model_configs", "system_prompt", "config"):
-        if field in body:
-            val = body[field]
+        if field in update_data:
+            val = update_data[field]
             if field in text_fields:
                 val = _json_str(val)
             setattr(channel, field, val)
     # Map frontend field name to backend field
-    if "ratelimit" in body:
-        channel.rate_limit = body["ratelimit"]
-    if "groups" in body:
-        g = body["groups"]
-        channel.group = g[0] if isinstance(g, list) and g else "default"
+    if "ratelimit" in update_data:
+        channel.rate_limit = body.rate_limit
+    if "groups" in update_data:
+        channel.group = body.group
     channel.updated_at = int(time.time() * 1000)
     await db.commit()
     await db.refresh(channel)

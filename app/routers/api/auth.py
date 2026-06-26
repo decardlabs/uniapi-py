@@ -13,6 +13,7 @@ from app.config import settings
 from app.models.channel import Channel
 from app.models.option import Option
 from app.schemas.common import GenericApiResponse
+from app.schemas.management import UserSelfUpdateRequest
 from app.schemas.user import (
     LoginRequest,
     LoginResponse,
@@ -193,7 +194,7 @@ async def self_info(
 
 @router.put("/api/user/self")
 async def update_self(
-    body: dict,
+    body: UserSelfUpdateRequest,
     request: Request,
     db: AsyncSession = Depends(get_db),
 ):
@@ -202,11 +203,11 @@ async def update_self(
     if not user:
         return GenericApiResponse(success=False, message="Not logged in")
 
-    new_password = body.get("password")
+    new_password = body.password
     if new_password:
         from app.services.auth import hash_password, verify_password
         from app.services.user import validate_password_strength
-        if not verify_password(body.get("old_password", ""), user.password):
+        if not verify_password(body.old_password or "", user.password):
             return GenericApiResponse(success=False, message="Old password is incorrect")
         strength_error = validate_password_strength(new_password)
         if strength_error:
@@ -216,10 +217,10 @@ async def update_self(
         user.failed_login_attempts = 0
         user.locked_until = None
 
-    if "display_name" in body:
-        user.display_name = body["display_name"]
-    if "email" in body:
-        user.email = body["email"]
+    if body.display_name is not None:
+        user.display_name = body.display_name
+    if body.email is not None:
+        user.email = body.email
     user.updated_at = int(time.time() * 1000)
     await db.commit()
     return GenericApiResponse(data={"updated": True})

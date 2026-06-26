@@ -16,6 +16,11 @@ from app.models.log import Log
 from app.models.user import User
 from app.budget.arbiter import BudgetArbiter
 from app.schemas.common import GenericApiResponse, PaginatedResponse
+from app.schemas.management import (
+    PoolCreateRequest, PoolFundRequest, PoolAllocateRequest,
+    PoolRecallAllRequest, PoolRecallRequest, PoolRolloverRequest,
+    PoolUpdateRequest, PoolConfigRequest,
+)
 
 router = APIRouter(tags=["pools"])
 
@@ -148,19 +153,19 @@ async def list_pools(
 
 @router.post("/api/pool/")
 async def create_pool(
-    body: dict,
+    body: PoolCreateRequest,
     db: AsyncSession = Depends(get_db),
     _=Depends(admin_auth),
 ):
     """Create a new budget pool."""
-    name = body.get("name", "").strip()
+    name = body.name.strip()
     if not name:
         raise HTTPException(status_code=400, detail="Pool name is required")
-    total_funded = float(body.get("total_funded", 0))
+    total_funded = body.total_funded
     if total_funded < 0:
         raise HTTPException(status_code=400, detail="total_funded must be >= 0")
-    period_type = body.get("period_type", "monthly")
-    period_key = body.get("period_key", "").strip()
+    period_type = body.period_type
+    period_key = body.period_key.strip()
     if not period_key:
         raise HTTPException(status_code=400, detail="period_key is required (e.g. 2026-06)")
 
@@ -210,7 +215,7 @@ async def get_pool(
 @router.post("/api/pool/{pool_id}/fund")
 async def fund_pool(
     pool_id: int,
-    body: dict,
+    body: PoolFundRequest,
     request: Request,
     db: AsyncSession = Depends(get_db),
     _=Depends(admin_auth),
@@ -223,11 +228,11 @@ async def fund_pool(
     if pool.status != "active":
         raise HTTPException(status_code=400, detail="Pool is not active")
 
-    amount = float(body.get("amount", 0))
+    amount = body.amount
     if amount <= 0:
         raise HTTPException(status_code=400, detail="Amount must be > 0")
 
-    remark = body.get("remark", "")
+    remark = body.remark or ""
 
     now = int(time.time() * 1000)
     pool.total_funded += amount
@@ -258,7 +263,7 @@ async def fund_pool(
 @router.post("/api/pool/{pool_id}/allocate")
 async def allocate_to_user(
     pool_id: int,
-    body: dict,
+    body: PoolAllocateRequest,
     request: Request,
     db: AsyncSession = Depends(get_db),
     _=Depends(admin_auth),
@@ -276,8 +281,8 @@ async def allocate_to_user(
     if pool.status != "active":
         raise HTTPException(status_code=400, detail="Pool is not active")
 
-    user_id = int(body.get("user_id", 0))
-    amount = float(body.get("amount", 0))
+    user_id = body.user_id
+    amount = body.amount
     if user_id <= 0 or amount <= 0:
         raise HTTPException(status_code=400, detail="Valid user_id and amount > 0 required")
 
@@ -289,7 +294,7 @@ async def allocate_to_user(
             detail=f"Insufficient pool balance. Available: {available:.4f}, requested: {amount:.4f}",
         )
 
-    remark = body.get("remark", "")
+    remark = body.remark or ""
     now = int(time.time() * 1000)
 
     # 1. Create allocation
@@ -358,7 +363,7 @@ async def allocate_to_user(
 @router.post("/api/pool/{pool_id}/recall")
 async def recall_from_user(
     pool_id: int,
-    body: dict,
+    body: PoolRecallRequest,
     request: Request,
     db: AsyncSession = Depends(get_db),
     _=Depends(admin_auth),
@@ -371,12 +376,12 @@ async def recall_from_user(
     if pool.status != "active":
         raise HTTPException(status_code=400, detail="Pool is not active")
 
-    user_id = int(body.get("user_id", 0))
-    amount = float(body.get("amount", 0))
+    user_id = body.user_id
+    amount = body.amount
     if user_id <= 0 or amount <= 0:
         raise HTTPException(status_code=400, detail="Valid user_id and amount > 0 required")
 
-    remark = body.get("remark", "")
+    remark = body.remark or ""
 
     # Find the user's active allocation in this pool
     alloc_result = await db.execute(
@@ -441,13 +446,13 @@ async def recall_from_user(
 @router.post("/api/pool/{pool_id}/recall_all")
 async def recall_all_from_user(
     pool_id: int,
-    body: dict,
+    body: PoolRecallAllRequest,
     request: Request,
     db: AsyncSession = Depends(get_db),
     _=Depends(admin_auth),
 ):
     """Recall all remaining balance from a user in this pool."""
-    user_id = int(body.get("user_id", 0))
+    user_id = body.user_id
     if user_id <= 0:
         raise HTTPException(status_code=400, detail="Valid user_id required")
 
@@ -466,8 +471,14 @@ async def recall_all_from_user(
         raise HTTPException(status_code=400, detail="No remaining balance to recall")
 
     # Reuse recall endpoint with the remaining amount
-    body["amount"] = remaining
-    return await recall_from_user(pool_id, body, request, db, _=None)
+    from app.schemas.management import PoolRecallRequest
+    recall_body = PoolRecallRequest(
+        user_id=user_id,
+        amount=remaining,
+        period_key=body.period_key,
+        remark=body.remark,
+    )
+    return await recall_from_user(pool_id, recall_body, request, db, _=None)
 
 
 # ── Close ──────────────────────────────────────────────
@@ -513,7 +524,7 @@ async def close_pool(
 @router.post("/api/pool/{pool_id}/rollover")
 async def rollover_pool(
     pool_id: int,
-    body: dict,
+    body: PoolRolloverRequest,
     request: Request,
     db: AsyncSession = Depends(get_db),
     _=Depends(admin_auth),
@@ -530,8 +541,8 @@ async def rollover_pool(
     if pool.status != "active":
         raise HTTPException(status_code=400, detail="Pool is not active")
 
-    new_period_key = body.get("new_period_key", "").strip()
-    new_name = body.get("new_name", "").strip()
+    new_period_key = body.new_period_key.strip() if body.new_period_key else ""
+    new_name = body.new_name.strip() if body.new_name else ""
     if not new_period_key:
         raise HTTPException(status_code=400, detail="new_period_key is required")
 
