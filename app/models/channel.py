@@ -16,7 +16,7 @@ class Channel(Base):
     key: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
     status: Mapped[int] = mapped_column(Integer, default=1)  # 1=Enabled
     name: Mapped[str] = mapped_column(String(64), index=True, default="")
-    weight: Mapped[int] = mapped_column(Integer, default=0)
+    weight: Mapped[int] = mapped_column(Integer, default=1)
     created_time: Mapped[int] = mapped_column(BigInteger, default=0)
     test_time: Mapped[int] = mapped_column(BigInteger, default=0)
     response_time: Mapped[int] = mapped_column(Integer, default=0)
