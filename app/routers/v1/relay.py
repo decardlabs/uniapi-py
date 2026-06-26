@@ -116,6 +116,7 @@ def _make_stream_usage_callback(
             # Always update type to 2 (consume), even when usage is empty.
             # Without this, error/empty streams leave stale type=6 records.
             log_entry.type = 2
+            import logging as _lg
             if not usage or not any(usage.values()):
                 log_entry.content = f"Stream ended without usage data for {log_entry.model_name}"
                 _lg.getLogger(__name__).debug("_on_usage: empty usage for log %d, still patched", log_id)
@@ -145,8 +146,6 @@ def _make_stream_usage_callback(
                         db_session=session,
                     )
                 except Exception as _exc:
-                    import logging as _lg
-
                     _lg.getLogger(__name__).warning(
                         "Stream budget settle failed for log %d: %s",
                         log_id, _exc,
