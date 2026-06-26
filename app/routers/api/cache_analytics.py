@@ -55,7 +55,7 @@ def _get_model_prices(model_name: str) -> tuple[float, float]:
 
 def _hit_rate(pt: int, cpt: int) -> float:
     if pt > 0:
-        return cpt / pt
+        return min(cpt / pt, 1.0)
     return 0.0
 
 

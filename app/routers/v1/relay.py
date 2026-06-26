@@ -93,6 +93,7 @@ def _make_stream_usage_callback(
         )
         if prompt_tokens == 0 and cache_hit > 0:
             prompt_tokens = cache_hit
+        cache_hit = min(cache_hit, prompt_tokens)
         cache_miss = max(0, prompt_tokens - cache_hit)
 
 
@@ -1113,9 +1114,11 @@ async def _handle_relay(request: Request, db: AsyncSession):
     # Fallback: legacy cached_tokens field
     if not cache_hit and not cache_miss:
         cache_hit = usage.get("cached_tokens") or 0
-        # Same MiniMax quirk
+        # MiniMax quirk: cached_tokens may include system prompt cache
+        # not reflected in prompt_tokens — cap to avoid >100% hit rate
         if prompt_tokens == 0 and cache_hit > 0:
             prompt_tokens = cache_hit
+        cache_hit = min(cache_hit, prompt_tokens)
         cache_miss = max(0, prompt_tokens - cache_hit)
 
     # Calculate actual cost in micro-yuan
