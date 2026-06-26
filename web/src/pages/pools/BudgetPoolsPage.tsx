@@ -42,7 +42,7 @@ interface Pool {
   total_funded: number;
   total_allocated: number;
   total_consumed: number;
-  available: number;       // computed: total_funded - total_allocated
+  available: number;       // computed: total_funded - total_consumed
   used_quota: number;      // alias for total_allocated (frontend compat)
   period_type: string;
   period_key: string;
@@ -283,7 +283,7 @@ export default function BudgetPoolsPage() {
           // Backend returns { success, data: Pool[], total: N }
           const pools: Pool[] = (res.data.data || []).map((p: any) => ({
             ...p,
-            available: Math.max(0, p.total_funded - p.total_allocated),
+            available: Math.max(0, p.total_funded - p.total_consumed),
           }));
           setData(pools);
           setTotal(res.data.total || 0);
