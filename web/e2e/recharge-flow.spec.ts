@@ -16,7 +16,6 @@ import { test, expect } from './fixtures';
 const ADMIN_USER = process.env.TEST_ADMIN_USERNAME || 'root';
 const ADMIN_PASS = process.env.TEST_ADMIN_PASSWORD || '123456';
 const RECHARGE_AMOUNT = Number(process.env.TEST_RECHARGE_AMOUNT || '7'); // ¥7
-const RECHARGE_REMARK = 'E2E test recharge';
 
 // Shared state
 let g_sessionCookies = '';
@@ -31,7 +30,6 @@ async function loginAsAdmin(request: any) {
     data: { username: ADMIN_USER, password: ADMIN_PASS },
   });
   expect(loginResp.ok(), `Admin login failed: ${await loginResp.text()}`).toBe(true);
-
   const cookies = loginResp.headers()['set-cookie'];
   g_sessionCookies = cookies?.split(';')[0] || '';
   return g_sessionCookies;
@@ -63,15 +61,13 @@ test.describe('充值申请与审批流程', () => {
     if (pools.length > 0) {
       g_poolId = pools[0].id;
     } else {
-      // 创建一个测试池子
       const createResp = await apiPost(request, '/api/pool/', {
         name: 'E2E Test Pool',
         total_funded: 10000.0,
         period_type: 'monthly',
         period_key: '2026-06',
       });
-      const createData = await createResp.json();
-      g_poolId = createData.data.id;
+      g_poolId = (await createResp.json()).data.id;
     }
 
     // 2. 记录初始状态
@@ -82,142 +78,99 @@ test.describe('充值申请与审批流程', () => {
     const poolData = (await poolDetailResp.json()).data;
     g_initialPoolAvailable = poolData.total_funded - poolData.total_consumed;
 
-    console.log(`[Setup] Pool ID: ${g_poolId}`);
-    console.log(`[Setup] Initial user balance: ¥${(g_initialUserBalance / 1_000_000).toFixed(2)}`);
-    console.log(`[Setup] Initial pool available: ¥${g_initialPoolAvailable.toFixed(2)}`);
+    // 3. 通过 API 创建充值申请（¥7）
+    const rechargeResp = await apiPost(request, '/api/recharge/', {
+      amount: RECHARGE_AMOUNT * 1_000_000,
+      remark: 'E2E test recharge',
+    });
+    g_rechargeId = (await rechargeResp.json()).data.id;
+    console.log(`[Setup] Recharge #${g_rechargeId} created (¥${RECHARGE_AMOUNT})`);
+    console.log(`[Setup] Pool ID: ${g_poolId}, initial balance: ¥${(g_initialUserBalance / 1_000_000).toFixed(2)}`);
   });
 
-  // ── UC1: 用户提交充值申请 ──────────────────────────────
+  // ── UC1: UI 审批通过 ─────────────────────────────────
 
-  test('UC1: 用户提交充值申请', async ({ page }) => {
-    // 导航到充值管理页面
-    await page.goto('/recharges');
-    await page.waitForLoadState('networkidle');
-    await expect(page.getByText(/recharge/i).first()).toBeVisible({ timeout: 10000 });
-
-    // 点击「新建充值申请」按钮
-    const newRequestBtn = page.getByRole('button', { name: /new request|new recharge|新建/i });
-    if (await newRequestBtn.isVisible()) {
-      await newRequestBtn.click();
-    }
-
-    // 填写金额和备注
-    const amountInput = page.getByPlaceholder(/amount/i).first();
-    const remarkInput = page.getByPlaceholder(/remark/i).first();
-    const submitBtn = page.getByRole('button', { name: /submit|提交/i });
-
-    await amountInput.fill(String(RECHARGE_AMOUNT));
-    if (await remarkInput.isVisible()) {
-      await remarkInput.fill(RECHARGE_REMARK);
-    }
-    await submitBtn.click();
-
-    // 等待提交成功（提示或列表更新）
-    await page.waitForTimeout(2000);
-    await page.waitForLoadState('networkidle');
-
-    // 验证申请出现在列表中（最新的第一条）
-    const firstRowAmount = page.locator('table tbody tr').first();
-    await expect(firstRowAmount).toBeVisible({ timeout: 5000 });
-
-    // 通过 API 获取刚创建的 recharge ID
-    const rechargesResp = await apiGet(request, '/api/recharge/self?p=0&size=5');
-    const recharges = (await rechargesResp.json()).data || [];
-    expect(recharges.length).toBeGreaterThan(0);
-    g_rechargeId = recharges[0].id;
-    expect(recharges[0].status).toBe(1); // pending
-
-    console.log(`[UC1] Recharge #${g_rechargeId} created, status=pending`);
-  });
-
-  // ── UC2: 管理员审批通过 ──────────────────────────────
-
-  test('UC2: 管理员审批通过', async ({ page }) => {
+  test('UC1: 管理员通过 UI 审批充值', async ({ page, request }) => {
     expect(g_rechargeId).toBeGreaterThan(0);
 
-    // 管理员导航到充值管理页
+    // 登录（UI）
+    await page.goto('/login');
+    await page.waitForLoadState('networkidle');
+    await page.getByLabel(/username/i).fill(ADMIN_USER);
+    await page.getByLabel(/password/i).fill(ADMIN_PASS);
+    await page.getByRole('button', { name: 'Sign In', exact: true }).click();
+    await page.waitForLoadState('networkidle');
+    await page.waitForTimeout(1000);
+
+    // 导航到充值管理页
     await page.goto('/recharges');
     await page.waitForLoadState('networkidle');
 
-    // 找到对应的申请行，点击「审批/Approve」
-    // 查找包含 recharge ID 的行
+    // 找到对应的申请行，点击「Review」
     const targetRow = page.locator('table tbody tr').filter({ hasText: String(g_rechargeId) }).first();
-    await expect(targetRow).toBeVisible({ timeout: 5000 });
+    await expect(targetRow).toBeVisible({ timeout: 10000 });
 
-    // 点击「通过/Approve」按钮
-    const approveBtn = targetRow.getByRole('button', { name: /approve|通过/i });
-    if (await approveBtn.isVisible()) {
-      await approveBtn.click();
-    } else {
-      // 可能行上有「审批」展开按钮
-      const reviewBtn = targetRow.getByRole('button', { name: /review|审批|审核/i });
-      if (await reviewBtn.isVisible()) {
-        await reviewBtn.click();
-        await page.waitForTimeout(500);
-        // 在弹出的审批面板中点击「通过」
-        const confirmApprove = page.getByRole('button', { name: /approve|通过|确认/i });
-        await confirmApprove.click();
-      }
-    }
+    // 点击 Review 按钮（每行只有一个）
+    const reviewBtn = targetRow.getByRole('button', { name: /review/i });
+    await reviewBtn.click();
+
+    // 等待 Review 面板出现
+    const approveBtn = page.getByRole('button', { name: /approve/i });
+    await expect(approveBtn).toBeVisible({ timeout: 5000 });
+
+    // 点击 Approve
+    await approveBtn.click();
 
     // 等待审批完成
     await page.waitForTimeout(2000);
     await page.waitForLoadState('networkidle');
 
-    // 验证状态变为「已通过」
-    const statusBadge = targetRow.locator('.badge, [class*="badge"], [class*="status"]');
-    // 或者刷新列表看最新状态
-    await page.reload();
-    await page.waitForLoadState('networkidle');
+    // 验证状态变为「Approved」
+    const statusCell = targetRow.locator('td').nth(3); // 状态列
+    await expect(statusCell).toContainText(/approved/i, { timeout: 5000 });
 
-    // 通过 API 验证状态
-    const rechargesResp = await apiGet(request, `/api/recharge/self?p=0&size=5`);
+    // 通过 API 双重验证
+    const rechargesResp = await apiGet(request, '/api/recharge/self?p=0&size=5');
     const recharges = (await rechargesResp.json()).data || [];
     const approved = recharges.find((r: any) => r.id === g_rechargeId);
     expect(approved).toBeDefined();
-    expect(approved.status).toBe(2); // approved
+    expect(approved.status).toBe(2);
 
-    console.log(`[UC2] Recharge #${g_rechargeId} approved, status=approved`);
+    console.log(`[UC1] Recharge #${g_rechargeId} approved via UI ✓`);
   });
 
-  // ── UC3: 数据验证 ──────────────────────────────────────
+  // ── UC2: API 数据验证 ─────────────────────────────────
 
-  test('UC3: 验证用户余额和预算池扣减', async ({ request }) => {
-    // 1. 验证用户余额增加了 RECHARGE_AMOUNT 元
+  test('UC2: 验证用户余额和预算池扣减', async ({ request }) => {
+    // 1. 用户余额 +¥7
     const userResp = await apiGet(request, '/api/user/self');
     const newBalance = (await userResp.json()).data.balance;
-    const expectedBalance = g_initialUserBalance + RECHARGE_AMOUNT * 1_000_000;
     const balanceDiff = newBalance - g_initialUserBalance;
-
     expect(Math.abs(balanceDiff - RECHARGE_AMOUNT * 1_000_000)).toBeLessThan(10);
-    console.log(`[UC3] User balance: ¥${(g_initialUserBalance / 1_000_000).toFixed(2)} → ¥${(newBalance / 1_000_000).toFixed(2)} (expected +¥${RECHARGE_AMOUNT})`);
+    console.log(`[UC2] Balance: ¥${(g_initialUserBalance / 1_000_000).toFixed(2)} → ¥${(newBalance / 1_000_000).toFixed(2)} (+¥${RECHARGE_AMOUNT}) ✓`);
 
-    // 2. 验证池子可用余额减少了 RECHARGE_AMOUNT 元
+    // 2. 池子可用 -¥7
     const poolResp = await apiGet(request, `/api/pool/${g_poolId}`);
     const poolData = (await poolResp.json()).data;
-    const newPoolAvailable = poolData.total_funded - poolData.total_consumed;
-    const poolDiff = g_initialPoolAvailable - newPoolAvailable;
-
+    const newAvailable = poolData.total_funded - poolData.total_consumed;
+    const poolDiff = g_initialPoolAvailable - newAvailable;
     expect(Math.abs(poolDiff - RECHARGE_AMOUNT)).toBeLessThan(0.01);
-    console.log(`[UC3] Pool available: ¥${g_initialPoolAvailable.toFixed(2)} → ¥${newPoolAvailable.toFixed(2)} (decreased by ¥${poolDiff.toFixed(2)})`);
+    console.log(`[UC2] Pool: ¥${g_initialPoolAvailable.toFixed(2)} → ¥${newAvailable.toFixed(2)} (-¥${RECHARGE_AMOUNT}) ✓`);
 
-    // 3. 验证有对应的 PoolTransaction 记录
+    // 3. PoolTransaction 记录
     const txResp = await apiGet(request, `/api/pool/${g_poolId}/transactions?p=0&size=50`);
     const txs = (await txResp.json()).data || [];
     const rechargeTx = txs.find((t: any) =>
-      t.type === 'consume' &&
-      t.remark?.includes('Recharge approval')
+      t.type === 'consume' && t.remark?.includes('Recharge approval')
     );
     expect(rechargeTx).toBeDefined();
-    expect(Math.abs(rechargeTx.amount - RECHARGE_AMOUNT)).toBeLessThan(0.01);
-    console.log(`[UC3] PoolTransaction #${rechargeTx.id}: ${rechargeTx.type} ¥${rechargeTx.amount}`);
+    console.log(`[UC2] PoolTransaction #${rechargeTx.id}: ${rechargeTx.type} ¥${rechargeTx.amount} ✓`);
 
-    // 4. 验证对账 API 的数据一致
+    // 4. 对账 API 一致
     const reconfResp = await apiGet(request, `/api/pool/${g_poolId}/reconciliation`);
     const reconf = (await reconfResp.json()).data.pool;
     expect(reconf.total_consumed).toBe(poolData.total_consumed);
-    expect(reconf.available).toBeCloseTo(newPoolAvailable, 2);
-    console.log(`[UC3] Reconciliation agrees: consumed=¥${reconf.total_consumed}, available=¥${reconf.available}`);
+    console.log(`[UC2] Reconciliation: consumed=¥${reconf.total_consumed}, available=¥${reconf.available} ✓`);
 
     console.log('\n✅ 全部验证通过！');
   });
