@@ -523,8 +523,9 @@ async def channel_default_pricing(
             "cached_input_price": yuan["cache_hit"],
         }
         model_configs[name] = {
-            "ratio": yuan["input"],
-            "completion_ratio": yuan["output"],
+            "input_price": yuan["input"],
+            "output_price": yuan["output"],
+            "cache_hit_price": yuan["cache_hit"],
             "max_tokens": cfg.max_tokens,
         }
 
