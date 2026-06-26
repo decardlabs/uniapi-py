@@ -755,17 +755,17 @@ function fmtNum(n: number): string {
 }
 
 function formatUsd(price: number): string {
-  if (price === 0) return '$0';
-  if (price < 0.001) return `$${parseFloat(price.toFixed(6))}`;
-  if (price < 1) return `$${parseFloat(price.toFixed(4))}`;
-  return `$${price.toFixed(2)}`;
+  if (price === 0) return '¥0';
+  if (price < 0.001) return `¥${parseFloat(price.toFixed(6))}`;
+  if (price < 1) return `¥${parseFloat(price.toFixed(4))}`;
+  return `¥${price.toFixed(2)}`;
 }
 
 function formatUsdRaw(price: number): string {
-  if (price === 0) return '$0';
-  if (price < 0.0001) return `$${parseFloat(price.toFixed(6))}`;
-  if (price < 0.01) return `$${parseFloat(price.toFixed(4))}`;
-  return `$${price.toFixed(2)}`;
+  if (price === 0) return '¥0';
+  if (price < 0.0001) return `¥${parseFloat(price.toFixed(6))}`;
+  if (price < 0.01) return `¥${parseFloat(price.toFixed(4))}`;
+  return `¥${price.toFixed(2)}`;
 }
 
 function formatUsdForTokens(price: number, tr: TrFn): string {
