@@ -220,7 +220,7 @@ async def update_channel(
             setattr(channel, field, val)
     # Map frontend field name to backend field
     if "ratelimit" in update_data:
-        channel.rate_limit = body.rate_limit
+        channel.rate_limit = body.ratelimit
     if "groups" in update_data:
         channel.group = body.group
     channel.updated_at = int(time.time() * 1000)
