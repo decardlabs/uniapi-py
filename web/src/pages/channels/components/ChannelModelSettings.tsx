@@ -24,8 +24,9 @@ export const ChannelModelSettings = ({
   tr,
 }: ChannelModelSettingsProps) => {
   const FALLBACK_MODEL_CONFIG = {
-    ratio: 1,
-    completion_ratio: 1,
+    input_price: 1.0,
+    output_price: 2.0,
+    cache_hit_price: 0.02,
     max_tokens: 128000,
   };
 
@@ -199,7 +200,7 @@ export const ChannelModelSettings = ({
                   help={
                     tr(
                       'model_configs.help',
-                      'Optional overrides for ratio, completion_ratio, and max_tokens. This does not control which model names are enabled above.'
+                      'Optional overrides for input_price (¥/M tokens), cache_hit_price, output_price, and max_tokens. Uses global pricing when not set. Old format ratio/completion_ratio also accepted.'
                     )
                   }
                 />
@@ -217,7 +218,7 @@ export const ChannelModelSettings = ({
               </div>
               <FormControl>
                 <Textarea
-                  placeholder={tr('model_configs.placeholder', '{"provider/actual-model-name": {"ratio": 1, "completion_ratio": 1, "max_tokens": 128000}}', {
+                  placeholder={tr('model_configs.placeholder', '{"model-name": {"input_price": 1.0, "output_price": 2.0, "cache_hit_price": 0.02, "max_tokens": 128000}}', {
                     example: JSON.stringify(MODEL_CONFIGS_EXAMPLE, null, 2),
                   })}
                   className={`font-mono text-xs min-h-[150px] ${errorClass('model_configs')}`}

@@ -151,7 +151,7 @@ describe('ChannelModelSettings', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Load Provider Defaults' }));
 
     expect(formRef?.getValues('model_configs')).toBe(
-      '{\n  "gpt-4": {\n    "ratio": 1,\n    "completion_ratio": 1,\n    "max_tokens": 128000\n  },\n  "deepseek-chat": {\n    "ratio": 1,\n    "completion_ratio": 1,\n    "max_tokens": 128000\n  }\n}'
+      '{\n  "gpt-4": {\n    "input_price": 1,\n    "output_price": 2,\n    "cache_hit_price": 0.02,\n    "max_tokens": 128000\n  },\n  "deepseek-chat": {\n    "input_price": 1,\n    "output_price": 2,\n    "cache_hit_price": 0.02,\n    "max_tokens": 128000\n  }\n}'
     );
   });
 
@@ -199,7 +199,7 @@ describe('ChannelModelSettings', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Load Provider Defaults' }));
 
     expect(formRef?.getValues('model_configs')).toBe(
-      '{\n  "deepseek-chat": {\n    "ratio": 1,\n    "completion_ratio": 1,\n    "max_tokens": 128000\n  }\n}'
+      '{\n  "deepseek-chat": {\n    "input_price": 1,\n    "output_price": 2,\n    "cache_hit_price": 0.02,\n    "max_tokens": 128000\n  }\n}'
     );
     expect(notify).toHaveBeenCalledWith(
       expect.objectContaining({

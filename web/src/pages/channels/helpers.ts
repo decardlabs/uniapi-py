@@ -137,22 +137,32 @@ export const validateModelConfigs = (configStr: string) => {
       }
 
       const configObj = config as any;
-      // Validate ratio
-      if (configObj.ratio !== undefined) {
-        if (typeof configObj.ratio !== 'number' || configObj.ratio < 0) {
+      // Validate input_price (new format, per million tokens)
+      if (configObj.input_price !== undefined) {
+        if (typeof configObj.input_price !== 'number' || configObj.input_price < 0) {
           return {
             valid: false,
-            error: `Invalid ratio for model "${modelName}": must be a non-negative number`,
+            error: `Invalid input_price for model "${modelName}": must be a non-negative number`,
           };
         }
       }
 
-      // Validate completion_ratio
-      if (configObj.completion_ratio !== undefined) {
-        if (typeof configObj.completion_ratio !== 'number' || configObj.completion_ratio < 0) {
+      // Validate cache_hit_price (new format)
+      if (configObj.cache_hit_price !== undefined) {
+        if (typeof configObj.cache_hit_price !== 'number' || configObj.cache_hit_price < 0) {
           return {
             valid: false,
-            error: `Invalid completion_ratio for model "${modelName}": must be a non-negative number`,
+            error: `Invalid cache_hit_price for model "${modelName}": must be a non-negative number`,
+          };
+        }
+      }
+
+      // Validate output_price (new format)
+      if (configObj.output_price !== undefined) {
+        if (typeof configObj.output_price !== 'number' || configObj.output_price < 0) {
+          return {
+            valid: false,
+            error: `Invalid output_price for model "${modelName}": must be a non-negative number`,
           };
         }
       }
@@ -167,8 +177,31 @@ export const validateModelConfigs = (configStr: string) => {
         }
       }
 
+      // Backward compat: accept old format fields too
+      if (configObj.ratio !== undefined) {
+        if (typeof configObj.ratio !== 'number' || configObj.ratio < 0) {
+          return {
+            valid: false,
+            error: `Invalid ratio for model "${modelName}": must be a non-negative number`,
+          };
+        }
+      }
+      if (configObj.completion_ratio !== undefined) {
+        if (typeof configObj.completion_ratio !== 'number' || configObj.completion_ratio < 0) {
+          return {
+            valid: false,
+            error: `Invalid completion_ratio for model "${modelName}": must be a non-negative number`,
+          };
+        }
+      }
+
       const hasPricingField =
-        configObj.ratio !== undefined || configObj.completion_ratio !== undefined || configObj.max_tokens !== undefined;
+        configObj.input_price !== undefined ||
+        configObj.cache_hit_price !== undefined ||
+        configObj.output_price !== undefined ||
+        configObj.ratio !== undefined ||
+        configObj.completion_ratio !== undefined ||
+        configObj.max_tokens !== undefined;
       if (!hasPricingField) {
         return {
           valid: false,

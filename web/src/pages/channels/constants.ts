@@ -55,15 +55,17 @@ export const MODEL_MAPPING_EXAMPLE = {
 };
 
 export const MODEL_CONFIGS_EXAMPLE = {
-  'provider/actual-model-name': {
-    ratio: 1,
-    completion_ratio: 1,
-    max_tokens: 128000,
+  'deepseek-v4-flash': {
+    input_price: 1.0,
+    cache_hit_price: 0.02,
+    output_price: 2.0,
+    max_tokens: 384000,
   },
-  'vision/model-example': {
-    ratio: 1.2,
-    completion_ratio: 1.5,
-    max_tokens: 65536,
+  'deepseek-v4-pro': {
+    input_price: 3.0,
+    cache_hit_price: 0.025,
+    output_price: 6.0,
+    max_tokens: 384000,
   },
 } satisfies Record<string, Record<string, unknown>>;
 
