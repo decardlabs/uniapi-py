@@ -73,7 +73,10 @@ export function SearchableDropdown({
   const performApiSearch = React.useCallback(
     async (query: string) => {
       if (!searchEndpoint || !transformResponse || query.length < minQueryLength) {
-        setApiOptions([]);
+        // Don't clear apiOptions on empty query when auto-search may have loaded data
+        if (!autoSearchOnOpen || query.length > 0) {
+          setApiOptions([]);
+        }
         return;
       }
 
