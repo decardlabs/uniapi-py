@@ -279,8 +279,10 @@ async def test_all_channels(
         # Per-channel SAVEPOINT: DB changes (response_time, test_time, logs) are committed
         # per-channel via SAVEPOINT + RELEASE, so a failure in one channel does not
         # roll back results from earlier channels.
+        savepoint_created = False
         try:
             await db.execute(text("SAVEPOINT sp_channel_test"))
+            savepoint_created = True
         except Exception:
             pass  # SAVEPOINT is a best-effort isolation; proceed without it if unsupported
 
@@ -478,12 +480,14 @@ async def test_all_channels(
                 "detail": f"Channel-level error: {channel_exc}",
             })
         else:
-            # No exception in this channel's outer block — release the SAVEPOINT
-            # so per-channel changes survive without a final db.commit().
-            try:
-                await db.execute(text("RELEASE SAVEPOINT sp_channel_test"))
-            except Exception:
-                pass
+            pass
+        finally:
+            # Release SAVEPOINT regardless of success/failure
+            if savepoint_created:
+                try:
+                    await db.execute(text("RELEASE SAVEPOINT sp_channel_test"))
+                except Exception:
+                    pass
 
     await db.commit()
     return GenericApiResponse(data={"total": len(results), "results": results})

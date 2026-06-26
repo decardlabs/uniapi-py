@@ -78,9 +78,9 @@ async def update_topup(
 
 @router.get("/api/recharge/self")
 async def list_self_recharges(
+    request: Request,
     p: int = Query(0, ge=0),
     size: int = Query(10, ge=1, le=50),
-    request: Request = None,
     db: AsyncSession = Depends(get_db),
     _=Depends(user_auth),
 ):

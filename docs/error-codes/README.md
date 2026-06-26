@@ -7,7 +7,7 @@
 > - 所有认证错误使用 `UnauthorizedException` / `ForbiddenException` 等子类（位于 [app/exceptions.py](../../app/exceptions.py)）
 > - 错误码统一使用 `UNIAPI_` 前缀（定义在 [app/error_codes.py](../../app/error_codes.py)）
 > - 响应格式为 `{"success": false, "error": {"code": "...", "type": "...", "status_code": ...}}`
-> - 实际测试位于 [tests/phase5/](../../tests/phase5/) (246 tests)
+> - 实际测试位于 [tests/phase5/](../../tests/phase5/) (309 tests)
 >
 > **唯一有效的规范文档是 [UNIAPI_ERROR_CODE_SPEC_DRAFT.md](UNIAPI_ERROR_CODE_SPEC_DRAFT.md)**，其与当前代码实现一致。
 >

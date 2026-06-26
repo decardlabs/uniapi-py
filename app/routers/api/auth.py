@@ -223,6 +223,23 @@ async def update_self(
         user.email = body.email
     user.updated_at = int(time.time() * 1000)
     await db.commit()
+
+    # Rotate session token on password change to invalidate old sessions
+    if new_password:
+        new_session = create_session(user)
+        resp = JSONResponse(
+            content=GenericApiResponse(data={"updated": True}).model_dump(),
+        )
+        resp.set_cookie(
+            key="session",
+            value=new_session,
+            max_age=3600 * 168,
+            httponly=True,
+            secure=settings.session_cookie_secure,
+            samesite="lax",
+        )
+        return resp
+
     return GenericApiResponse(data={"updated": True})
 
 
@@ -421,7 +438,7 @@ async def models_list():
     from app.relay.registry import registry
 
     catalog = {}
-    for ct in [39, 41, 50, 25, 27]:
+    for ct in registry.all_types():
         adaptor = registry.get(ct)
         if adaptor:
             catalog[str(ct)] = list(adaptor.get_supported_models().keys())

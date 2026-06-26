@@ -23,6 +23,9 @@ class AdaptorRegistry:
     def all_adaptors(self) -> list[BaseAdaptor]:
         return [cls() for cls in self._registry.values()]
 
+    def all_types(self) -> list[int]:
+        return list(self._registry.keys())
+
     def resolve_channel_type(self, model_name: str) -> int | None:
         """Find which registered channel type supports the given model.
 

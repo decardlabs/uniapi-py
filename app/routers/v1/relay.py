@@ -113,17 +113,12 @@ def _make_stream_usage_callback(
             log_entry.completion_tokens = completion_tokens
             log_entry.cached_prompt_tokens = cache_hit
 
-            log_entry.prompt_tokens = prompt_tokens
-            log_entry.completion_tokens = completion_tokens
-            log_entry.cached_prompt_tokens = cache_hit
-
             # Always update type to 2 (consume), even when usage is empty.
             # Without this, error/empty streams leave stale type=6 records.
             log_entry.type = 2
             if not usage or not any(usage.values()):
                 log_entry.content = f"Stream ended without usage data for {log_entry.model_name}"
-                with open("/tmp/_on_usage_debug.log", "a") as f:
-                    f.write(f"_on_usage: empty usage for log {log_id}, still patched\n")
+                _lg.getLogger(__name__).debug("_on_usage: empty usage for log %d, still patched", log_id)
             else:
                 log_entry.content = f"Stream: ChatCompletion with {log_entry.model_name or model_name}"
 
@@ -158,8 +153,7 @@ def _make_stream_usage_callback(
                     )
 
             await session.commit()
-            with open("/tmp/_on_usage_debug.log", "a") as f:
-                f.write(f"_on_usage: COMMITTED log {log_id}\n")
+            _lg.getLogger(__name__).debug("_on_usage: COMMITTED log %d", log_id)
 
             # Refund overcharge to user's micro-yuan balance
             diff_micro = estimated_micro - actual_micro

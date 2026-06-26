@@ -404,7 +404,7 @@ uniapi-py/
 
 ## 测试
 
-### 单元测试 (604 tests, 11 skipped)
+### 单元测试 (679 tests, 11 skipped)
 
 ```bash
 pytest tests/ -v

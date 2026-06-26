@@ -264,16 +264,6 @@ async def relay_chat_completion(
                 },
             )
 
-            return StreamingResponse(
-                _eager_raw_stream(),
-                media_type="text/event-stream",
-                headers={
-                    "Cache-Control": "no-cache",
-                    "Connection": "keep-alive",
-                    "X-Accel-Buffering": "no",
-                },
-            )
-
         # ── Eagerly establish upstream connection ────────────────────────
         # Use client.send() with stream=True to get response headers
         # WITHOUT consuming the body.  This way 4xx/5xx errors are raised
