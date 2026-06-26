@@ -721,4 +721,15 @@ async def _reconcile_pool(pool: BudgetPool, db: AsyncSession):
                 )
                 db.add(tx)
 
-    pool.total_consumed = round(total_consumed, 4)
+    # Also account for 'consume' PoolTransaction entries (recharge approvals, API costs)
+    # that are tracked directly in PoolTransaction rather than PoolAllocation
+    txn_result = await db.execute(
+        select(func.coalesce(func.sum(PoolTransaction.amount), 0))
+        .where(PoolTransaction.pool_id == pool.id)
+        .where(PoolTransaction.type == 'consume')
+    )
+    txn_consume = float(txn_result.scalar() or 0.0)
+
+    # total = allocation-based consumption + direct transaction consumption
+    total_consumed = round(total_consumed + txn_consume, 4)
+    pool.total_consumed = total_consumed
