@@ -199,6 +199,25 @@ export default function BudgetPoolsPage() {
   const [allocateRemark, setAllocateRemark] = useState('');
   const [submitting, setSubmitting] = useState(false);
 
+  // Auto-select first user when allocate dialog opens
+  useEffect(() => {
+    if (!allocateOpen) return;
+    const controller = new AbortController();
+    api.get('/api/user/search?keyword=', { signal: controller.signal })
+      .then(resp => {
+        const result = resp.data;
+        if (result?.success && Array.isArray(result.data) && result.data.length > 0) {
+          const first = result.data[0];
+          if (first.id && first.username) {
+            setAllocateUserId(String(first.id));
+            setAllocateUserText(`${first.username} (#${first.id})`);
+          }
+        }
+      })
+      .catch(() => {});
+    return () => controller.abort();
+  }, [allocateOpen]);
+
   // Recall form
   const [recallUserId, setRecallUserId] = useState('');
   const [recallAmount, setRecallAmount] = useState('');
