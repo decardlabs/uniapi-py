@@ -1,6 +1,6 @@
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { cn, renderQuota } from '@/lib/utils';
+import { cn } from '@/lib/utils';
 import { useTranslation } from 'react-i18next';
 import { Link } from 'react-router-dom';
 import { PiggyBank, Wallet, ArrowRight } from 'lucide-react';
@@ -71,7 +71,7 @@ export function PoolSummaryCards() {
     },
     {
       title: t('dashboard.pool_summary.total_budget'),
-      value: renderQuota(totalBudget),
+      value: `¥${totalBudget.toFixed(2)}`,
       icon: Wallet,
       accent: 'border-l-chart-1',
       iconBg: 'bg-chart-1/10',
@@ -79,8 +79,8 @@ export function PoolSummaryCards() {
     },
     {
       title: t('dashboard.pool_summary.total_available'),
-      value: renderQuota(totalAvailable),
-      subtitle: `${t('dashboard.pool_summary.total_allocated')}: ${renderQuota(totalUsed)}`,
+      value: `¥${totalAvailable.toFixed(2)}`,
+      subtitle: `${t('dashboard.pool_summary.total_allocated')}: ¥${totalUsed.toFixed(2)}`,
       icon: ArrowRight,
       accent: 'border-l-chart-3',
       iconBg: 'bg-chart-3/10',
