@@ -26,8 +26,8 @@ async def dashboard(
     user = await user_auth(request, db)
     is_admin = user.role >= 10
 
-    # Build filter: user scope
-    conditions = [Log.user_id == user.id]
+    # Build filter: only consume logs (type=2), exclude recharge/topup
+    conditions = [Log.user_id == user.id, Log.type == 2]
     if is_admin and user_id not in ("", "0", "all"):
         try:
             uid = int(user_id)
@@ -119,12 +119,15 @@ async def dashboard(
         result = await db.execute(token_q)
         token_logs = [dict(r._mapping) for r in result.all()]
 
+    # Calculate total consumption from logs (excludes recharge/topup)
+    total_consumed = sum(r.get("Quota", 0) for r in logs) if logs else 0
+
     return GenericApiResponse(data={
         "logs": logs,
         "user_logs": user_logs,
         "token_logs": token_logs,
-        "quota": 0,
-        "used_quota": 0,
+        "quota": user.balance if user.balance else 0,
+        "used_quota": total_consumed,
     })
 
 

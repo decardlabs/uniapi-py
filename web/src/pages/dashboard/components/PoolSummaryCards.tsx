@@ -11,6 +11,7 @@ interface PoolSummary {
   id: number;
   name: string;
   total_quota: number;
+  available: number;
   used_quota: number;
   status: string;
 }
@@ -25,10 +26,10 @@ export function PoolSummaryCards() {
     const fetchPools = async () => {
       try {
         const res = await api.get('/api/pool/', {
-          params: { status: 'active', page: 1, page_size: 50 },
+          params: { p: 0, size: 50 },
         });
         if (!cancelled && res.data?.success) {
-          setPools(res.data.data?.items || []);
+          setPools(res.data.data || []);
         }
       } catch {
         // Silently fail — this is a dashboard widget
@@ -56,8 +57,8 @@ export function PoolSummaryCards() {
   if (pools.length === 0) return null;
 
   const totalBudget = pools.reduce((s, p) => s + p.total_quota, 0);
-  const totalUsed = pools.reduce((s, p) => s + p.used_quota, 0);
-  const totalAvailable = totalBudget - totalUsed;
+  const totalAvailable = pools.reduce((s, p) => s + (p.available || 0), 0);
+  const totalUsed = totalBudget - totalAvailable;
 
   const cards = [
     {
