@@ -1,6 +1,7 @@
 import { api } from '@/lib/api';
 import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
+import { Children, isValidElement } from 'react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 // ── Mocks ─────────────────────────────────────────────
@@ -23,10 +24,23 @@ vi.mock('@/components/ui/notifications', () => ({
 }));
 
 vi.mock('@/components/ui/select', () => ({
-  Select: ({ children }: any) => <div data-testid="mock-select">{children}</div>,
-  SelectTrigger: ({ children, className }: any) => (
-    <div data-testid="select-trigger" className={className}>{children}</div>
-  ),
+  Select: ({ value, onValueChange, children }: any) => {
+    const options = Children.toArray(children).flatMap((child) => {
+      if (!isValidElement(child)) {
+        return [];
+      }
+      return Children.toArray(child.props.children).filter((nestedChild) => isValidElement(nestedChild));
+    });
+
+    return (
+      <div data-testid="mock-select">
+        <select value={value || ''} onChange={(e) => onValueChange?.(e.target.value)}>
+          {options}
+        </select>
+      </div>
+    );
+  },
+  SelectTrigger: () => null,
   SelectValue: ({ placeholder }: any) => <span>{placeholder}</span>,
   SelectContent: ({ children }: any) => <>{children}</>,
   SelectItem: ({ children, value }: any) => <option value={value}>{children}</option>,
