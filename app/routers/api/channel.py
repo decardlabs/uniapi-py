@@ -231,6 +231,19 @@ async def update_channel(
     if "groups" in update_data:
         channel.group = body.group
     channel.updated_at = int(time.time() * 1000)
+
+    # Sync pricing to all channels with the same name
+    # Users create multiple same-name channels with different API keys
+    # for load balancing. When pricing changes on one, sync to all.
+    if "model_configs" in update_data and channel.name:
+        sync_val = _json_str(update_data["model_configs"])
+        sync_result = await db.execute(
+            select(Channel).where(Channel.name == channel.name).where(Channel.id != channel.id)
+        )
+        for sibling in sync_result.scalars().all():
+            sibling.model_configs = sync_val
+            sibling.updated_at = int(time.time() * 1000)
+
     await db.commit()
     await db.refresh(channel)
     return GenericApiResponse(data=_channel_to_dict(channel))
