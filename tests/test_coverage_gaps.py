@@ -299,6 +299,7 @@ async def test_budget_redis_connection_failure():
         await client.initialize()
 
     assert client.available is False
+    assert client._client is None
 
 
 @pytest.mark.asyncio
@@ -316,6 +317,7 @@ async def test_budget_redis_successful_connection():
         await client.initialize()
 
     assert client.available is True
+    assert client._client is not None
 
 
 @pytest.mark.asyncio
