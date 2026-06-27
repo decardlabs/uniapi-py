@@ -61,7 +61,6 @@ async def test_token_create_unlimited(client: AsyncClient):
         cookies=cookies,
     )
     assert resp.status_code == 200
-    data = resp.json()
 
 
 @pytest.mark.asyncio

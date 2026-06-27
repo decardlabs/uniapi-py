@@ -347,7 +347,6 @@ async def test_all_channels(
 
             headers = adaptor.setup_request_headers(api_key)
             upstream_url = f"{base_url.rstrip('/')}/chat/completions"
-            supported_models = adaptor.get_supported_models()
             channel.test_time = now_ms
             has_success = False
 
@@ -362,7 +361,6 @@ async def test_all_channels(
                     })
                     continue
 
-                model_config = supported_models.get(model_name)
                 test_start = 0  # Defensive init — prevents UnboundLocalError
 
                 try:

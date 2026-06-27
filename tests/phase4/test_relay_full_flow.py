@@ -156,7 +156,7 @@ class TestRelayFullFlow:
     async def test_model_not_allowed_by_token(self, client: AsyncClient):
         """Token that doesn't allow the requested model should be rejected."""
         cookies = await _login(client)
-        token_key = await _get_root_token(client, cookies)
+        await _get_root_token(client, cookies)
 
         # Root seed token has no model restrictions (models="")
         # Create a restricted token

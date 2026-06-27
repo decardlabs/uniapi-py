@@ -12,7 +12,7 @@ class TestPIIMaskMiddleware:
     def test_mask_pii_phone(self):
         from app.middleware import PIIMaskMiddleware
 
-        mw = PIIMaskMiddleware(app := FastAPI())
+        mw = PIIMaskMiddleware(FastAPI())
         result = mw._mask_pii("Contact: 13800138000")
         assert "[PHONE]" in result
         assert "13800138000" not in result
@@ -20,7 +20,7 @@ class TestPIIMaskMiddleware:
     def test_mask_pii_email(self):
         from app.middleware import PIIMaskMiddleware
 
-        mw = PIIMaskMiddleware(app := FastAPI())
+        mw = PIIMaskMiddleware(FastAPI())
         result = mw._mask_pii("Email: test@example.com")
         assert "[EMAIL]" in result
         assert "test@example.com" not in result
@@ -28,14 +28,14 @@ class TestPIIMaskMiddleware:
     def test_mask_pii_api_key(self):
         from app.middleware import PIIMaskMiddleware
 
-        mw = PIIMaskMiddleware(app := FastAPI())
+        mw = PIIMaskMiddleware(FastAPI())
         result = mw._mask_pii("sk-abcdefghijklmnopqrstuvwxyz1234567890abcdefgh")
         assert "[API_KEY]" in result
 
     def test_mask_pii_id_card(self):
         from app.middleware import PIIMaskMiddleware
 
-        mw = PIIMaskMiddleware(app := FastAPI())
+        mw = PIIMaskMiddleware(FastAPI())
         result = mw._mask_pii("ID: 110101199001011234")
         assert "[ID_CARD]" in result
         assert "110101199001011234" not in result
@@ -43,7 +43,7 @@ class TestPIIMaskMiddleware:
     def test_mask_pii_dict_values(self):
         from app.middleware import PIIMaskMiddleware
 
-        mw = PIIMaskMiddleware(app := FastAPI())
+        mw = PIIMaskMiddleware(FastAPI())
         data = {"user": {"email": "alice@example.com", "phone": "13800138000"}}
         result = mw._mask_pii(data)
         assert result["user"]["email"] == "[EMAIL]"
@@ -52,7 +52,7 @@ class TestPIIMaskMiddleware:
     def test_mask_pii_list_items(self):
         from app.middleware import PIIMaskMiddleware
 
-        mw = PIIMaskMiddleware(app := FastAPI())
+        mw = PIIMaskMiddleware(FastAPI())
         data = ["test@example.com", "sk-abcdefghijklmnopqrstuvwxyz1234567890abcdefgh"]
         result = mw._mask_pii(data)
         assert result[0] == "[EMAIL]"
@@ -61,7 +61,7 @@ class TestPIIMaskMiddleware:
     def test_mask_nested_structure(self):
         from app.middleware import PIIMaskMiddleware
 
-        mw = PIIMaskMiddleware(app := FastAPI())
+        mw = PIIMaskMiddleware(FastAPI())
         data = {"messages": [{"content": "My email is user@example.com"}], "model": "gpt-4"}
         result = mw._mask_pii(data)
         assert "[EMAIL]" in result["messages"][0]["content"]
@@ -70,7 +70,7 @@ class TestPIIMaskMiddleware:
     def test_mask_pii_preserves_non_pii(self):
         from app.middleware import PIIMaskMiddleware
 
-        mw = PIIMaskMiddleware(app := FastAPI())
+        mw = PIIMaskMiddleware(FastAPI())
         data = {"model": "gpt-4", "messages": [{"role": "user", "content": "hello"}]}
         result = mw._mask_pii(data)
         assert result["model"] == "gpt-4"

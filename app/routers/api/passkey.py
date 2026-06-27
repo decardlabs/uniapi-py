@@ -82,7 +82,7 @@ async def register_passkey_begin(
 ):
     """Start WebAuthn registration. Returns publicKey options for the browser."""
     rp_id = _get_rp_id(request)
-    origin = _get_origin(request)
+    _ = _get_origin(request)
 
     # Get existing credential IDs to exclude
     result = await db.execute(

@@ -98,7 +98,6 @@ def _make_stream_usage_callback(
         if prompt_tokens == 0 and cache_hit > 0:
             prompt_tokens = cache_hit
         cache_hit = min(cache_hit, prompt_tokens)
-        cache_miss = max(0, prompt_tokens - cache_hit)
 
 
         async with async_session_factory() as session:

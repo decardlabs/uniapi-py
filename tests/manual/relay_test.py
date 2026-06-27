@@ -279,7 +279,6 @@ def test_messages_endpoint(token: str, base_url: str):
                             "stream": False,
                         })
     if status == 200:
-        content = data.get("content", [{}])
         ok("Messages API 成功")
     else:
         detail = data.get("detail", "")

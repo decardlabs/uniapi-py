@@ -433,7 +433,6 @@ async def test_date_range(client: AsyncClient):
 
     # Convert mid_ts to date string (the day mid_ts falls on)
     mid_date = datetime.datetime.fromtimestamp(mid_ts / 1000, tz=datetime.timezone.utc).strftime("%Y-%m-%d")
-    today_date = datetime.datetime.fromtimestamp(today_ts / 1000, tz=datetime.timezone.utc).strftime("%Y-%m-%d")
     old_date = datetime.datetime.fromtimestamp(old_ts / 1000, tz=datetime.timezone.utc).strftime("%Y-%m-%d")
 
     # Filter: from_date = old_date, to_date = mid_date
