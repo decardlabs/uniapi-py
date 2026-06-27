@@ -1,6 +1,7 @@
 import { api } from '@/lib/api';
 import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
+import type { ReactNode } from 'react';
 import { Children, isValidElement } from 'react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
@@ -23,8 +24,23 @@ vi.mock('@/components/ui/notifications', () => ({
   useNotifications: () => ({ notify: vi.fn() }),
 }));
 
+interface MockSelectProps {
+  value?: string;
+  onValueChange?: (value: string) => void;
+  children?: ReactNode;
+}
+
+interface MockSelectValueProps {
+  placeholder?: string;
+}
+
+interface MockSelectItemProps {
+  children?: ReactNode;
+  value: string;
+}
+
 vi.mock('@/components/ui/select', () => ({
-  Select: ({ value, onValueChange, children }: any) => {
+  Select: ({ value, onValueChange, children }: MockSelectProps) => {
     const options = Children.toArray(children).flatMap((child) => {
       if (!isValidElement(child)) {
         return [];
@@ -41,11 +57,11 @@ vi.mock('@/components/ui/select', () => ({
     );
   },
   SelectTrigger: () => null,
-  SelectValue: ({ placeholder }: any) => <span>{placeholder}</span>,
-  SelectContent: ({ children }: any) => <>{children}</>,
-  SelectItem: ({ children, value }: any) => <option value={value}>{children}</option>,
-  SelectGroup: ({ children }: any) => <>{children}</>,
-  SelectLabel: ({ children }: any) => <>{children}</>,
+  SelectValue: ({ placeholder }: MockSelectValueProps) => <span>{placeholder}</span>,
+  SelectContent: ({ children }: MockSelectProps) => <>{children}</>,
+  SelectItem: ({ children, value }: MockSelectItemProps) => <option value={value}>{children}</option>,
+  SelectGroup: ({ children }: MockSelectProps) => <>{children}</>,
+  SelectLabel: ({ children }: MockSelectProps) => <>{children}</>,
 }));
 
 vi.mock('@/components/ui/dialog', () => ({

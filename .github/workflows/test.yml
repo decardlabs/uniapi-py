@@ -73,6 +73,7 @@ jobs:
       - name: Run unit tests
         run: |
           cd web
+          # Keep a larger heap here because the jsdom/Vitest suite can exhaust the default limit on GitHub runners.
           NODE_OPTIONS=--max-old-space-size=4096 yarn test --run
 
       - name: Lint
