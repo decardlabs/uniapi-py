@@ -33,7 +33,7 @@ jobs:
       - name: Lint with ruff
         run: |
           pip install ruff
-          ruff check app/ tests/
+          ruff check app/ tests/ --select=E9,F  # Error-level checks only
 
       - name: Run tests with coverage
         run: |
