@@ -204,7 +204,7 @@ export function TopUpPage() {
                           type="number"
                           min="0"
                           step="0.01"
-                          placeholder={tr('request.amount_placeholder', 'Enter amount in yuan...')}
+                          placeholder={tr('request.amount_token_placeholder', 'Enter token count...')}
                           {...field}
                         />
                       </FormControl>

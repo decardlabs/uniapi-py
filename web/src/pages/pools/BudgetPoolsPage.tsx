@@ -848,12 +848,12 @@ export default function BudgetPoolsPage() {
               )}
             </div>
             <div>
-              <label className="text-sm font-medium">{tr('total_funded', 'Total Funded (¥)')}</label>
+              <label className="text-sm font-medium">{tr('total_quota', 'Total Funded (¥)')}</label>
               <Input
                 type="number"
                 value={createForm.total_funded}
                 onChange={(e) => setCreateForm({ ...createForm, total_funded: e.target.value })}
-                placeholder={tr('total_funded_placeholder', 'e.g. 10000')}
+                placeholder={tr('total_quota_placeholder', 'Enter purchase amount')}
                 className="mt-1"
               />
             </div>

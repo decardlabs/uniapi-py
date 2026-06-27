@@ -441,8 +441,6 @@ class TestTimeoutConfiguration:
         if "timeout=300" in source:
             # The old pattern — needs to be upgraded
             pass  # Test will document current state
-        # Check that httpx.Timeout is imported or used
-        has_proper_timeout = "httpx.Timeout" in source
         # This test documents what the code SHOULD do
         # For now just ensure we don't crash on timeout
         assert "timeout" in source.lower()

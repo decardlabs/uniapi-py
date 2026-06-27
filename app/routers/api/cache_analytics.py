@@ -65,8 +65,6 @@ def _enrich_summary_with_rates(
     """Enrich a raw summary row with cache_hit_rate and estimated_savings_rate."""
     pt = row.get("prompt_tokens", 0) or 0
     cpt = row.get("cached_prompt_tokens", 0) or 0
-    quota = row.get("quota", 0) or 0
-
     result = dict(row)
     result["cache_hit_rate"] = _hit_rate(pt, cpt)
 

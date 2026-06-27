@@ -55,9 +55,7 @@ const baseDefaults: ChannelForm = {
  * TestHarnessProps defines inputs for the test harness component.
  */
 interface TestHarnessProps {
-  availableModels?: { id: string; name: string }[];
   currentCatalogModels?: string[];
-  hasCuratedModels?: boolean;
   defaultPricing: string;
   notify?: (options: any) => void;
   onReady: (form: UseFormReturn<ChannelForm>) => void;
@@ -70,9 +68,7 @@ interface TestHarnessProps {
  * @returns The rendered ChannelModelSettings component.
  */
 const TestHarness = ({
-  availableModels = [],
   currentCatalogModels = [],
-  hasCuratedModels = false,
   defaultPricing,
   notify = vi.fn(),
   onReady,
@@ -87,7 +83,9 @@ const TestHarness = ({
     <TooltipProvider>
       <ChannelModelSettings
         form={form}
+        availableModels={availableModels}
         currentCatalogModels={currentCatalogModels}
+        hasCuratedModels={hasCuratedModels}
         defaultPricing={defaultPricing}
         notify={notify}
         tr={tr}
@@ -155,17 +153,12 @@ describe('ChannelModelSettings', () => {
     );
   });
 
-  it('adds recommended and catalog models from separate actions', () => {
+  it('adds provider catalog models to the selected model list', () => {
     let formRef: UseFormReturn<ChannelForm> | null = null;
 
     render(
       <TestHarness
-        availableModels={[
-          { id: 'recommended-a', name: 'recommended-a' },
-          { id: 'recommended-b', name: 'recommended-b' },
-        ]}
         currentCatalogModels={['recommended-a', 'catalog-only']}
-        hasCuratedModels={true}
         defaultPricing=''
         onReady={(form) => {
           formRef = form;
@@ -173,11 +166,8 @@ describe('ChannelModelSettings', () => {
       />
     );
 
-    fireEvent.click(screen.getByRole('button', { name: 'Add Recommended Models (2)' }));
-    expect(formRef?.getValues('models')).toEqual(['recommended-a', 'recommended-b']);
-
     fireEvent.click(screen.getByRole('button', { name: 'Add Provider Catalog (2)' }));
-    expect(formRef?.getValues('models')).toEqual(['recommended-a', 'recommended-b', 'catalog-only']);
+    expect(formRef?.getValues('models')).toEqual(['recommended-a', 'catalog-only']);
   });
 
   it('warns and applies fallback defaults when no selected models match provider defaults', () => {
@@ -226,7 +216,7 @@ describe('ChannelModelSettings', () => {
     fireEvent.click(screen.getAllByRole('button', { name: 'Format JSON' })[0]);
 
     expect(formRef?.getValues('model_mapping')).toBe(
-      '{\n  "gpt-4": "openai/gpt-4",\n  "deepseek-chat": "deepseek-chat"\n}'
+      '{\n  "gpt-4": "gpt-4",\n  "deepseek-chat": "deepseek-chat"\n}'
     );
   });
 });

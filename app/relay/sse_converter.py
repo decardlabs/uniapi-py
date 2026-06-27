@@ -241,8 +241,6 @@ def anthropic_to_chat_sse(
     chat_id = ""
     model = ""
     tool_buffers: dict[int, dict] = {}  # index -> {id, name, arguments}
-    first_chunk = True
-
     for ev in anthropic_events:
         event_type = ev.get("event", "")
         data = ev.get("data", {})

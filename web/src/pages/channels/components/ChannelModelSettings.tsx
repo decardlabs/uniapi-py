@@ -10,7 +10,9 @@ import { LabelWithHelp } from './LabelWithHelp';
 
 interface ChannelModelSettingsProps {
   form: UseFormReturn<ChannelForm>;
+  availableModels?: { id: string; name: string }[];
   currentCatalogModels: string[];
+  hasCuratedModels?: boolean;
   defaultPricing: string;
   notify: (options: any) => void;
   tr: (key: string, defaultValue: string, options?: Record<string, unknown>) => string;
@@ -18,7 +20,9 @@ interface ChannelModelSettingsProps {
 
 export const ChannelModelSettings = ({
   form,
+  availableModels = [],
   currentCatalogModels,
+  hasCuratedModels = false,
   defaultPricing,
   notify,
   tr,
@@ -42,12 +46,36 @@ export const ChannelModelSettings = ({
     form.setValue('models', uniqueModels);
   };
 
+  const addRecommendedModels = () => {
+    if (availableModels.length === 0) {
+      return;
+    }
+    const currentModels = form.getValues('models');
+    const modelIds = availableModels.map((m) => m.id);
+    const uniqueModels = [...new Set([...currentModels, ...modelIds])];
+    form.setValue('models', uniqueModels);
+  };
+
   const generateModelMapping = () => {
     const selectedModels = form.getValues('models') || [];
     const sourceModels = selectedModels.length > 0 ? selectedModels : currentCatalogModels;
     if (sourceModels.length === 0) return;
+    const existingMappingStr = form.getValues('model_mapping') || '';
+    let existingMapping: Record<string, string> = {};
+    try {
+      if (existingMappingStr.trim()) {
+        const parsed = JSON.parse(existingMappingStr) as Record<string, unknown>;
+        if (typeof parsed === 'object' && parsed !== null && !Array.isArray(parsed)) {
+          for (const [k, v] of Object.entries(parsed)) {
+            if (typeof v === 'string') existingMapping[k] = v;
+          }
+        }
+      }
+    } catch {
+      // Ignore malformed existing mapping and fall back to one-to-one.
+    }
     const mapping: Record<string, string> = {};
-    [...new Set(sourceModels)].forEach((model) => { mapping[model] = model; });
+    [...new Set(sourceModels)].forEach((model) => { mapping[model] = existingMapping[model] ?? model; });
     form.setValue('model_mapping', JSON.stringify(mapping, null, 2));
   };
 
@@ -115,6 +143,13 @@ export const ChannelModelSettings = ({
           <div className="rounded-md bg-muted px-2 py-1 text-xs font-medium text-muted-foreground">{currentCatalogModels.length}</div>
         </div>
         <div className="mt-3">
+          {hasCuratedModels && availableModels.length > 0 && (
+            <Button type="button" variant="outline" size="sm" onClick={addRecommendedModels} className="mr-2">
+              {tr('models.add_recommended', 'Add Recommended Models ({{count}})', {
+                count: availableModels.length,
+              })}
+            </Button>
+          )}
           <Button type="button" variant="outline" size="sm" onClick={addCatalogModels}>
             {tr('models.add_catalog', 'Add Provider Catalog ({{count}})', {
               count: currentCatalogModels.length,

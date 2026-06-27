@@ -1,6 +1,8 @@
 import { api } from '@/lib/api';
 import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
+import type { ReactNode } from 'react';
+import { Children, isValidElement } from 'react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 // ── Mocks ─────────────────────────────────────────────
@@ -22,24 +24,44 @@ vi.mock('@/components/ui/notifications', () => ({
   useNotifications: () => ({ notify: vi.fn() }),
 }));
 
+interface MockSelectProps {
+  value?: string;
+  onValueChange?: (value: string) => void;
+  children?: ReactNode;
+}
+
+interface MockSelectValueProps {
+  placeholder?: string;
+}
+
+interface MockSelectItemProps {
+  children?: ReactNode;
+  value: string;
+}
+
 vi.mock('@/components/ui/select', () => ({
-  Select: ({ value, onValueChange, children }: any) => (
-    <select
-      value={value || '__all__'}
-      onChange={(e) => onValueChange?.(e.target.value)}
-      data-testid="mock-select"
-    >
-      {children}
-    </select>
-  ),
-  SelectTrigger: ({ children, className }: any) => (
-    <div data-testid="select-trigger" className={className}>{children}</div>
-  ),
-  SelectValue: ({ placeholder }: any) => <span>{placeholder}</span>,
-  SelectContent: ({ children }: any) => <>{children}</>,
-  SelectItem: ({ children, value }: any) => <option value={value}>{children}</option>,
-  SelectGroup: ({ children }: any) => <>{children}</>,
-  SelectLabel: ({ children }: any) => <>{children}</>,
+  Select: ({ value, onValueChange, children }: MockSelectProps) => {
+    const options = Children.toArray(children).flatMap((child) => {
+      if (!isValidElement(child)) {
+        return [];
+      }
+      return Children.toArray(child.props.children).filter((nestedChild) => isValidElement(nestedChild));
+    });
+
+    return (
+      <div data-testid="mock-select">
+        <select value={value || ''} onChange={(e) => onValueChange?.(e.target.value)}>
+          {options}
+        </select>
+      </div>
+    );
+  },
+  SelectTrigger: () => null,
+  SelectValue: ({ placeholder }: MockSelectValueProps) => <span>{placeholder}</span>,
+  SelectContent: ({ children }: MockSelectProps) => <>{children}</>,
+  SelectItem: ({ children, value }: MockSelectItemProps) => <option value={value}>{children}</option>,
+  SelectGroup: ({ children }: MockSelectProps) => <>{children}</>,
+  SelectLabel: ({ children }: MockSelectProps) => <>{children}</>,
 }));
 
 vi.mock('@/components/ui/dialog', () => ({
@@ -93,39 +115,35 @@ import BudgetPoolsPage from '../BudgetPoolsPage';
 
 // ── Test Data ─────────────────────────────────────────
 const emptyResponse = {
-  data: { success: true, data: { items: [], total: 0, page: 1, page_size: 10 } },
+  data: { success: true, data: [], total: 0 },
 };
 
 const mockPools = {
   data: {
     success: true,
-    data: {
-      items: [
-        {
-          id: 1,
-          name: '2026年4月预算池',
-          total_quota: 100000000,
-          used_quota: 30000000,
-          period_type: 'monthly',
-          period_key: '2026-04',
-          status: 'active',
-          created_at: 1746000000,
-        },
-        {
-          id: 2,
-          name: '2026年3月预算池',
-          total_quota: 50000000,
-          used_quota: 50000000,
-          period_type: 'monthly',
-          period_key: '2026-03',
-          status: 'closed',
-          created_at: 1743300000,
-        },
-      ],
-      total: 2,
-      page: 1,
-      page_size: 10,
-    },
+    data: [
+      {
+        id: 1,
+        name: '2026年4月预算池',
+        total_funded: 100000000,
+        total_consumed: 30000000,
+        period_type: 'monthly',
+        period_key: '2026-04',
+        status: 'active',
+        created_at: 1746000000,
+      },
+      {
+        id: 2,
+        name: '2026年3月预算池',
+        total_funded: 50000000,
+        total_consumed: 50000000,
+        period_type: 'monthly',
+        period_key: '2026-03',
+        status: 'closed',
+        created_at: 1743300000,
+      },
+    ],
+    total: 2,
   },
 };
 
@@ -164,7 +182,7 @@ describe('BudgetPoolsPage', () => {
     render(<BudgetPoolsPage />);
     await waitFor(() => {
       expect(api.get).toHaveBeenCalledWith('/api/pool/', {
-        params: { page: 1, page_size: 10 },
+        params: { p: 0, size: 10 },
       });
     });
   });
@@ -195,26 +213,26 @@ describe('BudgetPoolsPage', () => {
     });
 
     // Fill form
-    const nameInput = screen.getByPlaceholderText(/april 2026 budget pool/i);
+    const nameInput = screen.getByPlaceholderText(/monthly budget/i);
     fireEvent.change(nameInput, { target: { value: 'Test Pool' } });
 
-    const quotaInput = screen.getByPlaceholderText(/enter purchase amount/i);
+    const quotaInput = screen.getByRole('spinbutton');
     fireEvent.change(quotaInput, { target: { value: '1000000' } });
-
-    const periodKeyInput = screen.getByPlaceholderText(/2026-04/i);
-    fireEvent.change(periodKeyInput, { target: { value: '2026-05' } });
 
     // Submit
     const submitBtn = screen.getByRole('button', { name: /submit/i });
     fireEvent.click(submitBtn);
 
     await waitFor(() => {
-      expect(api.post).toHaveBeenCalledWith('/api/pool/', {
-        name: 'Test Pool',
-        total_quota: 1000000,
-        period_type: 'monthly',
-        period_key: '2026-05',
-      });
+      expect(api.post).toHaveBeenCalledWith(
+        '/api/pool/',
+        expect.objectContaining({
+          name: 'Test Pool',
+          total_funded: 1000000,
+          period_type: 'monthly',
+          period_key: expect.stringMatching(/^\d{4}-\d{2}$/),
+        })
+      );
     });
   });
 

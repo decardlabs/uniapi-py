@@ -39,7 +39,7 @@ class TestUpstream429Retry:
 
         # Login as admin and create a test DeepSeek channel
         cookies = await _login(client)
-        resp = await client.post("/api/channel/", json={
+        await client.post("/api/channel/", json={
             "name": "Test DeepSeek",
             "type": 39,
             "key": "sk-test-key",

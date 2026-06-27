@@ -210,7 +210,7 @@ class TestBudgetStatus:
     async def test_returns_budget_info(self, arbiter):
         """Status should include budget breakdown."""
         # First make a request to create budget + consume
-        decision = await arbiter.pre_check(
+        await arbiter.pre_check(
             user_id=300, model="deepseek-v4-pro",
             estimated_input_tokens=1000, estimated_output_tokens=500,
         )
