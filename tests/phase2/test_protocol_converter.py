@@ -2,7 +2,6 @@
 
 TDD: write failing tests first, then implement converter.py.
 """
-import pytest
 
 
 class TestAnthropicToChat:

@@ -82,9 +82,8 @@ async def test_new_adaptor_implements_base(client: AsyncClient):
 async def test_new_adaptor_registered_and_used(client: AsyncClient):
     """A newly registered adaptor should be selectable via registry."""
     from app.relay.adaptor import BaseAdaptor, ModelConfig
-    from app.relay.meta import RelayMeta
-    from app.relay.registry import registry
     from app.relay.adaptors.deepseek.adaptor import DEEPSEEK_CHANNEL_TYPE
+    from app.relay.registry import registry
 
     class TestAdaptor(BaseAdaptor):
         provider_name = "test-provider"

@@ -3,8 +3,6 @@ from __future__ import annotations
 
 from unittest.mock import patch
 
-import pytest
-
 
 class TestCostRecordDedup:
     """CostRecord must not be written twice for the same request."""

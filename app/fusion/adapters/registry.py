@@ -6,9 +6,9 @@ from typing import Any
 
 from app.fusion.adapters.base import BaseAdapter
 from app.fusion.adapters.deepseek import DeepSeekAdapter
-from app.fusion.adapters.minimax import MiniMaxAdapter
 from app.fusion.adapters.glm import GLMAdapter
 from app.fusion.adapters.kimi import KimiAdapter
+from app.fusion.adapters.minimax import MiniMaxAdapter
 from app.fusion.adapters.qwen import QwenAdapter
 
 logger = logging.getLogger(__name__)

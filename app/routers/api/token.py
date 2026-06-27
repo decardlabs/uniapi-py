@@ -1,7 +1,6 @@
 from __future__ import annotations
 
-from fastapi import APIRouter, Depends, HTTPException, Query, Request
-from sqlalchemy import select
+from fastapi import APIRouter, Depends, Query, Request
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.database import get_db
@@ -10,7 +9,6 @@ from app.schemas.common import GenericApiResponse, PaginatedResponse
 from app.schemas.management import TokenCreateRequest, TokenUpdateRequest
 from app.schemas.user import TokenResponse
 from app.services import token as token_service
-from app.models.token import Token
 
 router = APIRouter(tags=["tokens"])
 

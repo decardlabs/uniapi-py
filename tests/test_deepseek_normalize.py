@@ -1,7 +1,5 @@
 """Tests for DeepSeek request normalization."""
 
-import json
-import pytest
 
 from app.relay.adaptors.deepseek.request import (
     backfill_tool_message_names,

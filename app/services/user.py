@@ -7,14 +7,12 @@ import uuid
 from typing import Optional
 
 import httpx
-
-from app.config import settings
 from fastapi import HTTPException
-from sqlalchemy import select, func, or_
+from sqlalchemy import func, or_, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.config import settings
 from app.models.option import Option
-from app.models.token import Token
 from app.models.user import User
 from app.services.auth import create_default_token, hash_password, verify_password
 

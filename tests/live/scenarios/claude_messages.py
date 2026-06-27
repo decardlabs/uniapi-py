@@ -6,10 +6,7 @@ including claude_messages, this goes direct without conversion.
 
 from __future__ import annotations
 
-import json
-
-from ..client import http_post, http_post_stream
-from ..config import config
+from ..client import http_post
 from . import ScenarioResult
 
 

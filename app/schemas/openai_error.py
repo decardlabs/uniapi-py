@@ -8,8 +8,6 @@ LobeChat, etc.) correctly interpret errors.
 
 from __future__ import annotations
 
-from typing import Any
-
 # ── Mapping: UniAPI error code → (http_status, openai_type, openai_code) ──
 
 OPENAI_ERROR_MAP: dict[str, tuple[int, str, str]] = {

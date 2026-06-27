@@ -1,5 +1,4 @@
 """Tests for Budget Pool API endpoints."""
-import time
 import pytest
 from httpx import AsyncClient
 
@@ -103,9 +102,10 @@ async def test_allocate_and_recall_flow(client: AsyncClient):
     assert pool_resp.json()["data"]["total_allocated"] >= 499.99
 
     # Check user budget increased (query DB directly; budget_arbiter not in test env)
+    from sqlalchemy import select
+
     from app.database import async_session_factory
     from app.models.budget import Budget
-    from sqlalchemy import select
     async with async_session_factory() as db:
         result = await db.execute(select(Budget).where(Budget.user_id == 1))
         record = result.scalar_one_or_none()

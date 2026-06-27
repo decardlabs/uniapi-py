@@ -8,7 +8,7 @@ import json
 
 import pytest
 
-from app.schemas.error import build_error_response, build_compat_error_response
+from app.schemas.error import build_compat_error_response, build_error_response
 
 # ── All 20 standard error codes ──────────────────────────────────────────────
 

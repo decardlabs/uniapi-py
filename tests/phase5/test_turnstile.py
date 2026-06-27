@@ -6,7 +6,6 @@ endpoints reject requests when Turnstile is enabled but the token is missing.
 import pytest
 from httpx import AsyncClient
 
-
 pytestmark = pytest.mark.asyncio
 
 

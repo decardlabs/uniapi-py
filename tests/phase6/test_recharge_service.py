@@ -5,13 +5,12 @@ import pytest
 from sqlalchemy import select
 
 from app.database import async_session_factory
-from app.models.log import Log
-from app.models.recharge import RechargeRequest
-from app.models.user import User
 from app.models.budget import BudgetPool, PoolTransaction
+from app.models.log import Log
+from app.models.user import User
 from app.services import recharge as recharge_service
-from app.services.pool_sync import sync_consumption_to_pool
 from app.services.auth import hash_password
+from app.services.pool_sync import sync_consumption_to_pool
 
 
 @pytest.mark.asyncio

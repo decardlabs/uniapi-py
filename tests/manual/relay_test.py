@@ -14,12 +14,8 @@ import argparse
 import http.cookiejar
 import json
 import sys
-import time
-import urllib.request
 import urllib.error
-from dataclasses import dataclass, field
-from typing import Any
-
+import urllib.request
 
 # ── Test Configuration ────────────────────────────────────────
 
@@ -240,7 +236,7 @@ def test_responses_endpoint(token: str, base_url: str):
                             "stream": False,
                         })
     if status == 200:
-        ok(f"Responses API 成功")
+        ok("Responses API 成功")
     else:
         detail = data.get("detail", "")
         if isinstance(detail, str) and "not supported" in detail:
@@ -284,7 +280,7 @@ def test_messages_endpoint(token: str, base_url: str):
                         })
     if status == 200:
         content = data.get("content", [{}])
-        ok(f"Messages API 成功")
+        ok("Messages API 成功")
     else:
         detail = data.get("detail", "")
         fail(f"Messages API 失败: {status} {detail}")
@@ -303,7 +299,7 @@ def main():
     token = args.token
     base_url = args.base_url.rstrip("/")
 
-    print(f"UniAPI 集成测试")
+    print("UniAPI 集成测试")
     print(f"Base URL: {base_url}")
     print(f"Token: {token[:20]}...")
 
@@ -320,7 +316,7 @@ def main():
         test_messages_endpoint(token, base_url)
 
     # Summary
-    print(f"\n━━━ 测试报告 ──────────────────────────")
+    print("\n━━━ 测试报告 ──────────────────────────")
     total = PASS + FAIL + SKIP
     print(f"总计: {total}  通过: {PASS}  失败: {FAIL}  跳过: {SKIP}")
     for r in RESULTS:

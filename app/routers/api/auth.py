@@ -4,13 +4,13 @@ import json
 import time
 
 from fastapi import APIRouter, Depends, Request
-from fastapi.responses import JSONResponse, Response
+from fastapi.responses import JSONResponse
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.config import settings
 from app.database import get_db
 from app.dependencies import user_auth
-from app.config import settings
 from app.models.channel import Channel
 from app.models.option import Option
 from app.schemas.common import GenericApiResponse
@@ -345,8 +345,8 @@ async def models_display(db: AsyncSession = Depends(get_db)):
     Only shows models from channels that are actually configured (status=1).
     Falls back to all registered adaptors when no channels are configured.
     """
+    from app.budget.pricing import get_model_pricing
     from app.relay.registry import registry
-    from app.budget.pricing import get_model_pricing, MODEL_PRICING_YUAN
 
     result = await db.execute(select(Channel).where(Channel.status == 1))
     channels = result.scalars().all()

@@ -7,7 +7,7 @@ upstream dispatch -> response transformation -> post-settlement.
 Uses httpx.AsyncClient patches to simulate upstream LLM responses.
 """
 
-from unittest.mock import AsyncMock, Mock, patch
+from unittest.mock import Mock, patch
 
 import pytest
 from httpx import AsyncClient

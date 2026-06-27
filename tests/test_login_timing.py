@@ -1,8 +1,6 @@
 """Test that login timing is constant to prevent username enumeration."""
 from __future__ import annotations
 
-import pytest
-
 
 class TestLoginTiming:
     """Login must not reveal whether a username exists via timing."""

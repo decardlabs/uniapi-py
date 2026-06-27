@@ -43,9 +43,9 @@ registry = AdaptorRegistry()
 
 from app.relay.adaptors.deepseek.adaptor import DEEPSEEK_CHANNEL_TYPE, DeepSeekAdaptor  # noqa: E402
 from app.relay.adaptors.glm.adaptor import GLM_CHANNEL_TYPE, GLMAdaptor  # noqa: E402
-from app.relay.adaptors.qwen.adaptor import QWEN_CHANNEL_TYPE, QwenAdaptor  # noqa: E402
 from app.relay.adaptors.kimi.adaptor import KIMI_CHANNEL_TYPE, KimiAdaptor  # noqa: E402
 from app.relay.adaptors.minimax.adaptor import MINIMAX_CHANNEL_TYPE, MiniMaxAdaptor  # noqa: E402
+from app.relay.adaptors.qwen.adaptor import QWEN_CHANNEL_TYPE, QwenAdaptor  # noqa: E402
 
 registry.register(DEEPSEEK_CHANNEL_TYPE, DeepSeekAdaptor)
 registry.register(GLM_CHANNEL_TYPE, GLMAdaptor)

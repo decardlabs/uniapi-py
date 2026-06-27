@@ -5,15 +5,16 @@ These tests verify that when the upstream returns HTTP 429:
 2. After exhausting all retries, it properly raises an UpstreamException
 3. The channel failure counter is NOT incremented during retries (only after exhaustion)
 """
-import pytest
 from unittest.mock import Mock, patch
 
 import httpx
+import pytest
 
 
 async def _get_test_token():
-    from app.database import async_session_factory
     from sqlalchemy import select
+
+    from app.database import async_session_factory
     from app.models.token import Token
 
     async with async_session_factory() as db:
@@ -187,10 +188,10 @@ class TestUpstream429Retry:
 
     async def test_429_backoff_does_not_refund_quota(self):
         """Quota is NOT refunded during backoff retry (only after all retries exhausted)."""
-        from app.database import async_session_factory
         from sqlalchemy import select
+
+        from app.database import async_session_factory
         from app.models.token import Token
-        from app.models.user import User
 
         # Capture token and user info before the call
         async with async_session_factory() as db:

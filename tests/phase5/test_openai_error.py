@@ -1,10 +1,9 @@
 """Tests for app/schemas/openai_error.py — OpenAI-compatible error response."""
 
-import pytest
 from app.schemas.openai_error import (
     OPENAI_ERROR_MAP,
-    get_openai_error_meta,
     build_openai_error_response,
+    get_openai_error_meta,
 )
 
 

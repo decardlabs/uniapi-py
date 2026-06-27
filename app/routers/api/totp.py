@@ -4,8 +4,6 @@ from __future__ import annotations
 import time
 
 from fastapi import APIRouter, Depends
-from fastapi.responses import JSONResponse
-from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.config import settings

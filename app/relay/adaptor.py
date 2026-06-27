@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 from abc import ABC, abstractmethod
-from typing import Any, Optional
 
 from app.relay.meta import RelayMeta
 from app.relay.mode import RelayMode

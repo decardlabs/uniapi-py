@@ -6,8 +6,6 @@ The fix: check balance first, then pre_check.
 """
 from __future__ import annotations
 
-import pytest
-
 
 class TestBudgetOrdering:
     """Balance check must happen before budget pre_check."""

@@ -5,9 +5,9 @@ Run separately from main test suite to avoid skewing coverage metrics:
   python3 -m pytest tests/test_performance.py -v --no-header
 """
 import time
+
 import pytest
 from httpx import AsyncClient
-
 
 pytestmark = pytest.mark.asyncio
 

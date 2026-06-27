@@ -3,10 +3,8 @@
 TDD: Channel distribution should be registry-based, not hardcoded.
 Billing calculations must be accurate (no double-count).
 """
-import pytest
-from app.routers.v1.relay import _get_adaptor
 from app.budget.pricing import estimate_cost_micro
-from app.relay.adaptor import ModelConfig
+from app.routers.v1.relay import _get_adaptor
 
 
 class TestGetAdaptor:
@@ -58,8 +56,8 @@ class TestApiKeyResolution:
 
     def test_api_key_for_deepseek(self):
         """DeepSeek should use the deepseek_api_key config."""
-        from app.routers.v1.relay import _get_channel_api_key
         from app.relay import channeltype
+        from app.routers.v1.relay import _get_channel_api_key
         key = _get_channel_api_key(channeltype.DeepSeek)
         # Should return a non-empty string or configured value
         assert isinstance(key, str)

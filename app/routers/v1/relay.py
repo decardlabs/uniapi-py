@@ -9,25 +9,29 @@ import uuid
 from typing import Any
 
 import httpx
-
 from fastapi import APIRouter, Depends, Request
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.budget.arbiter import ActualUsage, BudgetArbiter
+from app.budget.pricing import (
+    MAX_OVERDRAFT_MICRO,
+    calculate_cost,
+    calculate_cost_micro,
+    estimate_cost_micro,
+)
+from app.config import settings
 from app.database import get_db
 from app.dependencies import token_auth
 from app.exceptions import RelayException, UpstreamException
+from app.models.budget import CostRecord
 from app.models.channel import Channel
 from app.models.log import Log
 from app.relay.adaptor import BaseAdaptor
 from app.relay.meta import RelayMeta
 from app.relay.mode import RelayMode, relay_mode_from_path
-from app.relay.registry import registry
 from app.relay.openai_compatible import relay_chat_completion
-from app.budget.arbiter import BudgetArbiter, ActualUsage
-from app.budget.pricing import calculate_cost, calculate_cost_micro, estimate_cost_micro, get_model_pricing, MAX_OVERDRAFT_MICRO
-from app.models.budget import CostRecord
-from app.config import settings
+from app.relay.registry import registry
 
 logger = logging.getLogger(__name__)
 
@@ -334,7 +338,7 @@ async def _find_fallback_channel(
     available = [ch for ch in channels if not _is_channel_in_cooldown(ch.id)]
     if not available:
         available = channels  # all in cooldown → allow any
-    
+
     for ch in available:
         if ch.models:
             models = [m.strip() for m in ch.models.split(",")]
@@ -440,7 +444,7 @@ async def _handle_relay(request: Request, db: AsyncSession):
     token_allowed_models = None
     if hasattr(token, "models") and token.models:
         token_allowed_models = [m.strip() for m in token.models.split(",") if m.strip()]
-    
+
     # If model is specified, validate it against token permissions
     if model_name and token_allowed_models and model_name not in token_allowed_models:
         raise RelayException(
@@ -495,10 +499,9 @@ async def _handle_relay(request: Request, db: AsyncSession):
             body["model"] = model_name
         else:
             # Use top models: strongest as judge/synthesizer
-            from app.fusion.core.engine import FusionConfig, FusionEngine
-
             # Score models by price (higher = more capable = better for judge/synth)
             from app.budget.pricing import get_model_pricing
+            from app.fusion.core.engine import FusionConfig, FusionEngine
 
             scored = []
             for m_name in panel:

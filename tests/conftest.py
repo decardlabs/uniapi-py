@@ -1,18 +1,18 @@
 """Test configuration and fixtures."""
 
 import os
+
 import pytest
 from httpx import ASGITransport, AsyncClient
 
 # Use a test-specific database
 os.environ.setdefault("SQLITE_PATH", "/tmp/uniapi_test.db")
 
+from app.database import async_session_factory, engine
 from app.main import app
-from app.database import engine, async_session_factory
 from app.models.base import Base
-from app.models.user import User
-from app.models.token import Token
 from app.models.option import Option
+from app.models.user import User
 from app.services.auth import hash_password
 
 
@@ -64,7 +64,6 @@ async def client():
 
     # Seed test data
     from sqlalchemy import select
-    from app.database import async_session_factory
 
     async with async_session_factory() as db:
         # Create root user

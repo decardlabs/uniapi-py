@@ -1,13 +1,13 @@
 """Tests for BudgetArbiter core logic."""
 import time
+
 import pytest
 from sqlalchemy import select
-from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.budget.arbiter import ActualUsage, BudgetArbiter
 from app.database import async_session_factory, engine
 from app.models.base import Base
 from app.models.budget import Budget, CostRecord
-from app.budget.arbiter import BudgetArbiter, ActualUsage, BudgetDecision
 from tests.conftest import FakeRedisClient
 
 
@@ -209,7 +209,6 @@ class TestBudgetStatus:
 
     async def test_returns_budget_info(self, arbiter):
         """Status should include budget breakdown."""
-        import asyncio
         # First make a request to create budget + consume
         decision = await arbiter.pre_check(
             user_id=300, model="deepseek-v4-pro",

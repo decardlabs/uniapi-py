@@ -5,10 +5,9 @@ from __future__ import annotations
 import secrets
 import time
 import uuid
-from typing import Optional
 
 import httpx
-from fastapi import APIRouter, Depends, Request
+from fastapi import APIRouter, Depends
 from fastapi.responses import JSONResponse
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession

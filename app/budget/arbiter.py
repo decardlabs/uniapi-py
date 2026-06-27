@@ -8,14 +8,14 @@ from __future__ import annotations
 
 import logging
 import time
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 from typing import Any
 
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import async_sessionmaker
 
-from app.budget.pricing import calculate_cost, estimate_cost, compute_period, get_model_pricing
-from app.models.budget import Budget, CostRecord, BudgetResetLog
+from app.budget.pricing import calculate_cost, compute_period, estimate_cost, get_model_pricing
+from app.models.budget import Budget, BudgetResetLog, CostRecord
 
 logger = logging.getLogger(__name__)
 
@@ -101,7 +101,10 @@ class BudgetArbiter:
         try:
             pricing = get_model_pricing(model)
             if pricing["input"] == 0 and pricing["output"] == 0:
-                return BudgetDecision(status="approved", estimated_cost=0.0, available=available, monthly_budget=budget.monthly_budget)
+                return BudgetDecision(
+                    status="approved", estimated_cost=0.0,
+                    available=available, monthly_budget=budget.monthly_budget,
+                )
         except KeyError:
             pass
 

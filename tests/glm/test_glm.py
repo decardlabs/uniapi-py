@@ -4,6 +4,7 @@ GLM natively supports claude_messages via the Anthropic-compatible endpoint.
 """
 
 import time
+
 import pytest
 from httpx import AsyncClient
 

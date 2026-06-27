@@ -9,7 +9,6 @@ from typing import Callable
 from .config import config
 from .scenarios import ScenarioResult
 
-
 ProviderTest = Callable[..., ScenarioResult]
 
 
@@ -73,13 +72,13 @@ class LiveTestRunner:
                 ("Chat Simple", test_chat_simple),
             ]
 
-        from .scenarios.chat import test_chat_simple, test_chat_multi_turn, test_chat_reasoning_replay
-        from .scenarios.stream import test_stream_chat, test_stream_claude_messages
+        from .scenarios.chat import test_chat_multi_turn, test_chat_reasoning_replay, test_chat_simple
         from .scenarios.claude_messages import (
+            test_claude_messages_multi_turn,
             test_claude_messages_simple,
             test_claude_messages_tool,
-            test_claude_messages_multi_turn,
         )
+        from .scenarios.stream import test_stream_chat, test_stream_claude_messages
         from .scenarios.tools import test_tool_call_basic, test_tool_call_history
 
         return [
@@ -128,7 +127,7 @@ class LiveTestRunner:
                     dur = f"{result.duration:.1f}s"
                     _log(f"  {result.icon} {scenario_name}: {result.detail} [{dur}]")
                     if result.warn:
-                        _log(f"    ⚠️ Passed with caveat", "WARN")
+                        _log("    ⚠️ Passed with caveat", "WARN")
                 except Exception as e:
                     import traceback
 

@@ -2,10 +2,7 @@
 
 from __future__ import annotations
 
-import json
-
 from ..client import http_post
-from ..config import config
 from . import ScenarioResult
 
 

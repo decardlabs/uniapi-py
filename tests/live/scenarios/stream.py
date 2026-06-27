@@ -3,7 +3,6 @@
 from __future__ import annotations
 
 from ..client import http_post_stream
-from ..config import config
 from . import ScenarioResult
 
 

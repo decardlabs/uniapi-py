@@ -2,7 +2,6 @@
 
 import pytest
 
-
 # ── Helper to get a fresh client with a clean token ──────────────────────────
 
 
@@ -51,8 +50,9 @@ class TestTokenAuthErrors:
 
     async def test_valid_token_still_works(self):
         """Ensure normal auth flow is not broken."""
-        from app.database import async_session_factory
         from sqlalchemy import select
+
+        from app.database import async_session_factory
         from app.models.token import Token
 
         async with async_session_factory() as db:

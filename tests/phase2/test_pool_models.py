@@ -1,5 +1,4 @@
 """Tests for pool models (BudgetPool, PoolAllocation, PoolTransaction)."""
-import pytest
 
 
 class TestPoolModels:

@@ -8,8 +8,6 @@ from httpx import AsyncClient
 from sqlalchemy import select
 
 from app.relay.registry import registry
-from app.relay.adaptor import BaseAdaptor
-
 
 pytestmark = pytest.mark.asyncio
 
@@ -65,9 +63,10 @@ async def test_all_channels_have_valid_models(client: AsyncClient):
 @pytest.mark.asyncio
 async def test_channel_model_configs_parse(client: AsyncClient):
     """Channel model_configs should be valid JSON with expected fields."""
+    import json
+
     from app.database import async_session_factory
     from app.models.channel import Channel
-    import json
 
     async with async_session_factory() as db:
         result = await db.execute(select(Channel))

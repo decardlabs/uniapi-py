@@ -2,9 +2,7 @@
 
 import pytest
 from fastapi import FastAPI, HTTPException, Request
-from fastapi.responses import JSONResponse
 from httpx import ASGITransport, AsyncClient
-
 
 # ── Helper to build a minimal test app ───────────────────────────────────────
 

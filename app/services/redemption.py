@@ -6,7 +6,7 @@ import string
 import time
 from typing import Optional
 
-from sqlalchemy import select, func
+from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.models.redemption import RedemptionCode

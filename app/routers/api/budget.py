@@ -4,12 +4,12 @@ from __future__ import annotations
 from datetime import datetime
 
 from fastapi import APIRouter, Depends, HTTPException, Request
-from sqlalchemy import select, func
+from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.budget.arbiter import BudgetArbiter
 from app.database import get_db
 from app.dependencies import user_auth
-from app.budget.arbiter import BudgetArbiter
 from app.models.budget import CostRecord
 
 router = APIRouter(tags=["budget"])

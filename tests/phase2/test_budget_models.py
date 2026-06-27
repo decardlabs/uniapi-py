@@ -1,5 +1,4 @@
 """Tests for budget models (Budget, CostRecord, BudgetResetLog)."""
-import pytest
 
 
 class TestBudgetModels:
@@ -29,7 +28,6 @@ class TestBudgetModels:
     def test_tables_created_with_metadata(self):
         """Budget tables should be part of Base metadata."""
         from app.models.base import Base
-        from app.models.budget import Budget, CostRecord, BudgetResetLog
 
         table_names = Base.metadata.tables
         assert "budgets" in table_names
@@ -39,6 +37,7 @@ class TestBudgetModels:
     def test_create_budget_record(self):
         """Budget should be creatable with required fields."""
         import time
+
         from app.models.budget import Budget
 
         budget = Budget(

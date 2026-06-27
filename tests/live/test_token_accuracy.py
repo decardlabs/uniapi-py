@@ -13,12 +13,13 @@ uses a unique token name so log queries don't collide.
 
 from __future__ import annotations
 
+import json
 import os
 import time
-import json
-import pytest
+
 import httpx
-from httpx import AsyncClient, ASGITransport
+import pytest
+from httpx import ASGITransport, AsyncClient
 
 
 def _deepseek_key():
@@ -137,11 +138,11 @@ async def _relay_setup(deepseek_key: str, token_name: str):
     except OSError:
         pass
 
+    from app.database import async_session_factory, engine
     from app.main import app
-    from app.database import engine, async_session_factory
     from app.models.base import Base
     from app.models.user import User
-    from app.services.auth import hash_password, create_default_token
+    from app.services.auth import create_default_token, hash_password
 
     async with engine.begin() as conn:
         await conn.run_sync(Base.metadata.create_all)
@@ -212,10 +213,11 @@ async def test_relay_nonstreaming():
         usage = resp.json()["usage"]
         pt, ct = usage["prompt_tokens"], usage["completion_tokens"]
 
+        from sqlalchemy import select
+
         from app.database import async_session_factory
         from app.models.log import Log
         from app.models.token import Token
-        from sqlalchemy import select
 
         async with async_session_factory() as db:
             log_entry = (await db.execute(
@@ -260,7 +262,7 @@ async def test_relay_streaming():
                                  headers={"Authorization": f"Bearer {token_key}"})
         assert resp.status_code == 200
         content = resp.text
-        assert "data: [DONE]" in content, f"Stream incomplete"
+        assert "data: [DONE]" in content, "Stream incomplete"
 
         # Extract usage from SSE
         sse_lines = [l for l in content.split("\n") if l.startswith("data: ") and l != "data: [DONE]"]
@@ -279,9 +281,10 @@ async def test_relay_streaming():
         # Wait for async usage callback to complete
         await __import__("asyncio").sleep(1.5)
 
+        from sqlalchemy import select
+
         from app.database import async_session_factory
         from app.models.log import Log
-        from sqlalchemy import select
 
         async with async_session_factory() as db:
             log_entry = (await db.execute(
@@ -324,9 +327,10 @@ async def test_relay_high_max_tokens():
         usage = resp.json()["usage"]
         pt, ct = usage["prompt_tokens"], usage["completion_tokens"]
 
+        from sqlalchemy import select
+
         from app.database import async_session_factory
         from app.models.log import Log
-        from sqlalchemy import select
 
         async with async_session_factory() as db:
             log_entry = (await db.execute(
@@ -370,9 +374,10 @@ async def test_relay_claude_messages_usage():
         ct = usage.get("output_tokens", 0) or usage.get("completion_tokens", 0)
         assert pt > 0 and ct > 0, f"Expected non-zero usage, got {usage}"
 
+        from sqlalchemy import select
+
         from app.database import async_session_factory
         from app.models.log import Log
-        from sqlalchemy import select
 
         async with async_session_factory() as db:
             log_entry = (await db.execute(

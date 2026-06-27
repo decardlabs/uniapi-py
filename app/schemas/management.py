@@ -5,7 +5,6 @@ from typing import Optional
 
 from pydantic import BaseModel, Field
 
-
 # ── Top-up / Recharge ──
 
 class TopupActionRequest(BaseModel):

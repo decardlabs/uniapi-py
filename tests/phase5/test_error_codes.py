@@ -2,7 +2,6 @@
 
 import pytest
 
-
 # ── Error code list: the 20 standard codes from the spec §12 ──
 
 ALL_CODES = [

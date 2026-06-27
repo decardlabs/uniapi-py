@@ -8,8 +8,6 @@ from __future__ import annotations
 
 import inspect
 
-import pytest
-
 
 class TestReaderCleanup:
     """_reader task must be cancelled on client disconnect."""

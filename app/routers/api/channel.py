@@ -15,15 +15,15 @@ from fastapi import APIRouter, Depends, HTTPException, Query, Request
 from sqlalchemy import func, or_, select, text
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.budget.pricing import calculate_cost_micro
 from app.database import get_db
 from app.dependencies import admin_auth
 from app.models.channel import Channel
-from app.budget.pricing import calculate_cost_micro
 from app.models.log import Log
 from app.models.token import Token
 from app.models.user import User
 from app.schemas.common import GenericApiResponse, PaginatedResponse
-from app.schemas.management import ChannelCreateRequest, ChannelUpdateRequest
+from app.schemas.management import ChannelUpdateRequest
 
 router = APIRouter(tags=["channels"])
 logger = logging.getLogger(__name__)
@@ -262,8 +262,8 @@ async def test_all_channels(
       - Uses the root user's \"default\" token for permission checks
       - Logs results with username=\"root\", token_name=\"default\"
     """
-    from app.relay import channeltype
     from app.config import settings
+    from app.relay import channeltype
     from app.relay.registry import registry
 
     result = await db.execute(select(Channel).where(Channel.status == 1))
@@ -519,8 +519,8 @@ async def channel_default_pricing(
     _=Depends(admin_auth),
 ):
     """Return default pricing for a given channel type, including model_configs as JSON string."""
-    from app.relay.registry import registry
     from app.budget.pricing import get_model_pricing
+    from app.relay.registry import registry
 
     adaptor = registry.get(type)
     if not adaptor:
@@ -549,7 +549,6 @@ async def channel_default_pricing(
             "max_tokens": cfg.max_tokens,
         }
 
-    import json
     return GenericApiResponse(data={
         "model_configs": json.dumps(model_configs),
         "tooling": json.dumps({"whitelist": [], "pricing": {}}),

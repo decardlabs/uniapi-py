@@ -5,11 +5,22 @@ from contextlib import asynccontextmanager
 from typing import AsyncGenerator
 
 from fastapi import FastAPI, HTTPException, Request
-from app.version import VERSION
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import JSONResponse
-from sqlalchemy import select, text
+from sqlalchemy import select
 
+import app.models.ability  # noqa: F401
+import app.models.budget  # noqa: F401
+import app.models.channel  # noqa: F401
+import app.models.log  # noqa: F401
+import app.models.mcp_server  # noqa: F401
+import app.models.option  # noqa: F401
+import app.models.passkey  # noqa: F401
+import app.models.recharge  # noqa: F401
+import app.models.redemption  # noqa: F401
+import app.models.token  # noqa: F401
+
+# Ensure all models are registered in Base.metadata
+import app.models.user  # noqa: F401
 from app.config import settings
 from app.database import async_session_factory, engine
 from app.exceptions import AppException, app_exception_handler, http_exception_handler
@@ -21,20 +32,7 @@ from app.middleware import (
     RequestTimingMiddleware,
 )
 from app.models.base import Base
-
-# Ensure all models are registered in Base.metadata
-import app.models.user  # noqa: F401
-import app.models.token  # noqa: F401
-import app.models.log  # noqa: F401
-import app.models.option  # noqa: F401
-import app.models.passkey  # noqa: F401
-import app.models.channel  # noqa: F401
-import app.models.ability  # noqa: F401
-import app.models.budget  # noqa: F401
-import app.models.recharge  # noqa: F401
-import app.models.redemption  # noqa: F401
-import app.models.mcp_server  # noqa: F401
-from app.config import settings
+from app.version import VERSION
 
 
 def _build_fusion_registry():
@@ -71,8 +69,8 @@ async def lifespan(app: FastAPI) -> AsyncGenerator:
 
     # Initialize BudgetArbiter
     if settings.budget_enabled:
-        from app.budget.redis import BudgetRedisClient
         from app.budget.arbiter import BudgetArbiter
+        from app.budget.redis import BudgetRedisClient
         redis_client = BudgetRedisClient(settings.budget_redis_url)
         await redis_client.initialize()
         arbiter = BudgetArbiter(
@@ -143,7 +141,6 @@ async def _seed_defaults():
             await create_default_token(db, root.id)
 
         # Add default options
-        from app.models.token import Token
 
         default_options = {
             # 品牌
@@ -267,27 +264,27 @@ def create_app() -> FastAPI:
         }
 
     # Register routers
-    from app.routers.api.auth import router as auth_router
-    from app.routers.api.status import router as status_router
-    from app.routers.api.topup import router as topup_router
-    from app.routers.api.redemption import router as redemption_router
-    from app.routers.api.dashboard import router as dashboard_router
-    from app.routers.api.web import router as web_router
-    from app.routers.api.admin_user import router as admin_user_router
-    from app.routers.api.token import router as token_router
-    from app.routers.api.log import router as log_router
-    from app.routers.api.options import router as options_router
-    from app.routers.api.channel_types import router as channel_types_router
-    from app.routers.api.channel import router as channel_router
-    from app.routers.api.budget import router as budget_router
     from app.routers.api.admin_budget import router as admin_budget_router
+    from app.routers.api.admin_user import router as admin_user_router
+    from app.routers.api.auth import router as auth_router
+    from app.routers.api.budget import router as budget_router
     from app.routers.api.cache_analytics import router as cache_analytics_router
+    from app.routers.api.channel import router as channel_router
+    from app.routers.api.channel_types import router as channel_types_router
+    from app.routers.api.dashboard import router as dashboard_router
+    from app.routers.api.log import router as log_router
     from app.routers.api.mcp_servers import router as mcp_servers_router
-    from app.routers.api.verification import router as verification_router
-    from app.routers.api.pool import router as pool_router
     from app.routers.api.oauth import router as oauth_router
-    from app.routers.api.totp import router as totp_router
+    from app.routers.api.options import router as options_router
     from app.routers.api.passkey import router as passkey_router
+    from app.routers.api.pool import router as pool_router
+    from app.routers.api.redemption import router as redemption_router
+    from app.routers.api.status import router as status_router
+    from app.routers.api.token import router as token_router
+    from app.routers.api.topup import router as topup_router
+    from app.routers.api.totp import router as totp_router
+    from app.routers.api.verification import router as verification_router
+    from app.routers.api.web import router as web_router
     from app.routers.v1.relay import router as relay_router
 
     app.include_router(status_router)

@@ -69,8 +69,8 @@ class TestMiddlewareErrors:
 
     def test_rate_limit_middleware_uses_standard_error_code(self):
         """RateLimitMiddleware is configured to use standard error format."""
-        from app.middleware import RateLimitMiddleware
         from app.error_codes import UNIAPI_RATE_LIMITED
+        from app.middleware import RateLimitMiddleware
 
         assert RateLimitMiddleware is not None
         assert UNIAPI_RATE_LIMITED == "UNIAPI_RATE_LIMITED"

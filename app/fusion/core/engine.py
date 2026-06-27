@@ -8,9 +8,17 @@ from dataclasses import dataclass, field
 from typing import Any
 
 from app.fusion.adapters.registry import AdapterRegistry
-from app.fusion.schemas import ChatRequest, ChatResponse, FusionBreakdown, FusionMeta, ModelRequest, ModelResponse, UsageInfo
 from app.fusion.core.judge import JudgeModule
 from app.fusion.core.synthesizer import SynthesizerModule
+from app.fusion.schemas import (
+    ChatRequest,
+    ChatResponse,
+    FusionBreakdown,
+    FusionMeta,
+    ModelRequest,
+    ModelResponse,
+    UsageInfo,
+)
 
 logger = logging.getLogger(__name__)
 

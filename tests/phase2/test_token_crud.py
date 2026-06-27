@@ -62,7 +62,7 @@ async def test_token_create_unlimited(client: AsyncClient):
     )
     assert resp.status_code == 200
     data = resp.json()
-    
+
 
 @pytest.mark.asyncio
 async def test_token_create_with_models(client: AsyncClient):

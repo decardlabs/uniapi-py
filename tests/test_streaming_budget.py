@@ -11,8 +11,6 @@ from __future__ import annotations
 
 import inspect
 
-import pytest
-
 
 class TestStreamingBudgetSettlement:
     """Streaming requests must settle budget after stream ends."""

@@ -15,12 +15,11 @@ from fastapi import APIRouter, Depends, Query, Request
 from sqlalchemy import case, func, literal_column, select, text
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.budget.pricing import get_model_pricing
 from app.database import get_db
 from app.dependencies import admin_auth
 from app.models.channel import Channel
 from app.models.log import Log
-from app.budget.pricing import get_model_pricing
-from app.relay.registry import registry as adaptor_registry
 from app.schemas.common import GenericApiResponse
 
 router = APIRouter(tags=["cache-analytics"])

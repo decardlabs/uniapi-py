@@ -14,7 +14,6 @@ from typing import Any, Optional
 
 from pydantic import BaseModel, Field
 
-
 # ── Upstream error detail ────────────────────────────────────────────────────
 
 

@@ -1,7 +1,7 @@
 """Phase 5, Task 0.2: Tests for error response Pydantic schemas."""
 
 import json
-from datetime import datetime, timezone
+from datetime import datetime
 
 import pytest
 from pydantic import ValidationError

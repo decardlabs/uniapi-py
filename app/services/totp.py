@@ -2,10 +2,7 @@
 
 from __future__ import annotations
 
-from io import BytesIO
-
 import pyotp
-import qrcode
 
 
 def generate_totp_secret() -> str:

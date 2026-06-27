@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 from fastapi import APIRouter, Query
+
 from app.schemas.common import GenericApiResponse
 
 router = APIRouter(tags=["channel-types"])

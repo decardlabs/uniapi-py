@@ -3,8 +3,6 @@ from __future__ import annotations
 
 import json
 
-import pytest
-
 
 def _parse_chat_chunk(sse_line: str) -> dict:
     """Extract JSON from a 'data: {...}\\n\\n' SSE line."""
@@ -193,7 +191,7 @@ class TestEdgeCases:
 
     def test_full_conversion_round_trip(self):
         """Verify the full SSE string conversion produces valid Anthropic stream."""
-        from app.relay.sse_converter import chat_to_anthropic_sse, _format_anthropic_sse
+        from app.relay.sse_converter import _format_anthropic_sse, chat_to_anthropic_sse
         chunks = [
             'data: {"id":"chatcmpl-x","object":"chat.completion.chunk","choices":[{"index":0,"delta":{"role":"assistant"},"finish_reason":null}]}',
             'data: {"id":"chatcmpl-x","choices":[{"index":0,"delta":{"content":"Hello"},"finish_reason":null}]}',
@@ -344,7 +342,7 @@ class TestAnthropicToChatSSE:
 
     def test_round_trip(self):
         """chat -> anthropic -> chat round-trip should preserve content."""
-        from app.relay.sse_converter import chat_to_anthropic_sse, anthropic_to_chat_sse
+        from app.relay.sse_converter import anthropic_to_chat_sse, chat_to_anthropic_sse
         original_chunks = [
             'data: {"id":"x","object":"chat.completion.chunk","choices":[{"index":0,"delta":{"role":"assistant"},"finish_reason":null}]}',
             'data: {"id":"x","choices":[{"index":0,"delta":{"content":"Hello"},"finish_reason":null}]}',

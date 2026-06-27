@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from fastapi import APIRouter, Depends, Query, Request
+from fastapi import APIRouter, Depends, Query
 from fastapi.responses import JSONResponse
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -14,9 +14,8 @@ from app.schemas.common import GenericApiResponse
 from app.schemas.management import PasswordResetConfirmRequest
 from app.services.auth import hash_password
 from app.services.email import (
-    send_verification_code,
-    verify_code,
     generate_reset_token,
+    send_verification_code,
     verify_reset_token,
 )
 from app.services.user import verify_turnstile

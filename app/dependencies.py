@@ -7,7 +7,7 @@ from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.database import get_db
-from app.exceptions import ForbiddenException, QuotaExceededException, UnauthorizedException
+from app.exceptions import ForbiddenException, UnauthorizedException
 from app.models.token import Token
 from app.models.user import User
 from app.services.auth import get_session_user

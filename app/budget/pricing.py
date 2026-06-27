@@ -160,7 +160,10 @@ def calculate_cost_micro(
     Delegates to calculate_cost() to avoid duplicating the formula.
     Pass ``channel_model_configs`` to use channel-level pricing overrides.
     """
-    yuan = calculate_cost(model, input_tokens, output_tokens, cache_hit_tokens, channel_model_configs=channel_model_configs)
+    yuan = calculate_cost(
+        model, input_tokens, output_tokens, cache_hit_tokens,
+        channel_model_configs=channel_model_configs,
+    )
     return max(1, int(round(yuan * 1_000_000)))
 
 

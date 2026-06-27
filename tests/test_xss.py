@@ -8,12 +8,10 @@ class TestIframeSandbox:
     def test_homepage_iframe_no_dangerous_permissions(self):
         """The HomePage iframe must NOT include allow-scripts or
         allow-same-origin in the sandbox attribute."""
-        import re
-
-        from app.config import settings
-
         # Check the actual source code of HomePage.tsx for the sandbox attribute
         import os
+        import re
+
 
         home_path = os.path.join(
             os.path.dirname(__file__),
@@ -38,7 +36,6 @@ class TestIframeSandbox:
         """The Markdown renderer must configure rehype-sanitize to
         strip dangerous HTML tags and attributes."""
         import os
-        import re
 
         md_path = os.path.join(
             os.path.dirname(__file__),

@@ -1,8 +1,6 @@
 """Security-related tests for auth: session cookies, password strength, lockout, TOTP, Turnstile."""
 from __future__ import annotations
 
-import pytest
-
 from app.config import settings
 from app.services.user import validate_password_strength
 

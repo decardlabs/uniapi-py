@@ -10,7 +10,6 @@ import hashlib
 import hmac
 import json
 import time
-from typing import Optional
 
 _GLM_TOKEN_CACHE: dict[str, tuple[str, float]] = {}
 _CACHE_TTL = 24 * 3600  # 24 hours

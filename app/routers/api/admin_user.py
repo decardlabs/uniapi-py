@@ -1,18 +1,16 @@
 from __future__ import annotations
 
-from typing import Optional
-
-from fastapi import APIRouter, Depends, Query, Request
-from sqlalchemy import select, func
+from fastapi import APIRouter, Depends, Query
+from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.database import get_db
 from app.dependencies import admin_auth
+from app.models.budget import CostRecord
 from app.schemas.common import GenericApiResponse, PaginatedResponse
 from app.schemas.management import AdminUserCreateRequest, AdminUserUpdateRequest
 from app.schemas.user import UserResponse
 from app.services import user as user_service
-from app.models.budget import CostRecord
 
 router = APIRouter(tags=["admin-users"])
 
@@ -164,8 +162,9 @@ async def admin_unlock_user(
     _=Depends(admin_auth),
 ):
     """Unlock a permanently locked user account (sets locked_until=None)."""
-    from app.models.user import User
     from fastapi import HTTPException
+
+    from app.models.user import User
 
     result = await db.execute(select(User).where(User.id == user_id))
     user = result.scalar_one_or_none()

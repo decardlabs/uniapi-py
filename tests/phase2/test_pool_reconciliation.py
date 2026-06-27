@@ -52,10 +52,11 @@ async def test_reconcile_with_pool_transaction(client: AsyncClient):
     pool_id = await _create_pool(client, cookies, 6000.0)
 
     # Create a recharge request directly in DB to simulate approval that creates PoolTransaction
-    from app.database import async_session_factory
-    from app.models.recharge import RechargeRequest
-    from app.models.budget import BudgetPool, PoolTransaction
     import time
+
+    from app.database import async_session_factory
+    from app.models.budget import BudgetPool, PoolTransaction
+    from app.models.recharge import RechargeRequest
 
     now = int(time.time() * 1000)
     async with async_session_factory() as db:
@@ -108,9 +109,10 @@ async def test_reconcile_allocation_and_transaction(client: AsyncClient):
     cookies = await _login(client)
     pool_id = await _create_pool(client, cookies, 10000.0)
 
-    from app.database import async_session_factory
-    from app.models.budget import BudgetPool, PoolAllocation, PoolTransaction, CostRecord
     import time
+
+    from app.database import async_session_factory
+    from app.models.budget import BudgetPool, CostRecord, PoolAllocation, PoolTransaction
 
     now = int(time.time() * 1000)
     async with async_session_factory() as db:
@@ -170,9 +172,6 @@ async def test_reconcile_allocation_and_transaction(client: AsyncClient):
 @pytest.mark.asyncio
 async def test_reconcile_after_recharge_approval(client: AsyncClient):
     """Full flow: create pool → fund → recharge → approve → reconcile."""
-    from app.database import async_session_factory
-    from app.models.budget import BudgetPool
-    from sqlalchemy import select
 
     cookies = await _login(client)
     pool_id = await _create_pool(client, cookies, 6000.0)
@@ -216,9 +215,10 @@ async def test_reconcile_concurrent_consumptions(client: AsyncClient):
     cookies = await _login(client)
     pool_id = await _create_pool(client, cookies, 10000.0)
 
+    import time
+
     from app.database import async_session_factory
     from app.models.budget import BudgetPool, PoolTransaction
-    import time
 
     now = int(time.time() * 1000)
     async with async_session_factory() as db:

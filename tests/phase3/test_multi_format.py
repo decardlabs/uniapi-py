@@ -3,9 +3,10 @@
 DeepSeek natively supports claude_messages format, so requests to
 /v1/messages should be proxied directly without format conversion.
 """
-import pytest
-import httpx
 import time
+
+import httpx
+import pytest
 from httpx import AsyncClient
 
 

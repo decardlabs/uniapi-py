@@ -5,7 +5,8 @@ the BaseAdaptor contract. When a new provider is added, these tests
 ensure it implements all required methods correctly.
 """
 import pytest
-from app.relay.adaptor import BaseAdaptor, ModelConfig
+
+from app.relay.adaptor import ModelConfig
 from app.relay.meta import RelayMeta
 from app.relay.mode import RelayMode
 

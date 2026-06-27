@@ -9,9 +9,6 @@ from unittest.mock import patch
 import pytest
 from httpx import AsyncClient
 
-from app.routers.api.oauth import _oauth_states
-
-
 # ── State management helpers ─────────────────────────────────────────────
 
 async def _get_state(client: AsyncClient) -> str:

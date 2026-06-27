@@ -3,8 +3,6 @@ from __future__ import annotations
 
 import inspect
 
-import pytest
-
 
 class TestPricingDedup:
     """Micro-yuan pricing functions should delegate to yuan variants."""
@@ -50,9 +48,9 @@ class TestPricingSync:
         in budget/pricing.py MODEL_PRICING_YUAN."""
         from app.relay.adaptors.deepseek.adaptor import DeepSeekAdaptor
         from app.relay.adaptors.glm.adaptor import GLMAdaptor
-        from app.relay.adaptors.qwen.adaptor import QwenAdaptor
         from app.relay.adaptors.kimi.adaptor import KimiAdaptor
         from app.relay.adaptors.minimax.adaptor import MiniMaxAdaptor
+        from app.relay.adaptors.qwen.adaptor import QwenAdaptor
 
         adaptor_models = set()
         for AdaptorCls in (DeepSeekAdaptor, GLMAdaptor, QwenAdaptor, KimiAdaptor, MiniMaxAdaptor):

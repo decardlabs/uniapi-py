@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import json
 import time
+import uuid
 
 from fastapi import APIRouter, Depends, Query, Request
 from sqlalchemy import select
@@ -12,20 +13,16 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.database import get_db
 from app.dependencies import user_auth
 from app.models.passkey import PasskeyCredential
-from app.models.token import Token as TokenModel
 from app.models.user import User
 from app.schemas.common import GenericApiResponse
 from app.schemas.user import LoginResponse
-from app.services.auth import create_default_token, create_session, hash_password
+from app.services.auth import create_session
 from app.services.webauthn import (
-    generate_registration_opts,
-    verify_registration,
     generate_authentication_opts,
+    generate_registration_opts,
     verify_authentication,
+    verify_registration,
 )
-
-import secrets
-import uuid
 
 router = APIRouter(tags=["passkey"])
 

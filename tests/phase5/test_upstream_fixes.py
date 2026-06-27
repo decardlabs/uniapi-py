@@ -12,15 +12,12 @@ Issues covered:
 """
 
 import asyncio
-import json
-import logging
 import time
-from unittest.mock import Mock, patch
+from unittest.mock import patch
 
 import httpx
 import pytest
 from sqlalchemy import select
-
 
 # ── Shared helpers ────────────────────────────────────────────────────────────
 
@@ -224,8 +221,12 @@ class TestChannelFailureStatePersistence:
     async def test_429_cooldown_persists_across_requests(self):
         """After a 429, the channel cooldown should be visible to subsequent
         channel selection queries."""
-        from app.routers.v1.relay import _channel_cooldowns, _channel_429_counts
-        from app.routers.v1.relay import _cooldown_channel, _is_channel_in_cooldown
+        from app.routers.v1.relay import (
+            _channel_429_counts,
+            _channel_cooldowns,
+            _cooldown_channel,
+            _is_channel_in_cooldown,
+        )
 
         _channel_cooldowns.clear()
         _channel_429_counts.clear()
@@ -242,8 +243,12 @@ class TestChannelFailureStatePersistence:
     async def test_clear_failures_also_clears_cooldown(self):
         """_reset_channel_failures should clear both failure counter and 429 cooldown."""
         from app.routers.v1.relay import (
-            _channel_failures, _channel_cooldowns, _channel_429_counts,
-            _cooldown_channel, _is_channel_in_cooldown, _reset_channel_failures,
+            _channel_429_counts,
+            _channel_cooldowns,
+            _channel_failures,
+            _cooldown_channel,
+            _is_channel_in_cooldown,
+            _reset_channel_failures,
         )
 
         _channel_failures.clear()
@@ -410,6 +415,7 @@ class TestTimeoutConfiguration:
     def test_relay_chat_completion_uses_timeout_config(self):
         """relay_chat_completion should use httpx.Timeout with connect timeout."""
         import inspect
+
         from app.relay.openai_compatible import relay_chat_completion
 
         source = inspect.getsource(relay_chat_completion)
@@ -425,6 +431,7 @@ class TestTimeoutConfiguration:
     def test_non_stream_timeout_is_not_bare_int(self):
         """The non-streaming timeout should be an httpx.Timeout object, not a bare int."""
         import inspect
+
         from app.relay.openai_compatible import relay_chat_completion
 
         source = inspect.getsource(relay_chat_completion)

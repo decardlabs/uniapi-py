@@ -130,7 +130,6 @@ uniapi-py 与直接接入的兼容性对比测试
 """
 from __future__ import annotations
 
-import json
 import os
 from dataclasses import dataclass, field
 

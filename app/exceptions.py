@@ -13,7 +13,6 @@ from typing import Any, Optional
 
 from fastapi.responses import JSONResponse
 
-
 # ── Base exception ───────────────────────────────────────────────────────────
 
 
@@ -200,7 +199,7 @@ async def app_exception_handler(request, exc: AppException) -> JSONResponse:
     top-level ``detail`` field for backwards compatibility.
     """
     from app.schemas.error import build_compat_error_response, build_error_response
-    from app.schemas.openai_error import get_openai_error_meta, build_openai_error_response
+    from app.schemas.openai_error import build_openai_error_response, get_openai_error_meta
 
     request_id = getattr(request.state, "request_id", None) if hasattr(request, "state") else None
     is_v1_path = request.url.path.startswith("/v1/") if hasattr(request, "url") else False
@@ -250,8 +249,9 @@ async def http_exception_handler(request, exc) -> JSONResponse:  # type: ignore[
     Registered alongside ``app_exception_handler`` in ``app/main.py``.
     """
     from fastapi import HTTPException
+
     from app.schemas.error import build_compat_error_response
-    from app.schemas.openai_error import get_openai_error_meta, build_openai_error_response
+    from app.schemas.openai_error import build_openai_error_response, get_openai_error_meta
 
     # Map HTTP status → UniAPI code
     status_code = exc.status_code if isinstance(exc, HTTPException) else 500
