@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import json
 import time
 
 from fastapi import APIRouter, Depends, Request
@@ -365,16 +366,26 @@ async def models_display(db: AsyncSession = Depends(get_db)):
             else:
                 model_names = list(all_models.keys())
 
+            # Parse channel-level pricing overrides from model_configs
+            channel_overrides: dict | None = None
+            if ch.model_configs:
+                try:
+                    parsed = json.loads(ch.model_configs)
+                    if isinstance(parsed, dict):
+                        channel_overrides = parsed
+                except (json.JSONDecodeError, TypeError):
+                    pass
+
             models_data = {}
             for model_name in model_names:
                 if model_name not in all_models:
                     continue
                 try:
-                    pricing = get_model_pricing(model_name)
+                    pricing = get_model_pricing(model_name, channel_model_configs=channel_overrides)
                 except KeyError:
                     # Fallback: use MODEL_PRICING_YUAN with lowercased name
                     try:
-                        pricing = get_model_pricing(model_name.lower())
+                        pricing = get_model_pricing(model_name.lower(), channel_model_configs=channel_overrides)
                     except KeyError:
                         continue
                 models_data[model_name] = {
