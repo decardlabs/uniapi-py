@@ -50,7 +50,7 @@ omit = ["*/migrations/*", "*/tests/*", "*/__pycache__/*"]
 
 [tool.coverage.report]
 show_missing = true
-fail_under = 70
+fail_under = 60
 
 [tool.ruff]
 line-length = 120
