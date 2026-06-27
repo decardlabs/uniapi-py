@@ -218,10 +218,13 @@ async def update_channel(
             if field in text_fields:
                 val = _json_str(val)
             setattr(channel, field, val)
-    # Only update key when a non-empty value is provided
-    # Prevents accidentally clearing the key when editing other fields
+    # Only update key when a non-empty, unmasked value is provided
+    # The channel list API masks keys for display (e.g. "sk-dc39...7ae").
+    # If the frontend sends back the masked key unchanged, skip the update
+    # to avoid overwriting the real key with the masked version.
     if "key" in update_data and update_data["key"] and update_data["key"].strip():
-        channel.key = update_data["key"]
+        if "..." not in update_data["key"]:
+            channel.key = update_data["key"]
     # Map frontend field name to backend field
     if "ratelimit" in update_data:
         channel.rate_limit = body.ratelimit
