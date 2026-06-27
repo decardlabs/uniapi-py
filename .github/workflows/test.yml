@@ -62,7 +62,7 @@ jobs:
       - name: Install dependencies
         run: |
           cd web
-          npm install -g yarn@berry
+          npm install -g @yarnpkg/cli
           yarn install --frozen-lockfile
 
       - name: Type check
@@ -107,7 +107,7 @@ jobs:
       - name: Install Playwright and browsers
         run: |
           cd web
-          npm install -g yarn@berry
+          npm install -g @yarnpkg/cli
           yarn install --frozen-lockfile
           npx playwright install chromium --with-deps
 
