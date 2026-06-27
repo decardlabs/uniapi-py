@@ -1,0 +1,71 @@
+name: Deploy
+
+on:
+  push:
+    tags: ['v*']
+
+jobs:
+  deploy:
+    name: Deploy to api.ccbot.chat
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Build frontend
+        run: |
+          cd web
+          npm install -g yarn
+          yarn install --frozen-lockfile
+          yarn build:prod
+
+      - name: Sync to server
+        uses: appleboy/scp-action@v0.1.7
+        with:
+          host: ${{ secrets.SSH_HOST }}
+          username: ${{ secrets.SSH_USER }}
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          source: |
+            ./
+          target: /www/wwwroot/api.ccbot.chat
+          strip_components: 0
+          rm: true
+          overwrite: true
+          exclude: |
+            .git/
+            .venv/
+            __pycache__/
+            *.pyc
+            .env
+            web/node_modules/
+            web/.yarn/
+            web/src/
+            web/test-results/
+            web/playwright-report/
+            tests/
+            DeepSeek-Reasonix/
+            logs/
+            backups/
+            deploy.sh
+            .user.ini
+            uniapi.db*
+
+      - name: Restart service
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.SSH_HOST }}
+          username: ${{ secrets.SSH_USER }}
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          script: |
+            set -e
+            cd /www/wwwroot/api.ccbot.chat
+            source .venv/bin/activate
+            pip install -e . -q 2>&1 | tail -1
+            alembic upgrade head 2>&1 | tail -3
+            echo "VERSION = \"${GITHUB_REF_NAME#v}\"" > app/version.py
+            systemctl restart uniapi-py
+            sleep 3
+            curl -s -o /dev/null -w "Health: %{http_code}\n" http://127.0.0.1:3000/health

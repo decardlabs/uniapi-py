@@ -84,7 +84,6 @@ jobs:
     name: E2E Tests (Playwright)
     runs-on: ubuntu-latest
     timeout-minutes: 20
-    needs: [backend, frontend]
 
     steps:
       - uses: actions/checkout@v4
@@ -105,75 +104,53 @@ jobs:
         with:
           node-version: "20"
 
-      - name: Install frontend dependencies
+      - name: Install Playwright and browsers
         run: |
           cd web
           npm install -g yarn
           yarn install --frozen-lockfile
-
-      - name: Install Playwright browsers
-        run: |
-          cd web
           npx playwright install chromium --with-deps
 
-      - name: Start backend
+      - name: Start backend and seed data
         run: |
           SQLITE_PATH=/tmp/uniapi_ci.db python -m uvicorn app.main:app --port 8000 &
           sleep 3
-          # Seed root user via test fixture
-          python -c "
-import asyncio, os
-os.environ['SQLITE_PATH'] = '/tmp/uniapi_ci.db'
-from app.database import engine, async_session_factory
-from app.models.base import Base
-from app.models.user import User
-from app.services.auth import hash_password
-async def seed():
-    async with engine.begin() as conn:
-        await conn.run_sync(Base.metadata.create_all)
-    async with async_session_factory() as db:
-        from sqlalchemy import select
-        result = await db.execute(select(User).where(User.username == 'root'))
-        if not result.scalar_one_or_none():
-            import time
-            now = int(time.time() * 1000)
-            root = User(
-                username='root',
-                password=hash_password('123456'),
-                display_name='Root',
-                role=100,
-                status=1,
-                group='default',
-                access_token='root-access-token-ci',
-                created_at=now,
-                updated_at=now,
-            )
-            db.add(root)
-            from app.services.auth import create_default_token
-            await create_default_token(db, root.id)
-            from app.models.option import Option
-            for key, value in {'SystemName': 'UniAPI', 'PasswordLoginEnabled': 'true', 'RegisterEnabled': 'true', 'LogConsumeEnabled': 'true', 'QuotaPerUnit': '500000'}.items():
-                db.add(Option(key=key, value=value, created_at=now))
-            await db.commit()
-asyncio.run(seed())
-"
-          curl -s http://localhost:8000/api/status
-
-      - name: Start frontend
-        run: |
-          cd web
-          yarn dev > /tmp/vite.log 2>&1 &
-          sleep 5
-          curl -s -o /dev/null -w "%{http_code}" http://localhost:3001
+          python -c "import asyncio, os; os.environ['SQLITE_PATH'] = '/tmp/uniapi_ci.db'; \
+            from sqlalchemy import select; from app.database import engine, async_session_factory; \
+            from app.models.base import Base; from app.models.user import User; \
+            from app.services.auth import hash_password as h; \
+            async def seed(): \
+              async with engine.begin() as c: await c.run_sync(Base.metadata.create_all); \
+              async with async_session_factory() as d: \
+                r = await d.execute(select(User).where(User.username == 'root')); \
+                if r.scalar_one_or_none(): return; \
+                import time; n = int(time.time()*1000); \
+                u = User(username='root',password=h('123456'),display_name='Root', \
+                  role=100,status=1,group='default',access_token='root-access-token-ci', \
+                  created_at=n,updated_at=n); d.add(u); \
+                from app.services.auth import create_default_token as cdt; \
+                await cdt(d, u.id); \
+                from app.models.option import Option; \
+                for k,v in {'SystemName':'UniAPI','PasswordLoginEnabled':'true', \
+                  'RegisterEnabled':'true','LogConsumeEnabled':'true', \
+                  'TurnstileCheckEnabled':'false','QuotaPerUnit':'500000'}.items(): \
+                  d.add(Option(key=k,value=v,created_at=n)); \
+                await d.commit(); \
+            asyncio.run(seed())"
+          curl -s -o /dev/null -w "Backend: %{http_code}\n" http://localhost:8000/api/status
 
       - name: Run E2E tests
         run: |
           cd web
-          CI=true BASE_URL=http://localhost:3001 npx playwright test \
+          CI=true BASE_URL=http://localhost:8000 TEST_ADMIN_USERNAME=root \
+            TEST_ADMIN_PASSWORD=123456 npx playwright test \
+            e2e/smoke.spec.ts \
             e2e/channel-crud.spec.ts \
             e2e/token-crud.spec.ts \
-            e2e/smoke.spec.ts \
-            --project=chromium
+            e2e/recharge-flow.spec.ts \
+            e2e/channel-pricing.spec.ts \
+            e2e/pricing-sync.spec.ts \
+            --project=chromium --reporter=list
 
       - name: Upload Playwright report
         if: always()
