@@ -20,7 +20,8 @@ jobs:
       - name: Build frontend
         run: |
           cd web
-          npm install -g @yarnpkg/cli
+          corepack enable
+          yarn set version 4.13.0
           yarn install --frozen-lockfile
           yarn build:prod
 
