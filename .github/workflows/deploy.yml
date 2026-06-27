@@ -66,13 +66,14 @@ jobs:
             alembic upgrade head 2>&1 | tail -3
             systemctl daemon-reload
             systemctl start uniapi-py
-            for i in {1..30}; do
+            for i in $(seq 1 45); do
               code="$(curl -s -o /dev/null -w '%{http_code}' http://127.0.0.1:3000/health || true)"
               if [ "$code" = "200" ]; then
                 echo "Health: 200"
                 break
               fi
-              if [ "$i" = "30" ]; then
+              echo "Health check attempt $i/45 failed (code: $code)"
+              if [ "$i" = "45" ]; then
                 echo "Health check failed (last code: $code)"
                 systemctl status uniapi-py --no-pager || true
                 journalctl -u uniapi-py -n 100 --no-pager || true
