@@ -35,13 +35,16 @@ jobs:
             --exclude='deploy.sh' --exclude='.user.ini' \
             -C . .
 
-      - name: Upload package
+      - name: Copy tar to workspace
+        run: cp /tmp/deploy.tar.gz .
+
+      - name: Upload tar
         uses: appleboy/scp-action@v0.1.7
         with:
           host: ${{ secrets.SSH_HOST }}
           username: ${{ secrets.SSH_USER }}
           key: ${{ secrets.SSH_PRIVATE_KEY }}
-          source: "/tmp/deploy.tar.gz"
+          source: "deploy.tar.gz"
           target: "/tmp"
           overwrite: true
 
