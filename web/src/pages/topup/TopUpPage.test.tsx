@@ -91,7 +91,7 @@ describe('TopUpPage', () => {
     expect(heading).toBeInTheDocument();
 
     // Should have an amount input
-    const amountInput = screen.getByPlaceholderText(/enter token count/i);
+    const amountInput = screen.getByRole('spinbutton');
     expect(amountInput).toBeInTheDocument();
 
     // Should have a remark textarea
@@ -110,7 +110,7 @@ describe('TopUpPage', () => {
     await screen.findByRole('heading', { name: /submit recharge request/i });
 
     // Fill in amount
-    const amountInput = screen.getByPlaceholderText(/enter token count/i);
+    const amountInput = screen.getByRole('spinbutton');
     fireEvent.change(amountInput, { target: { value: '1' } });
 
     // Fill in remark
