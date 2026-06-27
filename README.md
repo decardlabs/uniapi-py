@@ -8,15 +8,15 @@
 
 ## Status
 
-🚧 **All phases complete** — 795 tests, all GREEN (11 skipped)
+🚧 **All phases complete** — 815 tests, all GREEN (11 skipped)
 
 | Phase | 内容 | 状态 | 测试数 |
 |-------|------|------|--------|
-| 1 | Auth, Status, DeepSeek Chat Completions | ✅ | 108 |
-| 2 | Management API CRUD, Billing, Pool Mgmt | ✅ | 221 |
+| 1 | Auth, Status, DeepSeek Chat Completions | ✅ | 116 |
+| 2 | Management API CRUD, Billing, Pool Mgmt | ✅ | 230 |
 | 3 | Multi-format: NATIVE_FORMATS routing | ✅ | 7 |
 | 4 | Extensibility + Budget Pool Management | ✅ | 51 |
-| 5 | Upstream 429 retry + failover, Auth security | ✅ | 309 |
+| 5 | Upstream 429 retry + failover, Auth/Turnstile security | ✅ | 312 |
 | 6 | Recharge & Redemption codes | ✅ | 60 |
 | Security | Input validation, RBAC, XSS | ✅ | 18 |
 
@@ -472,7 +472,7 @@ registry.register(MY_CHANNEL_TYPE, MyProviderAdaptor)
 
 | 版本 | 日期 | 变更 |
 |------|------|------|
-| **v0.14.0** | 2026-06-26 | 预算池：修复 `_reconcile_pool` 遗漏 PoolTransaction；池子列表字段 `available`/`total_quota`/`allocated` 补全；前端池子可用余额计算 bug（`total_allocated`→`total_consumed`）；充值 E2E 测试；仪表盘 PoolSummaryCards 修复（API 参数、字段名、金额格式）；SearchableDropdown auto-search 空查询修复；分配弹窗改用原生 select；模型页价格 $→¥；缓存分析 >100% 修复（MiniMax cached_tokens 截断）；795 测试 |
+| **v0.14.0** | 2026-06-26 | 预算池：修复 `_reconcile_pool` 遗漏 PoolTransaction；池子列表字段 `available`/`total_quota`/`allocated` 补全；前端池子可用余额计算 bug（`total_allocated`→`total_consumed`）；充值 E2E 测试；仪表盘 PoolSummaryCards 修复（API 参数、字段名、金额格式）；SearchableDropdown auto-search 空查询修复；分配弹窗改用原生 select；模型页价格 $→¥；缓存分析 >100% 修复（MiniMax cached_tokens 截断）；815 测试 |
 
 ### v0.11.x — 负载均衡 & 计费货币化
 
