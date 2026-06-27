@@ -20,7 +20,7 @@ jobs:
       - name: Build frontend
         run: |
           cd web
-          corepack enable
+          npm install -g yarn
           yarn install --frozen-lockfile
           yarn build:prod
 
