@@ -12,8 +12,6 @@ jobs:
 
     steps:
       - uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
 
       - name: Build frontend
         run: |
@@ -22,25 +20,27 @@ jobs:
           yarn install --frozen-lockfile
           yarn build:prod
 
-      - name: Stop service
-        uses: appleboy/ssh-action@v1.0.3
-        with:
-          host: ${{ secrets.SSH_HOST }}
-          username: ${{ secrets.SSH_USER }}
-          key: ${{ secrets.SSH_PRIVATE_KEY }}
-          script: systemctl stop uniapi-py 2>/dev/null; sleep 1
+      - name: Package app
+        run: |
+          tar czf /tmp/deploy.tar.gz \
+            --exclude='.venv' --exclude='.git' --exclude='__pycache__' --exclude='*.pyc' \
+            --exclude='.env' --exclude='uniapi.db*' --exclude='web/node_modules' \
+            --exclude='web/.yarn' --exclude='web/src' --exclude='tests' \
+            --exclude='DeepSeek-Reasonix' --exclude='logs' --exclude='backups' \
+            --exclude='deploy.sh' --exclude='.user.ini' \
+            -C . .
 
-      - name: Sync files
+      - name: Upload package
         uses: appleboy/scp-action@v0.1.7
         with:
           host: ${{ secrets.SSH_HOST }}
           username: ${{ secrets.SSH_USER }}
           key: ${{ secrets.SSH_PRIVATE_KEY }}
-          source: "."
-          target: "/www/wwwroot/api.ccbot.chat"
-          strip_components: 0
+          source: "/tmp/deploy.tar.gz"
+          target: "/tmp"
+          overwrite: true
 
-      - name: Restart service
+      - name: Extract and restart
         uses: appleboy/ssh-action@v1.0.3
         with:
           host: ${{ secrets.SSH_HOST }}
@@ -48,19 +48,16 @@ jobs:
           key: ${{ secrets.SSH_PRIVATE_KEY }}
           script: |
             set -e
-            cd /www/wwwroot/api.ccbot.chat
-
-            echo "VERSION = \"${GITHUB_REF_NAME#v}\"" > app/version.py
-
+            REMOTE="/www/wwwroot/api.ccbot.chat"
+            systemctl stop uniapi-py 2>/dev/null; sleep 1
+            tar xzf /tmp/deploy.tar.gz -C "$REMOTE" --overwrite
+            echo "VERSION = \"${GITHUB_REF_NAME#v}\"" > "$REMOTE"/app/version.py
+            cd "$REMOTE"
             source .venv/bin/activate
             pip install -e . -q 2>&1 | tail -1
             alembic upgrade head 2>&1 | tail -3
-
             systemctl daemon-reload
             systemctl start uniapi-py
             sleep 3
-
-            echo "=== Health ==="
-            curl -s -o /dev/null -w "%{http_code}\n" http://127.0.0.1:3000/health
-            echo "=== Version ==="
+            curl -s -o /dev/null -w "Health: %{http_code}\n" http://127.0.0.1:3000/health
             cat app/version.py
