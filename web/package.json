@@ -3,6 +3,7 @@
   "private": true,
   "version": "3.9.9",
   "type": "module",
+  "packageManager": "yarn@4.17.0",
   "scripts": {
     "dev": "vite --host 0.0.0.0",
     "build": "tsc -b && vite build --emptyOutDir",
