@@ -20,7 +20,7 @@ jobs:
       - name: Build frontend
         run: |
           cd web
-          npm install -g yarn
+          npm install -g yarn@berry
           yarn install --frozen-lockfile
           yarn build:prod
 
