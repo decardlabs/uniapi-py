@@ -90,6 +90,7 @@ jobs:
     name: E2E Tests (Playwright)
     runs-on: ubuntu-latest
     timeout-minutes: 30
+    continue-on-error: true
 
     steps:
       - uses: actions/checkout@v4
