@@ -245,7 +245,7 @@ jobs:
             --exclude='__pycache__' \
             --exclude='*.pyc' \
             --exclude='.env' \
-            --exclude='uniapi.db*' \
+            --exclude='uniapi.db' \
             --exclude='web/node_modules' \
             --exclude='web/.yarn/cache' \
             --exclude='web/src' \
@@ -302,6 +302,18 @@ jobs:
             # ── 2/7. 停止服务（防止 SQLite WAL/SHM 被覆盖）──
             echo ""
             echo "[2/7] 停止服务..."
+
+            # 清理旧版 Go 服务（如果存在且占用端口 3000）
+            OLD_GO_SERVICE="uniapi.service"
+            if systemctl is-active "$OLD_GO_SERVICE" 2>/dev/null; then
+              OLD_PORT=$(grep -oP '(?<=--port )\d+' /etc/systemd/system/$OLD_GO_SERVICE 2>/dev/null || echo 3000)
+              if [ "$OLD_PORT" = "3000" ]; then
+                systemctl stop "$OLD_GO_SERVICE" 2>/dev/null || true
+                systemctl disable "$OLD_GO_SERVICE" 2>/dev/null || true
+                echo "  ✓ 旧版 Go 服务已停止并禁用"
+              fi
+            fi
+
             systemctl stop "$PY_SERVICE" 2>/dev/null || true
             sleep 1
             echo "  ✓ 服务已停止"

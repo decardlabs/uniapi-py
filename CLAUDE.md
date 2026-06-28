@@ -116,27 +116,28 @@ DeepSeek's prefix caching is handled via three fields in `ModelConfig`: `cached_
 
 Each adaptor can override `resolve_model_name()` for case-insensitive lookups or aliases. The relay calls this during routing and updates `body["model"]` to the canonical form. Notably: MiniMax model names are lowercased during validation, and DeepSeek has its own normalization in `normalize_request()`.
 
-### Middleware Stack (applied in order)
+### Middleware Stack (add_middleware order; request execution is reversed)
 
 1. `CORSMiddleware` — CORS headers
 2. `AuditMiddleware` — log all requests
 3. `RateLimitMiddleware` — per-route RPM (api=480, relay=480 default)
 4. `PIIMaskMiddleware` — mask sensitive fields in logs
 5. `RequestTimingMiddleware` — timing headers
-6. `RequestIDMiddleware` — unique request ID per request
+6. `RequestIDMiddleware` — unique request ID per request (innermost, adds request ID)
 
 ### CI Pipeline ([.github/workflows/test.yml](.github/workflows/test.yml))
 
-Three-job GitHub Actions workflow:
-- **backend** — pytest + coverage (≥70%) + ruff lint
+Four-job GitHub Actions workflow:
+- **backend** — pytest + coverage (≥60%) + ruff lint
 - **frontend** — yarn type-check + vitest + eslint
-- **e2e** (depends on both) — seed DB → start backend + frontend → playwright test
+- **e2e** (depends on both, continue-on-error) — seed DB → start backend + frontend → playwright test
+- **deploy** (depends on backend+frontend, only on `v*` tags) — build frontend → SCP to server → SSH deploy
 
 ### Project Structure
 
 ```
 .github/workflows/
-└── test.yml                # GitHub Actions CI (3 jobs)
+└── test.yml                # GitHub Actions CI (4 jobs: backend, frontend, e2e, deploy)
 app/
 ├── main.py                 # FastAPI create_app, lifespan (DB init, budget, fusion seed)
 ├── config.py               # Pydantic-Settings (all env vars)
@@ -199,9 +200,9 @@ tests/
 - The `client` fixture provides an `httpx.AsyncClient` connected via ASGITransport
 - Budget tests use `FakeRedisClient` (in-memory dict) instead of real Redis
 - Live tests in `tests/live/` connect to a running instance with real provider API keys
-- All pricing data (yuan/1M tokens) is tested in `test_channeltype.py` and `test_budget_pricing.py`
+- All pricing data (yuan/1M tokens) is tested in `test_channeltype.py` and `tests/phase2/test_budget_pricing.py`
 - Security tests in `tests/security/` cover RBAC isolation, SQL injection, and path traversal
-- CI enforces ≥70% coverage via `pytest-cov`
+- CI enforces ≥60% coverage via `pytest-cov`
 
 ### Config
 
