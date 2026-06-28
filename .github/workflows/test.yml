@@ -118,10 +118,8 @@ jobs:
           yarn install --immutable
           npx playwright install chromium --with-deps
 
-      - name: Start backend and seed data
+      - name: Seed database
         run: |
-          SQLITE_PATH=/tmp/uniapi_ci.db python -m uvicorn app.main:app --port 8000 &
-          sleep 3
           SQLITE_PATH=/tmp/uniapi_ci.db python3 << 'SEED_SCRIPT'
           import asyncio, os, time
           os.environ['SQLITE_PATH'] = '/tmp/uniapi_ci.db'
@@ -162,12 +160,31 @@ jobs:
 
           asyncio.run(seed())
           SEED_SCRIPT
-          curl -s -o /dev/null -w "Backend: %{http_code}\n" http://localhost:8000/api/status
+
+      - name: Start backend and frontend
+        run: |
+          # Backend API on 8000
+          SQLITE_PATH=/tmp/uniapi_ci.db python -m uvicorn app.main:app --port 8000 &
+          # Frontend dev server on 3001 (vite proxies /api -> 8000)
+          cd web
+          yarn dev &
+          cd ..
+          # Wait for both servers
+          for i in $(seq 1 30); do
+            be=$(curl -s -o /dev/null -w '%{http_code}' http://localhost:8000/api/status 2>/dev/null || echo 0)
+            fe=$(curl -s -o /dev/null -w '%{http_code}' http://localhost:3001 2>/dev/null || echo 0)
+            if [ "$be" = "200" ] && [ "$fe" = "200" ]; then
+              echo "Both servers ready (backend=$be, frontend=$fe)"
+              break
+            fi
+            echo "Waiting... backend=$be frontend=$fe (attempt $i/30)"
+            sleep 2
+          done
 
       - name: Run E2E tests
         run: |
           cd web
-          CI=true BASE_URL=http://localhost:8000 TEST_ADMIN_USERNAME=root \
+          CI=true BASE_URL=http://localhost:3001 TEST_ADMIN_USERNAME=root \
             TEST_ADMIN_PASSWORD=123456 npx playwright test \
             e2e/ \
             --project=chromium --reporter=list
