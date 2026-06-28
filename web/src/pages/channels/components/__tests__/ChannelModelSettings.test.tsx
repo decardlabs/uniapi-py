@@ -56,6 +56,8 @@ const baseDefaults: ChannelForm = {
  */
 interface TestHarnessProps {
   currentCatalogModels?: string[];
+  availableModels?: { id: string; name: string }[];
+  hasCuratedModels?: boolean;
   defaultPricing: string;
   notify?: (options: any) => void;
   onReady: (form: UseFormReturn<ChannelForm>) => void;
@@ -69,6 +71,8 @@ interface TestHarnessProps {
  */
 const TestHarness = ({
   currentCatalogModels = [],
+  availableModels = [],
+  hasCuratedModels = false,
   defaultPricing,
   notify = vi.fn(),
   onReady,
@@ -215,8 +219,9 @@ describe('ChannelModelSettings', () => {
     formRef?.setValue('model_mapping', '{"gpt-4": "openai/gpt-4"}');
     fireEvent.click(screen.getAllByRole('button', { name: 'Format JSON' })[0]);
 
+    // Existing mappings are preserved; only new models get auto-filled
     expect(formRef?.getValues('model_mapping')).toBe(
-      '{\n  "gpt-4": "gpt-4",\n  "deepseek-chat": "deepseek-chat"\n}'
+      '{\n  "gpt-4": "openai/gpt-4",\n  "deepseek-chat": "deepseek-chat"\n}'
     );
   });
 });

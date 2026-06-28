@@ -31,9 +31,7 @@ jobs:
           pip install -e ".[dev]"
 
       - name: Lint with ruff
-        run: |
-          pip install ruff
-          ruff check app/ tests/ --select=E9,F  # Error-level checks only
+        run: ruff check app/ tests/ --select=E9,F  # Error-level checks only
 
       - name: Run tests with coverage
         run: |
@@ -163,12 +161,7 @@ jobs:
           cd web
           CI=true BASE_URL=http://localhost:8000 TEST_ADMIN_USERNAME=root \
             TEST_ADMIN_PASSWORD=123456 npx playwright test \
-            e2e/smoke.spec.ts \
-            e2e/channel-crud.spec.ts \
-            e2e/token-crud.spec.ts \
-            e2e/recharge-flow.spec.ts \
-            e2e/channel-pricing.spec.ts \
-            e2e/pricing-sync.spec.ts \
+            e2e/ \
             --project=chromium --reporter=list
 
       - name: Upload Playwright report

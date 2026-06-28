@@ -4,11 +4,15 @@ on:
   push:
     tags: ['v*']
 
+concurrency:
+  group: deploy
+  cancel-in-progress: false
+
 jobs:
   deploy:
     name: Deploy to api.ccbot.chat
     runs-on: ubuntu-latest
-    timeout-minutes: 15
+    timeout-minutes: 20
 
     steps:
       - uses: actions/checkout@v4
@@ -21,8 +25,7 @@ jobs:
         run: |
           cd web
           corepack enable
-          yarn set version 4.13.0
-          yarn install --frozen-lockfile
+          yarn install --immutable
           yarn build:prod
 
       - name: Package app
