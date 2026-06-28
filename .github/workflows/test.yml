@@ -261,6 +261,14 @@ jobs:
           cp /tmp/deploy.tar.gz .
 
       # ── 3/7. 上传到服务器 ──
+      - name: Clean old package on server
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.SSH_HOST }}
+          username: ${{ secrets.SSH_USER }}
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          script: rm -f /tmp/deploy.tar.gz
+
       - name: Upload to server
         uses: appleboy/scp-action@v0.1.7
         with:
