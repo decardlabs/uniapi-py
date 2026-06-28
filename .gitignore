@@ -10,6 +10,7 @@ __pycache__/
 web/e2e/test-results/
 web/e2e/playwright-report/
 web/playwright-report/
+web/test-results/
 
 # Database
 *.db

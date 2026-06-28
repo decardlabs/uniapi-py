@@ -3,6 +3,7 @@ name: CI
 on:
   push:
     branches: [main, develop]
+    tags: ['v*']
   pull_request:
     branches: [main]
 
@@ -196,3 +197,273 @@ jobs:
           name: playwright-report
           path: web/playwright-report/
           retention-days: 7
+
+  # ── Deploy（仅 tag 推送，依赖 backend + frontend 通过）──
+  deploy:
+    name: Deploy to api.ccbot.chat
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    needs: [backend, frontend]
+    if: startsWith(github.ref, 'refs/tags/v')
+
+    steps:
+      - uses: actions/checkout@v4
+
+      # ── 1/7. 构建前端 ──
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+
+      - name: Build frontend
+        run: |
+          cd web
+          corepack enable
+          yarn install --immutable
+          yarn build
+
+      # ── 版本一致性检查 ──
+      - name: Validate version
+        run: |
+          EXPECTED=$(grep '^version = ' pyproject.toml | sed 's/version = "\(.*\)"/\1/')
+          TAG="${{ github.ref_name }}"
+          TAG="${TAG#v}"
+          if [ "$EXPECTED" != "$TAG" ]; then
+            echo "ERROR: pyproject.toml version ($EXPECTED) != git tag ($TAG)"
+            echo "Please bump pyproject.toml version to match the tag before deploying."
+            exit 1
+          fi
+          echo "Version check: pyproject.toml ($EXPECTED) == tag ($TAG) ✓"
+
+      # ── 2/7. 打包（对齐 deploy.sh 的 rsync exclude 列表）──
+      - name: Package app
+        run: |
+          tar czf /tmp/deploy.tar.gz \
+            --exclude='.venv' \
+            --exclude='.git' \
+            --exclude='__pycache__' \
+            --exclude='*.pyc' \
+            --exclude='.env' \
+            --exclude='uniapi.db*' \
+            --exclude='web/node_modules' \
+            --exclude='web/.yarn/cache' \
+            --exclude='web/src' \
+            --exclude='web/test-results' \
+            --exclude='web/playwright-report' \
+            --exclude='.codegraph' \
+            --exclude='DeepSeek-Reasonix' \
+            --exclude='logs' \
+            --exclude='backups' \
+            --exclude='deploy.sh' \
+            --exclude='.user.ini' \
+            -C . .
+          cp /tmp/deploy.tar.gz .
+
+      # ── 3/7. 上传到服务器 ──
+      - name: Upload to server
+        uses: appleboy/scp-action@v0.1.7
+        with:
+          host: ${{ secrets.SSH_HOST }}
+          username: ${{ secrets.SSH_USER }}
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          source: "deploy.tar.gz"
+          target: "/tmp"
+          overwrite: true
+
+      # ── 4-7/7. 服务器端部署 ──
+      - name: Deploy on server
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.SSH_HOST }}
+          username: ${{ secrets.SSH_USER }}
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          script: |
+            set -euo pipefail
+
+            REMOTE="/www/wwwroot/api.ccbot.chat"
+            PY_SERVICE="uniapi-py.service"
+            VERSION="${{ github.ref_name }}"
+            VERSION="${VERSION#v}"
+
+            echo "========================================="
+            echo " UniAPI Deploy: ${VERSION}"
+            echo " Target: ${REMOTE}"
+            echo "========================================="
+
+            # ── 2/7. 停止服务（防止 SQLite WAL/SHM 被覆盖）──
+            echo ""
+            echo "[2/7] 停止服务..."
+            systemctl stop "$PY_SERVICE" 2>/dev/null || true
+            sleep 1
+            echo "  ✓ 服务已停止"
+
+            # ── 3/7. 解压代码 ──
+            echo ""
+            echo "[3/7] 解压代码..."
+            tar xzf /tmp/deploy.tar.gz -C "$REMOTE" --overwrite
+            rm -f /tmp/deploy.tar.gz
+            echo "  ✓ 代码解压完成"
+
+            # ── 4/7. 服务器环境初始化 ──
+            echo ""
+            echo "[4/7] 配置服务器环境..."
+
+            mkdir -p "$REMOTE/logs" "$REMOTE/backups"
+            echo "  ✓ 目录结构就绪"
+
+            echo "VERSION = \"${VERSION}\"" > "$REMOTE/app/version.py"
+            echo "  ✓ version.py: ${VERSION}"
+
+            # .env（仅首次创建）
+            if [ ! -f "$REMOTE/.env" ]; then
+              RANDOM_SECRET="$(openssl rand -hex 32)"
+              cat > "$REMOTE/.env" << ENVEOF
+            # Server
+            SERVER_PORT=3000
+            DEBUG=false
+
+            # Database
+            SQLITE_PATH=$REMOTE/uniapi.db
+            SQL_DSN=
+
+            # Session
+            SESSION_SECRET=$RANDOM_SECRET
+            COOKIE_MAX_AGE_HOURS=168
+
+            # Token
+            TOKEN_KEY_PREFIX=sk-
+
+            # Rate limits
+            API_RATE_LIMIT=480
+            RELAY_RATE_LIMIT=480
+
+            # Provider API keys — 请手动填写
+            DEEPSEEK_API_KEY=
+            GLM_API_KEY=
+            QWEN_API_KEY=
+            KIMI_API_KEY=
+            MINIMAX_API_KEY=
+
+            # Budget (disabled)
+            BUDGET_REDIS_URL=
+            BUDGET_ENABLED=false
+            DEFAULT_MONTHLY_BUDGET=800.0
+            ENVEOF
+              echo "  ✓ .env 已创建（首次）"
+            else
+              echo "  ✓ .env 已存在，保留不覆盖"
+            fi
+
+            # Python 虚拟环境（仅首次创建）
+            if [ ! -d "$REMOTE/.venv" ]; then
+              python3 -m venv "$REMOTE/.venv"
+              echo "  ✓ .venv 已创建（首次）"
+            else
+              echo "  ✓ .venv 已存在，仅更新依赖"
+            fi
+
+            # 安装/更新依赖
+            cd "$REMOTE"
+            source .venv/bin/activate
+            pip install -e . -q 2>&1 | tail -3
+            echo "  ✓ Python 依赖就绪"
+
+            # 数据库迁移（幂等）
+            echo "  运行数据库迁移..."
+            alembic upgrade head 2>&1 | tail -5 || {
+              echo "  ⚠ 数据库迁移失败，请检查日志"
+              echo "  → 继续部署，如 schema 不匹配服务将启动失败"
+            }
+            echo "  ✓ 数据库迁移完成"
+
+            # 权限设置
+            find "$REMOTE" -not -name '.user.ini' -exec chown root:www {} + 2>/dev/null || true
+            find "$REMOTE" -not -name '.user.ini' -exec chmod 750 {} + 2>/dev/null || true
+            chmod -R 770 "$REMOTE/logs" "$REMOTE/backups" 2>/dev/null || true
+            echo "  ✓ 权限设置完成"
+
+            # ── 5/7. Nginx SSE 优化（仅首次创建）──
+            echo ""
+            echo "[5/7] 配置 Nginx SSE..."
+            NGINX_SSE_CONF="/www/server/panel/vhost/nginx/extension/api.ccbot.chat/proxy_sse.conf"
+            if [ ! -f "$NGINX_SSE_CONF" ]; then
+              mkdir -p "$(dirname "$NGINX_SSE_CONF")"
+              cat > "$NGINX_SSE_CONF" << 'NGINXEOF'
+            proxy_buffering off;
+            proxy_cache off;
+            proxy_read_timeout 300s;
+            proxy_send_timeout 60s;
+            client_max_body_size 16m;
+            NGINXEOF
+              nginx -t && nginx -s reload 2>/dev/null && echo "  ✓ Nginx SSE 配置已创建" || true
+            else
+              echo "  ✓ Nginx SSE 配置已存在，保留不覆盖"
+            fi
+            echo "  → 配置文件: $NGINX_SSE_CONF"
+
+            # ── 6/7. 配置 systemd 服务（每次更新）──
+            echo ""
+            echo "[6/7] 配置系统服务..."
+            cat > "/etc/systemd/system/$PY_SERVICE" << UNITEOF
+            [Unit]
+            Description=UniAPI Python Backend
+            After=network.target
+
+            [Service]
+            Type=simple
+            User=root
+            Group=root
+            WorkingDirectory=$REMOTE
+            ExecStart=$REMOTE/.venv/bin/uvicorn app.main:app --host 127.0.0.1 --port 3000
+            Restart=always
+            RestartSec=5
+            StandardOutput=append:$REMOTE/logs/access.log
+            StandardError=append:$REMOTE/logs/error.log
+            EnvironmentFile=$REMOTE/.env
+            ExecStopPost=/bin/sleep 1
+
+            [Install]
+            WantedBy=multi-user.target
+            UNITEOF
+            echo "  ✓ systemd 服务配置已更新"
+
+            # ── 7/7. 启动服务 & 验证 ──
+            echo ""
+            echo "[7/7] 启动服务..."
+            systemctl daemon-reload
+            systemctl enable "$PY_SERVICE"
+            systemctl restart "$PY_SERVICE"
+            sleep 3
+
+            echo ""
+            echo "验证服务状态..."
+            for i in $(seq 1 45); do
+              code="$(curl -s -o /dev/null -w '%{http_code}' http://127.0.0.1:3000/health 2>/dev/null || true)"
+              if [ "$code" = "200" ]; then
+                echo "  Health: 200 $(curl -s http://127.0.0.1:3000/health)"
+                break
+              fi
+              echo "  等待中... (attempt $i/45, code=$code)"
+              if [ "$i" = "45" ]; then
+                echo ""
+                echo "========================================="
+                echo " ⚠ 健康检查失败（90秒超时）"
+                echo "========================================="
+                echo "服务状态:"
+                systemctl status "$PY_SERVICE" --no-pager || true
+                echo ""
+                echo "最近日志:"
+                journalctl -u "$PY_SERVICE" -n 50 --no-pager || true
+                echo ""
+                echo "应用日志:"
+                tail -50 "$REMOTE/logs/error.log" 2>/dev/null || true
+                exit 1
+              fi
+              sleep 2
+            done
+
+            echo ""
+            echo "========================================="
+            echo " 部署完成: ${VERSION}"
+            echo " 服务状态: $(systemctl is-active $PY_SERVICE)"
+            echo " 版本文件: $(cat $REMOTE/app/version.py)"
+            echo "========================================="
