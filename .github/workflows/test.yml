@@ -312,8 +312,7 @@ jobs:
             mkdir -p "$REMOTE/logs" "$REMOTE/backups"
             echo "  ✓ 目录结构就绪"
 
-            echo "VERSION = \"${VERSION}\"" > "$REMOTE/app/version.py"
-            echo "  ✓ version.py: ${VERSION}"
+            echo "  ✓ version.py: $(cat "$REMOTE/app/version.py")"
 
             # .env（仅首次创建）
             if [ ! -f "$REMOTE/.env" ]; then
