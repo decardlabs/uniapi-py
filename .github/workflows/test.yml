@@ -221,18 +221,20 @@ jobs:
           yarn install --immutable
           yarn build
 
-      # ── 版本一致性检查 ──
-      - name: Validate version
+      # ── 版本自动同步：git tag → pyproject.toml + app/version.py ──
+      - name: Sync version from tag
         run: |
-          EXPECTED=$(grep '^version = ' pyproject.toml | sed 's/version = "\(.*\)"/\1/')
           TAG="${{ github.ref_name }}"
-          TAG="${TAG#v}"
-          if [ "$EXPECTED" != "$TAG" ]; then
-            echo "ERROR: pyproject.toml version ($EXPECTED) != git tag ($TAG)"
-            echo "Please bump pyproject.toml version to match the tag before deploying."
-            exit 1
-          fi
-          echo "Version check: pyproject.toml ($EXPECTED) == tag ($TAG) ✓"
+          VERSION="${TAG#v}"
+          echo "Tag: $TAG  →  Version: $VERSION"
+
+          # 更新 pyproject.toml
+          sed -i "s/^version = \".*\"/version = \"$VERSION\"/" pyproject.toml
+          echo "  pyproject.toml → $VERSION"
+
+          # 更新 app/version.py
+          echo "VERSION = \"$VERSION\"" > app/version.py
+          echo "  app/version.py → $VERSION"
 
       # ── 2/7. 打包（对齐 deploy.sh 的 rsync exclude 列表）──
       - name: Package app
