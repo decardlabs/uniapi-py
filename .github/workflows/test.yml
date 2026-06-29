@@ -164,8 +164,8 @@ jobs:
 
       - name: Start backend and frontend
         run: |
-          # Backend API on 8000
-          SQLITE_PATH=/tmp/uniapi_ci.db python -m uvicorn app.main:app --port 8000 &
+          # Backend API on 8000 (DEBUG=true enables E2E debug endpoint)
+          SQLITE_PATH=/tmp/uniapi_ci.db DEBUG=true python -m uvicorn app.main:app --port 8000 &
           # Frontend dev server on 3001 (vite proxies /api -> 8000)
           cd web
           yarn dev &
