@@ -121,42 +121,7 @@ jobs:
           SQLITE_PATH=/tmp/uniapi_ci.db python -m uvicorn app.main:app --port 8000 &
           sleep 3
           # Seed root user via test fixture
-          python -c "
-import asyncio, os
-os.environ['SQLITE_PATH'] = '/tmp/uniapi_ci.db'
-from app.database import engine, async_session_factory
-from app.models.base import Base
-from app.models.user import User
-from app.services.auth import hash_password
-async def seed():
-    async with engine.begin() as conn:
-        await conn.run_sync(Base.metadata.create_all)
-    async with async_session_factory() as db:
-        from sqlalchemy import select
-        result = await db.execute(select(User).where(User.username == 'root'))
-        if not result.scalar_one_or_none():
-            import time
-            now = int(time.time() * 1000)
-            root = User(
-                username='root',
-                password=hash_password('123456'),
-                display_name='Root',
-                role=100,
-                status=1,
-                group='default',
-                access_token='root-access-token-ci',
-                created_at=now,
-                updated_at=now,
-            )
-            db.add(root)
-            from app.services.auth import create_default_token
-            await create_default_token(db, root.id)
-            from app.models.option import Option
-            for key, value in {'SystemName': 'UniAPI', 'PasswordLoginEnabled': 'true', 'RegisterEnabled': 'true', 'LogConsumeEnabled': 'true', 'QuotaPerUnit': '500000'}.items():
-                db.add(Option(key=key, value=value, created_at=now))
-            await db.commit()
-asyncio.run(seed())
-"
+          SQLITE_PATH=/tmp/uniapi_ci.db python3 scripts/seed_ci_db.py
           curl -s http://localhost:8000/api/status
 
       - name: Start frontend
