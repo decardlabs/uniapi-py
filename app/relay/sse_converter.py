@@ -5,6 +5,7 @@ Reference: docs/API中转站协议转换架构讨论.md §4.2
 from __future__ import annotations
 
 import json
+import time
 from typing import Any, Generator, Iterator
 
 
@@ -322,7 +323,7 @@ def _format_chat_chunk(
 ) -> str:
     """Format a chunk as an OpenAI Chat SSE data line."""
     chunk = {
-        "id": chat_id or f"chatcmpl-{int(__import__('time').time())}",
+        "id": chat_id or f"chatcmpl-{int(time.time())}",
         "object": "chat.completion.chunk",
         "model": model or "unknown",
         "choices": [{"index": 0, "delta": delta}],

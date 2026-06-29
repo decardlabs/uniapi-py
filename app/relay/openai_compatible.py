@@ -8,8 +8,6 @@ OpenAI-compatible providers (including DeepSeek).
 
 import asyncio
 import json
-import time
-import uuid
 from collections.abc import AsyncGenerator
 from typing import Any, Callable, Optional
 
@@ -70,43 +68,6 @@ async def _capture_stream_usage(
                     except Exception:
                         pass
             asyncio.ensure_future(_report())
-
-
-def make_chat_completion_response(
-    model: str,
-    content: str,
-    usage: dict[str, int],
-    reasoning_content: Optional[str] = None,
-) -> dict:
-    """Build a standard OpenAI Chat Completion response dict."""
-    message: dict[str, Any] = {"role": "assistant", "content": content}
-    if reasoning_content:
-        message["reasoning_content"] = reasoning_content
-
-    return {
-        "id": f"chatcmpl-{uuid.uuid4().hex}",
-        "object": "chat.completion",
-        "created": int(time.time()),
-        "model": model,
-        "choices": [
-            {
-                "index": 0,
-                "message": message,
-                "finish_reason": "stop",
-            }
-        ],
-        "usage": {
-            "prompt_tokens": usage.get("prompt_tokens", 0),
-            "completion_tokens": usage.get("completion_tokens", 0),
-            "total_tokens": usage.get("total_tokens", 0),
-            "prompt_tokens_details": {
-                "cached_tokens": usage.get("cached_tokens", 0),
-            },
-            "completion_tokens_details": {
-                "reasoning_tokens": usage.get("reasoning_tokens", 0),
-            },
-        },
-    }
 
 
 

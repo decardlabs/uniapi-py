@@ -105,6 +105,3 @@ class BaseAdaptor(ABC):
         (non-conversion) relay path.
         """
         return body
-
-    def convert_image_request(self, body: dict) -> dict:
-        raise NotImplementedError("Image generation not supported")

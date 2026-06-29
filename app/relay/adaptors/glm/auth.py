@@ -42,14 +42,6 @@ def generate_glm_token(api_key: str) -> str:
     payload = {"api_key": _id, "exp": exp, "timestamp": now}
 
     # Base64url encode
-    def b64url(data: bytes) -> str:
-        return (
-            data.encode("utf-8").hex()
-            if isinstance(data, str)
-            else data.hex()
-        )
-
-    # Use standard base64url encoding
     import base64
 
     def _b64url_encode(data: bytes) -> str:

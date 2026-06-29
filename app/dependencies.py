@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import time
 from typing import Optional
 
 from fastapi import Depends, Request
@@ -103,7 +104,7 @@ async def token_auth(
     if token.status != 1:
         raise UnauthorizedException(message="Token is disabled or expired")
 
-    if token.expired_time > 0 and token.expired_time < __import__("time").time():
+    if token.expired_time > 0 and token.expired_time < time.time():
         raise UnauthorizedException(message="Token has expired")
 
 

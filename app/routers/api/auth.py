@@ -359,7 +359,10 @@ async def models_display(db: AsyncSession = Depends(get_db)):
                 }
 
             if models_data:
-                display[ch.name or adaptor.provider_name] = {"models": models_data}
+                key = ch.name or adaptor.provider_name
+                if key in display:
+                    key = f"{key} ({adaptor.provider_name})"
+                display[key] = {"models": models_data}
     else:
         # No channels configured yet — show all adaptor models as preview
         for adaptor in registry.all_adaptors():

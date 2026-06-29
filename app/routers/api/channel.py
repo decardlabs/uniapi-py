@@ -85,7 +85,7 @@ async def _replace_channel_with_keys(
             status=_get("status", 1),
             base_url=_get("base_url", ""),
             models=_get("models", ""),
-            group=_get("group", _get("groups", "default")),
+            group=_get("groups", "default"),
             weight=_get("weight", 0),
             priority=_get("priority", 0),
             model_mapping=_get("model_mapping"),
