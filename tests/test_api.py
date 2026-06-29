@@ -90,6 +90,55 @@ async def test_models_display(client: AsyncClient):
 
 
 @pytest.mark.asyncio
+async def test_models_display_groups_by_channel_type(client: AsyncClient):
+    """Channels of the same provider type should be merged into one display entry."""
+    from app.database import async_session_factory
+    from app.models.channel import Channel
+    from sqlalchemy import select
+    import time
+
+    now_s = int(time.time())
+    now_ms = now_s * 1000
+
+    async with async_session_factory() as db:
+        # Create two channels of type 27 (MiniMax) with same name
+        ch1 = Channel(
+            id=100, type=27, name="MiniMax", key="sk-mm-e2e-1",
+            status=1, group="default", weight=1,
+            models="MiniMax-M3",
+            created_time=now_s, created_at=now_ms, updated_at=now_ms,
+        )
+        ch2 = Channel(
+            id=101, type=27, name="MiniMax", key="sk-mm-e2e-2",
+            status=1, group="default", weight=1,
+            models="MiniMax-M3",
+            created_time=now_s, created_at=now_ms, updated_at=now_ms,
+        )
+        # Create one channel of type 39 (DeepSeek) — different type
+        ch3 = Channel(
+            id=102, type=39, name="DeepSeek", key="sk-ds-e2e-1",
+            status=1, group="default", weight=1,
+            models="deepseek-v4-flash",
+            created_time=now_s, created_at=now_ms, updated_at=now_ms,
+        )
+        db.add_all([ch1, ch2, ch3])
+        await db.commit()
+
+    response = await client.get("/api/models/display")
+    assert response.status_code == 200
+    data = response.json()
+    assert data["success"] is True
+    display = data["data"]
+
+    # Should have 2 entries (one per type), not 3 (one per channel)
+    assert len(display) == 2, f"Expected 2 type groups, got {len(display)}: {list(display.keys())}"
+
+    # Both MiniMax channels should be merged into one entry
+    minimax_entries = [k for k in display if "MiniMax" in k]
+    assert len(minimax_entries) == 1, f"Expected 1 MiniMax entry, got {len(minimax_entries)}: {minimax_entries}"
+
+
+@pytest.mark.asyncio
 async def test_root_login(client: AsyncClient):
     response = await client.post(
         "/api/user/login",

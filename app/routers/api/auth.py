@@ -300,9 +300,15 @@ async def models_display(db: AsyncSession = Depends(get_db)):
     channels = result.scalars().all()
 
     display = {}
+    seen_types: set[int] = set()
 
     if channels:
         for ch in channels:
+            # Group by channel type — only show the first channel of each type
+            if ch.type in seen_types:
+                continue
+            seen_types.add(ch.type)
+
             adaptor = registry.get(ch.type)
             if not adaptor:
                 continue
@@ -343,11 +349,7 @@ async def models_display(db: AsyncSession = Depends(get_db)):
                 }
 
             if models_data:
-                # Use channel name as key; append #id when name collision occurs
-                key = ch.name or adaptor.provider_name
-                if key in display:
-                    key = f"{key} (#{ch.id})"
-                display[key] = {"models": models_data}
+                display[ch.name or adaptor.provider_name] = {"models": models_data}
     else:
         # No channels configured yet — show all adaptor models as preview
         for adaptor in registry.all_adaptors():
