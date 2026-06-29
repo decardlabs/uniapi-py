@@ -98,7 +98,7 @@ export default defineConfig(({ mode }) => ({
           network: ['axios'],
 
           // Specialized utilities
-          'misc-utils': ['qrcode', 'zustand'],
+          'misc-utils': ['zustand'],
         },
       },
     },
