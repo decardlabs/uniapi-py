@@ -189,18 +189,6 @@ class AdminBudgetUpdateRequest(BaseModel):
     monthly_budget: Optional[float] = None
 
 
-# ── TOTP ──
-
-class TOTPConfirmRequest(BaseModel):
-    """POST /api/user/totp/confirm"""
-    totp_code: str = ""
-
-
-class TOTPDisableRequest(BaseModel):
-    """POST /api/user/totp/disable"""
-    totp_code: str = ""
-
-
 # ── User Self Update ──
 
 class UserSelfUpdateRequest(BaseModel):

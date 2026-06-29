@@ -147,39 +147,6 @@ async def delete_user(
     return GenericApiResponse(message="User deleted")
 
 
-@router.post("/api/user/totp/disable/{user_id}")
-async def disable_user_totp(
-    user_id: int,
-    db: AsyncSession = Depends(get_db),
-    _=Depends(admin_auth),
-):
-    await user_service.admin_disable_totp(db, user_id)
-    return GenericApiResponse(message="TOTP disabled")
-
-
-@router.post("/api/admin/users/{user_id}/unlock")
-async def admin_unlock_user(
-    user_id: int,
-    db: AsyncSession = Depends(get_db),
-    _=Depends(admin_auth),
-):
-    """Unlock a permanently locked user account (sets locked_until=None)."""
-    from app.models.user import User
-    from fastapi import HTTPException
-
-    result = await db.execute(select(User).where(User.id == user_id))
-    user = result.scalar_one_or_none()
-    if not user:
-        raise HTTPException(status_code=404, detail="User not found")
-
-    user.locked_until = None
-    user.failed_login_attempts = 0
-    await db.commit()
-    return GenericApiResponse(
-        data={"unlocked": True, "user_id": user_id, "username": user.username}
-    )
-
-
 @router.get("/api/group/")
 async def list_groups(
     db: AsyncSession = Depends(get_db),

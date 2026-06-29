@@ -1,6 +1,6 @@
 [project]
 name = "uniapi-py"
-version = "0.13.0"
+version = "0.14.0"
 description = "UniAPI Python backend - AI API gateway"
 requires-python = ">=3.11"
 dependencies = [
@@ -15,10 +15,7 @@ dependencies = [
     "itsdangerous>=2.0.0",
     "passlib[bcrypt]>=1.7.0",
     "python-dotenv>=1.0.0",
-    "pyotp>=2.9.0",
     "aiosqlite>=0.20.0",
-    "qrcode[pil]>=7.0",
-    "webauthn>=2.6.0,<3.0",
 ]
 
 [project.optional-dependencies]

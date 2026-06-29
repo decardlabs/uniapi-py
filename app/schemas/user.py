@@ -8,7 +8,6 @@ from pydantic import BaseModel
 class LoginRequest(BaseModel):
     username: str
     password: str
-    totp_code: Optional[str] = None
     turnstile_token: Optional[str] = None
 
 
@@ -18,7 +17,6 @@ class RegisterRequest(BaseModel):
     display_name: Optional[str] = None
     email: Optional[str] = None
     verification_code: Optional[str] = None
-    aff_code: Optional[str] = None
 
 
 class UserResponse(BaseModel):
@@ -44,7 +42,6 @@ class LoginResponse(BaseModel):
     balance: int = 0  # micro-yuan
     group: str
     access_token: Optional[str] = None
-    totp_required: Optional[bool] = None
 
 
 class SelfResponse(BaseModel):

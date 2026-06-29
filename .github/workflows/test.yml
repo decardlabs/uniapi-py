@@ -173,6 +173,8 @@ asyncio.run(seed())
             e2e/channel-crud.spec.ts \
             e2e/token-crud.spec.ts \
             e2e/smoke.spec.ts \
+            e2e/login.spec.ts \
+            e2e/password-change.spec.ts \
             --project=chromium
 
       - name: Upload Playwright report

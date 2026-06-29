@@ -138,29 +138,6 @@ async def test_unauthorized_user_access_fails(client: AsyncClient):
 
 
 @pytest.mark.asyncio
-async def test_admin_totp_disable(client: AsyncClient):
-    cookies = await _admin_login(client)
-    create_resp = await client.post(
-        "/api/user/",
-        json={"username": "totpuser", "password": "password123"},
-        cookies=cookies,
-    )
-    assert create_resp.status_code == 200
-
-    list_resp = await client.get("/api/user/?p=0&size=50", cookies=cookies)
-    users = [u for u in list_resp.json()["data"] if u["username"] == "totpuser"]
-    target_id = users[0]["id"]
-
-    resp = await client.post(
-        f"/api/user/totp/disable/{target_id}",
-        cookies=cookies,
-    )
-    assert resp.status_code == 200
-    data = resp.json()
-    assert data["success"] is True
-
-
-@pytest.mark.asyncio
 async def test_list_groups(client: AsyncClient):
     cookies = await _admin_login(client)
     resp = await client.get("/api/group/", cookies=cookies)

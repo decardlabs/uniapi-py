@@ -107,39 +107,6 @@
     }
   },
   "personal_settings": {
-    "access_token": {
-      "description": "アクセストークンと招待リンクを生成します。",
-      "generate_token": "アクセストークンを生成",
-      "get_invite_link": "招待リンクを取得",
-      "title": "アクセストークンと招待"
-    },
-    "passkey": {
-      "delete_button": "削除",
-      "delete_confirm": "このパスキーを削除してもよろしいですか？",
-      "description": "生体認証、セキュリティキー、またはデバイスを使用してパスワードなしでログインできます。",
-      "errors": {
-        "delete_failed": "パスキーの削除に失敗しました",
-        "load_failed": "パスキーの読み込みに失敗しました",
-        "not_supported": "このブラウザはパスキーに対応していません",
-        "register_failed": "パスキーの登録に失敗しました",
-        "rename_failed": "パスキーの名前変更に失敗しました",
-        "webauthn_unavailable": "WebAuthn は利用できません"
-      },
-      "list_title": "登録済みパスキー",
-      "name_label": "パスキー名",
-      "name_placeholder": "例: MacBook Touch ID",
-      "no_passkeys": "パスキーは登録されていません。",
-      "no_passkeys_desc": "パスキーを追加して、生体認証またはセキュリティキーによるパスワードなしログインを有効にしましょう。",
-      "not_supported_desc": "お使いのブラウザはパスキーに対応していません。Chrome、Safari、Edge などの最新ブラウザをお試しください。",
-      "processing": "処理中...",
-      "recommended": "おすすめ",
-      "register_button": "パスキーを追加",
-      "registered": "登録日",
-      "rename_button": "名前を変更",
-      "rename_placeholder": "新しい名前を入力",
-      "sign_count": "使用回数",
-      "title": "パスキー (WebAuthn)"
-    },
     "profile_info": {
       "bind_email": "Bind Email",
       "bind_success": "Email updated successfully",
@@ -163,7 +130,6 @@
       "username": "ユーザー名"
     },
     "security": {
-      "description": "ログイン方法とアカウント保護を管理します。",
       "password": {
         "confirm_password": "パスワードの確認",
         "confirm_password_placeholder": "新しいパスワードを再入力",
@@ -176,50 +142,7 @@
         "title": "パスワード",
         "update_button": "パスワードを更新",
         "updating": "更新中..."
-      },
-      "status": {
-        "passkey_off": "パスキーなし",
-        "passkey_on": "パスキー有効",
-        "password_off": "パスワードなし",
-        "password_on": "パスワード設定済み",
-        "title": "セキュリティ概要",
-        "totp_off": "TOTP なし",
-        "totp_on": "TOTP 有効"
-      },
-      "title": "アカウントセキュリティ"
-    },
-    "totp": {
-      "cancel": "キャンセル",
-      "confirm": "確認",
-      "description": "2 要素認証でアカウントの安全性を強化します。",
-      "disable_button": "TOTP を無効化",
-      "disable_placeholder": "無効化する TOTP コードを入力",
-      "disabled_desc": "アカウント保護のため 2 要素認証を有効にしましょう。",
-      "disabled_title": "TOTP は無効です",
-      "enable_button": "TOTP を有効化",
-      "enabled_desc": "アカウントは 2 要素認証で保護されています。",
-      "enabled_title": "TOTP は有効です",
-      "errors": {
-        "confirm_failed": "TOTP の確認に失敗しました",
-        "disable_failed": "TOTP を無効化できませんでした",
-        "invalid_code": "6 桁の正しいコードを入力してください",
-        "load_status": "TOTP 状態の取得に失敗しました",
-        "missing_code": "無効化するには TOTP コードを入力してください",
-        "setup_failed": "TOTP の設定に失敗しました"
-      },
-      "processing": "処理中...",
-      "secret_key": "シークレットキー（手入力用）",
-      "setup_desc": "以下の手順で TOTP を設定し、アカウントを保護します。",
-      "setup_instructions_title": "設定手順",
-      "setup_step1": "認証アプリ（Google Authenticator、Authy など）をインストール",
-      "setup_step2": "下の QR コードをスキャンするか、シークレットキーを手入力",
-      "setup_step3": "認証アプリに表示される 6 桁コードを入力",
-      "setup_step4": "\"確認\" をクリックして TOTP を有効化",
-      "setup_title": "二要素認証の設定",
-      "title": "二要素認証 (TOTP)",
-      "verify_code": "確認コード",
-      "verify_placeholder": "認証アプリの 6 桁コードを入力",
-      "verify_placeholder_mobile": "6 桁コードを入力"
+      }
     }
   },
   "settings": {
@@ -236,44 +159,22 @@
     "description": "システム全体の設定とオプションを管理します。",
     "descriptions": {
       "About": "About ページのコンテンツ（Markdown/HTML 対応）。",
-      "ApproximateTokenEnabled": "より高速な概算トークン計測を使ってパフォーマンスを向上させます（やや精度が低下）。",
       "AutomaticDisableChannelEnabled": "失敗が継続するチャネルを自動的に無効化します。",
       "AutomaticEnableChannelEnabled": "状態が回復したチャネルを自動で再有効化します。",
       "ChannelDisableThreshold": "チャネルを自動停止する失敗率（%）。既定値は 5%。",
       "ChatLink": "UI に表示される外部チャット／サポートリンクです。",
-      "DisplayInCurrencyEnabled": "利用量とクォータを通貨表記で表示します。",
-      "DisplayTokenStatEnabled": "トークン統計をログ・ダッシュボードに表示します。",
       "EmailDomainRestrictionEnabled": "下記のドメインのみ登録を許可します。",
       "EmailDomainWhitelist": "許可されたメールドメイン（カンマ区切り。例: gmail.com, example.com）。",
       "EmailVerificationEnabled": "登録やパスワードリセットなどでメール認証を必須にします。",
       "Footer": "サイト全体で表示されるフッターのテキスト／HTML。",
-      "GitHubClientId": "GitHub OAuth のクライアント ID（ログインに使用）。",
-      "GitHubClientSecret": "GitHub OAuth のクライアントシークレット（安全に保存され、表示されません）。",
-      "GitHubOAuthEnabled": "GitHub OAuth ログインを有効化します。クライアント ID/シークレットが必要です。",
-      "GroupRatio": "グループ別の課金係数を定義する JSON マップです。",
       "HomePageContent": "ホームページに表示する内容です。",
-      "LarkClientId": "Lark OAuth 用アプリ ID。",
-      "LarkClientSecret": "Lark OAuth のアプリシークレット（安全に保存）。",
       "LogConsumeEnabled": "利用／消費ログを記録します。オフでストレージを節約できます。",
       "Logo": "ヘッダー／ログイン画面に表示されるロゴ URL。",
       "MessagePusherAddress": "ログイベント通知サービスのエンドポイント。",
       "MessagePusherToken": "通知サービスの認証トークン（安全に保存）。",
       "Notice": "全ユーザー向けのお知らせ内容です。",
-      "OidcAuthorizationEndpoint": "OIDC 認可エンドポイントの URL。",
-      "OidcClientId": "OIDC ログイン開始時に使用するクライアント ID。",
-      "OidcClientSecret": "OIDC のクライアントシークレット（トークン交換時に使用）。",
-      "OidcEnabled": "OpenID Connect ログインを有効化します。エンドポイントと資格情報が必要です。",
-      "OidcTokenEndpoint": "OIDC トークンエンドポイントの URL。",
-      "OidcUserinfoEndpoint": "OIDC userinfo エンドポイントの URL。",
-      "OidcWellKnown": "OIDC well-known URL（例: https://issuer/.well-known/openid-configuration）。",
       "PasswordLoginEnabled": "メール＋パスワードでのログインを許可します。無効化すると OAuth 等が必須になります。",
       "PasswordRegisterEnabled": "メール＋パスワードでの新規登録を許可します。",
-      "PreConsumedQuota": "リクエスト開始時に確保するクォータ。未使用分は課金後に返還されます。",
-      "QuotaForInvitee": "招待されたユーザーに付与されるクォータ報酬です。",
-      "QuotaForInviter": "招待したユーザーに付与されるクォータ報酬です。",
-      "QuotaForNewUser": "新規ユーザーに付与される初期クォータです。",
-      "QuotaPerUnit": "通貨表示用の換算レート。値が大きいほど 1 ドルあたりのクォータが増えます。",
-      "QuotaRemindThreshold": "残りクォータがこの値を下回ると通知します。",
       "RegisterEnabled": "ユーザー登録のマスタースイッチです。オフにすると新規登録が停止します。",
       "RetryTimes": "上流への再試行回数を自動制御します。",
       "SMTPAccount": "SMTP 認証に使用するユーザー名／メールアドレス。",
@@ -284,14 +185,7 @@
       "ServerAddress": "このサーバーの公開ベース URL（リンクやコールバックで使用）。",
       "SystemName": "UI やメールに表示されるシステム名。",
       "Theme": "UI テーマ（modern）。",
-      "TopUpLink": "ユーザーがクォータを購入・チャージするための外部リンク。",
-      "TurnstileCheckEnabled": "重要操作（登録／リセット）で Cloudflare Turnstile を使用します。",
-      "TurnstileSecretKey": "サーバー側で使用する Turnstile シークレットキー（厳重に管理してください）。",
-      "TurnstileSiteKey": "フロントエンドで使用する Turnstile サイトキー。",
-      "WeChatAccountQRCodeImageURL": "ユーザーへ表示する WeChat アカウント QR コード画像の URL。",
-      "WeChatAuthEnabled": "WeChat ログインを有効化します。サーバー設定が必要です。",
-      "WeChatServerAddress": "WeChat ログインリレー／サーバーのベース URL。",
-      "WeChatServerToken": "WeChat 連携の検証トークン（安全に保管）。"
+      "TopUpLink": "ユーザーがクォータを購入・チャージするための外部リンク。"
     },
     "disabled": "無効",
     "enabled": "有効",
@@ -320,21 +214,9 @@
         "description": "可観測性と下流連携を調整します。",
         "title": "ログ・メトリクス・連携"
       },
-      "oauth": {
-        "description": "外部 ID プロバイダーを接続し、シームレスなログインを提供します。",
-        "title": "OAuth / SSO プロバイダー"
-      },
       "other": {
         "description": "まだカテゴリ化されていない設定キーです。",
         "title": "その他の設定"
-      },
-      "quota": {
-        "description": "クォータ・課金係数・通貨表示を管理します。",
-        "title": "クォータと課金"
-      },
-      "security": {
-        "description": "ボット対策とセキュリティチェックを設定します。",
-        "title": "ボット対策とセキュリティ"
       }
     },
     "info_about": "{{key}} の情報",

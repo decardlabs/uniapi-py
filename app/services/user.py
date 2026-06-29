@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 import re
-import secrets
 import time
 import uuid
 from typing import Optional
@@ -17,6 +16,7 @@ from app.models.option import Option
 from app.models.token import Token
 from app.models.user import User
 from app.services.auth import create_default_token, hash_password, verify_password
+from app.services.email import verify_code
 
 
 def _uuid4() -> str:
@@ -64,7 +64,6 @@ async def register_user(
     display_name: Optional[str] = None,
     email: Optional[str] = None,
     verification_code: Optional[str] = None,
-    aff_code: Optional[str] = None,
 ) -> User:
     existing = await db.execute(select(User).where(User.username == username))
     if existing.scalar_one_or_none():
@@ -74,10 +73,14 @@ async def register_user(
     if strength_error:
         raise HTTPException(status_code=400, detail=strength_error)
 
-    now = int(time.time() * 1000)
-    # Auto-generate a unique affiliate code for the new user
-    user_aff_code = secrets.token_hex(8)
+    # Verify email code if email is provided
+    if email and verification_code:
+        if not verify_code(email, verification_code):
+            raise HTTPException(status_code=400, detail="验证码错误或已过期")
+    elif email and not verification_code:
+        raise HTTPException(status_code=400, detail="请先获取邮箱验证码")
 
+    now = int(time.time() * 1000)
     user = User(
         username=username,
         password=hash_password(password),
@@ -88,27 +91,15 @@ async def register_user(
         balance=2000000,
         group="default",
         access_token=_uuid4(),
-        aff_code=user_aff_code,
         created_at=now,
         updated_at=now,
     )
 
-    # Process affiliate invitation
-    if aff_code:
-        inviter_result = await db.execute(
-            select(User).where(User.aff_code == aff_code)
-        )
-        inviter = inviter_result.scalar_one_or_none()
-        if inviter:
-            user.inviter_id = inviter.id
     db.add(user)
     await db.flush()
     await create_default_token(db, user.id)
     await db.commit()
     return user
-
-
-MAX_LOGIN_ATTEMPTS = 5
 
 
 async def login_user(
@@ -121,46 +112,15 @@ async def login_user(
     user = result.scalar_one_or_none()
 
     if not user:
-        # Perform a dummy DB write to make timing consistent with the
-        # wrong-password case (which writes failed_login_attempts).
-        # Without this, an attacker can enumerate valid usernames
-        # by measuring response time.
         await db.flush()
         raise HTTPException(status_code=401, detail="用户名或密码错误")
 
     if user.status != 1:
         raise HTTPException(status_code=401, detail="Account is disabled")
 
-    # Check if account is locked (locked_until = -1 means permanent until admin unlocks)
-    if user.locked_until == -1 or (user.locked_until is not None and user.locked_until > now):
-        raise HTTPException(status_code=423, detail="帐户已被锁定，请使用邮箱重置密码")
-
     if not verify_password(password, user.password):
-        user.failed_login_attempts += 1
-        remaining = MAX_LOGIN_ATTEMPTS - user.failed_login_attempts
-
-        if user.failed_login_attempts >= MAX_LOGIN_ATTEMPTS:
-            # Lock permanently until admin unlocks (locked_until = -1)
-            user.locked_until = -1
-            user.updated_at = now
-            await db.commit()
-            raise HTTPException(
-                status_code=423,
-                detail="密码错误次数过多，帐户已被锁定，请使用邮箱重置密码",
-            )
-
-        user.updated_at = now
         await db.commit()
-        raise HTTPException(
-            status_code=401,
-            detail=f"密码错误，请重新输入（还剩 {remaining} 次尝试机会）",
-        )
-
-    # Successful login: reset failed attempts counter
-    if user.failed_login_attempts > 0:
-        user.failed_login_attempts = 0
-        user.updated_at = now
-        await db.commit()
+        raise HTTPException(status_code=401, detail="密码错误")
 
     return user
 
@@ -262,9 +222,6 @@ async def admin_update_user(
         user.display_name = display_name
     if password is not None:
         user.password = hash_password(password)
-        # Reset lock counters on admin password reset
-        user.failed_login_attempts = 0
-        user.locked_until = None
     if email is not None:
         user.email = email
     if quota is not None:
@@ -287,16 +244,6 @@ async def admin_delete_user(db: AsyncSession, user_id: int) -> None:
     user.status = 3  # Deleted
     user.username = f"deleted_{_uuid4()[:8]}"
     user.updated_at = now
-    await db.commit()
-
-
-async def admin_disable_totp(db: AsyncSession, user_id: int) -> None:
-    user = await get_user_by_id(db, user_id)
-    if not user:
-        raise HTTPException(status_code=404, detail="User not found")
-
-    user.totp_secret = None
-    user.updated_at = int(time.time() * 1000)
     await db.commit()
 
 

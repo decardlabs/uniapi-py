@@ -37,35 +37,6 @@ const OPTION_GROUPS: OptionGroup[] = [
     ],
   },
   {
-    id: 'oauth',
-    title: 'OAuth / SSO Providers',
-    description: 'Connect third-party identity providers for seamless sign-in.',
-    keys: [
-      'GitHubOAuthEnabled',
-      'GitHubClientId',
-      'GitHubClientSecret',
-      'OidcEnabled',
-      'OidcClientId',
-      'OidcClientSecret',
-      'OidcWellKnown',
-      'OidcAuthorizationEndpoint',
-      'OidcTokenEndpoint',
-      'OidcUserinfoEndpoint',
-      'LarkClientId',
-      'LarkClientSecret',
-      'WeChatAuthEnabled',
-      'WeChatServerAddress',
-      'WeChatServerToken',
-      'WeChatAccountQRCodeImageURL',
-    ],
-  },
-  {
-    id: 'security',
-    title: 'Anti-bot & Security',
-    description: 'Configure bot protection and security checks.',
-    keys: ['TurnstileCheckEnabled', 'TurnstileSiteKey', 'TurnstileSecretKey'],
-  },
-  {
     id: 'email',
     title: 'Email (SMTP)',
     description: 'Set up outbound email delivery.',
@@ -84,23 +55,6 @@ const OPTION_GROUPS: OptionGroup[] = [
     keys: ['TopUpLink', 'ChatLink', 'ServerAddress'],
   },
   {
-    id: 'quota',
-    title: 'Quota & Billing',
-    description: 'Manage quotas, billing ratios, and currency presentation.',
-    keys: [
-      'QuotaForNewUser',
-      'QuotaForInviter',
-      'QuotaForInvitee',
-      'QuotaRemindThreshold',
-      'PreConsumedQuota',
-      'GroupRatio',
-      'QuotaPerUnit',
-      'DisplayInCurrencyEnabled',
-      'DisplayTokenStatEnabled',
-      'ApproximateTokenEnabled',
-    ],
-  },
-  {
     id: 'channels',
     title: 'Channels & Reliability',
     description: 'Automatically react to upstream channel health and retry behavior.',
@@ -116,10 +70,6 @@ const OPTION_GROUPS: OptionGroup[] = [
 
 const SENSITIVE_OPTION_KEYS = new Set<string>([
   'SMTPToken',
-  'GitHubClientSecret',
-  'OidcClientSecret',
-  'LarkClientSecret',
-  'WeChatServerToken',
   'MessagePusherToken',
 ]);
 
@@ -133,16 +83,9 @@ const BOOLEAN_OPTION_KEYS = new Set<string>([
   'RegisterEnabled',
   'EmailVerificationEnabled',
   'EmailDomainRestrictionEnabled',
-  'GitHubOAuthEnabled',
-  'OidcEnabled',
-  'WeChatAuthEnabled',
-  'TurnstileCheckEnabled',
   'AutomaticDisableChannelEnabled',
   'AutomaticEnableChannelEnabled',
-  'ApproximateTokenEnabled',
   'LogConsumeEnabled',
-  'DisplayInCurrencyEnabled',
-  'DisplayTokenStatEnabled',
 ]);
 
 const isBooleanOptionKey = (key: string) => BOOLEAN_OPTION_KEYS.has(key);
@@ -170,35 +113,6 @@ export function SystemSettings() {
         ],
       },
       {
-        id: 'oauth',
-        title: t('system_settings.groups.oauth.title'),
-        description: t('system_settings.groups.oauth.description'),
-        keys: [
-          'GitHubOAuthEnabled',
-          'GitHubClientId',
-          'GitHubClientSecret',
-          'OidcEnabled',
-          'OidcClientId',
-          'OidcClientSecret',
-          'OidcWellKnown',
-          'OidcAuthorizationEndpoint',
-          'OidcTokenEndpoint',
-          'OidcUserinfoEndpoint',
-          'LarkClientId',
-          'LarkClientSecret',
-          'WeChatAuthEnabled',
-          'WeChatServerAddress',
-          'WeChatServerToken',
-          'WeChatAccountQRCodeImageURL',
-        ],
-      },
-      {
-        id: 'security',
-        title: t('system_settings.groups.security.title'),
-        description: t('system_settings.groups.security.description'),
-        keys: ['TurnstileCheckEnabled', 'TurnstileSiteKey', 'TurnstileSecretKey'],
-      },
-      {
         id: 'email',
         title: t('system_settings.groups.email.title'),
         description: t('system_settings.groups.email.description'),
@@ -215,23 +129,6 @@ export function SystemSettings() {
         title: t('system_settings.groups.links.title'),
         description: t('system_settings.groups.links.description'),
         keys: ['TopUpLink', 'ChatLink', 'ServerAddress'],
-      },
-      {
-        id: 'quota',
-        title: t('system_settings.groups.quota.title'),
-        description: t('system_settings.groups.quota.description'),
-        keys: [
-          'QuotaForNewUser',
-          'QuotaForInviter',
-          'QuotaForInvitee',
-          'QuotaRemindThreshold',
-          'PreConsumedQuota',
-          'GroupRatio',
-          'QuotaPerUnit',
-          'DisplayInCurrencyEnabled',
-          'DisplayTokenStatEnabled',
-          'ApproximateTokenEnabled',
-        ],
       },
       {
         id: 'channels',
@@ -260,29 +157,6 @@ export function SystemSettings() {
       EmailDomainRestrictionEnabled: t('system_settings.descriptions.EmailDomainRestrictionEnabled'),
       EmailDomainWhitelist: t('system_settings.descriptions.EmailDomainWhitelist'),
 
-      // OAuth / SSO Providers
-      GitHubOAuthEnabled: t('system_settings.descriptions.GitHubOAuthEnabled'),
-      GitHubClientId: t('system_settings.descriptions.GitHubClientId'),
-      GitHubClientSecret: t('system_settings.descriptions.GitHubClientSecret'),
-      OidcEnabled: t('system_settings.descriptions.OidcEnabled'),
-      OidcClientId: t('system_settings.descriptions.OidcClientId'),
-      OidcClientSecret: t('system_settings.descriptions.OidcClientSecret'),
-      OidcWellKnown: t('system_settings.descriptions.OidcWellKnown'),
-      OidcAuthorizationEndpoint: t('system_settings.descriptions.OidcAuthorizationEndpoint'),
-      OidcTokenEndpoint: t('system_settings.descriptions.OidcTokenEndpoint'),
-      OidcUserinfoEndpoint: t('system_settings.descriptions.OidcUserinfoEndpoint'),
-      LarkClientId: t('system_settings.descriptions.LarkClientId'),
-      LarkClientSecret: t('system_settings.descriptions.LarkClientSecret'),
-      WeChatAuthEnabled: t('system_settings.descriptions.WeChatAuthEnabled'),
-      WeChatServerAddress: t('system_settings.descriptions.WeChatServerAddress'),
-      WeChatServerToken: t('system_settings.descriptions.WeChatServerToken'),
-      WeChatAccountQRCodeImageURL: t('system_settings.descriptions.WeChatAccountQRCodeImageURL'),
-
-      // Anti-bot / Security
-      TurnstileCheckEnabled: t('system_settings.descriptions.TurnstileCheckEnabled'),
-      TurnstileSiteKey: t('system_settings.descriptions.TurnstileSiteKey'),
-      TurnstileSecretKey: t('system_settings.descriptions.TurnstileSecretKey'),
-
       // Email (SMTP)
       SMTPServer: t('system_settings.descriptions.SMTPServer'),
       SMTPPort: t('system_settings.descriptions.SMTPPort'),
@@ -303,18 +177,6 @@ export function SystemSettings() {
       TopUpLink: t('system_settings.descriptions.TopUpLink'),
       ChatLink: t('system_settings.descriptions.ChatLink'),
       ServerAddress: t('system_settings.descriptions.ServerAddress'),
-
-      // Quota & Billing
-      QuotaForNewUser: t('system_settings.descriptions.QuotaForNewUser'),
-      QuotaForInviter: t('system_settings.descriptions.QuotaForInviter'),
-      QuotaForInvitee: t('system_settings.descriptions.QuotaForInvitee'),
-      QuotaRemindThreshold: t('system_settings.descriptions.QuotaRemindThreshold'),
-      PreConsumedQuota: t('system_settings.descriptions.PreConsumedQuota'),
-      GroupRatio: t('system_settings.descriptions.GroupRatio'),
-      QuotaPerUnit: t('system_settings.descriptions.QuotaPerUnit'),
-      DisplayInCurrencyEnabled: t('system_settings.descriptions.DisplayInCurrencyEnabled'),
-      DisplayTokenStatEnabled: t('system_settings.descriptions.DisplayTokenStatEnabled'),
-      ApproximateTokenEnabled: t('system_settings.descriptions.ApproximateTokenEnabled'),
 
       // Channels & Reliability
       AutomaticDisableChannelEnabled: t('system_settings.descriptions.AutomaticDisableChannelEnabled'),

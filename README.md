@@ -8,16 +8,16 @@
 
 ## Status
 
-🚧 **All phases complete** — 634 tests, all GREEN (11 skipped)
+🚧 **All phases complete** — 745 tests, all GREEN (11 skipped)
 
 | Phase | 内容 | 状态 | 测试数 |
 |-------|------|------|--------|
 | 1 | Auth, Status, DeepSeek Chat Completions | ✅ | 28 |
-| 2 | Management API CRUD, Billing | ✅ | 148 |
+| 2 | Management API CRUD, Billing | ✅ | ~200 |
 | 3 | Multi-format: NATIVE_FORMATS routing | ✅ | 7 |
-| 4 | Extensibility + Budget Pool Management | ✅ | 46 |
-| 5 | Upstream 429 retry + failover | ✅ | 273 |
-| 6 | Recharge & Redemption codes | ✅ | 48 |
+| 4 | Extensibility + Budget Pool Management | ✅ | ~50 |
+| 5 | Upstream 429 retry + failover | ✅ | ~310 |
+| 6 | Recharge & Redemption codes | ✅ | ~55 |
 
 ### 已接入供应商（5 家）
 
@@ -62,7 +62,7 @@ curl -X POST http://localhost:8000/api/user/login \
 | SQLite 数据库锁错误 | 并发写 SQLite 触发锁超时 | 开发环境正常现象，生产应切换为 MySQL (`SQL_DSN`) |
 | `ModuleNotFoundError` | 依赖未安装或虚拟环境未激活 | 确认 `.venv/bin/activate` 已执行；`pip list` 检查依赖 |
 | `401 Unauthorized` | API Key 错误或未设置 | 检查 `Authorization: Bearer` 头部和对应供应商环境变量 |
-| Cursor/Claude Code 调用无响应 | Base URL 配置错误 | 参见 [大模型接入协议研究_Review.md](docs/大模型接入协议研究_Review.md#二各厂商协议兼容端点--调用注意事项) |
+| Cursor/Claude Code 调用无响应 | Base URL 配置错误 | 参见 [docs/大模型接入协议研究_Review.md](docs/大模型接入协议研究_Review.md) |
 
 ### 连接前端
 
@@ -107,83 +107,6 @@ Claude Code → POST /v1/messages → relay_mode=CLAUDE_MESSAGES
   → ❌ 否 → convert_request() 转 Chat 格式 → /v1/chat/completions
 ```
 
-## Project Structure
-
-```
-uniapi-py/
-├── app/
-│   ├── main.py              # FastAPI app, lifespan, router 注册
-│   ├── config.py            # Pydantic-Settings (env vars)
-│   ├── database.py          # SQLAlchemy async engine + session
-│   ├── dependencies.py      # DI (UserAuth, AdminAuth, RootAuth, TokenAuth)
-│   ├── exceptions.py        # 统一异常处理 + handler
-│   ├── error_codes.py       # 错误码定义 (UNIAPI_ 前缀)
-│   ├── middleware.py         # Audit, PIIMask, RateLimit, RequestTiming, RequestID
-│   ├── version.py           # 自动生成版本号 (git describe)
-│   ├── models/              # SQLAlchemy ORM
-│   │   ├── user.py, token.py, channel.py, ability.py
-│   │   ├── log.py, option.py, budget.py
-│   │   ├── recharge.py, redemption.py, passkey.py
-│   │   └── base.py
-│   ├── schemas/             # Pydantic v2 validation
-│   │   ├── common.py, user.py, relay.py, error.py
-│   │   └── recharge.py, redemption.py
-│   ├── services/            # 业务逻辑
-│   │   ├── auth.py, user.py, token.py
-│   │   ├── recharge.py, redemption.py
-│   │   ├── email.py, totp.py, webauthn.py
-│   ├── budget/              # 预算系统
-│   │   ├── arbiter.py, pricing.py, redis.py
-│   ├── routers/
-│   │   ├── api/             # 管理 API (/api/*)
-│   │   └── v1/              # 中继 API (/v1/*)
-│   ├── relay/               # 上游供应商中继
-│   │   ├── adaptor.py       # BaseAdaptor ABC
-│   │   ├── registry.py      # 供应商注册表
-│   │   ├── mode.py          # RelayMode enum
-│   │   ├── meta.py          # RelayMeta dataclass
-│   │   ├── converter.py     # anthropic_to_chat(), responses_to_chat()
-│   │   ├── sse_converter.py # SSE 格式转换
-│   │   ├── channeltype.py   # 渠道类型常量
-│   │   ├── upstream_errors.py # 上游错误映射
-│   │   ├── openai_compatible.py  # SSE streaming + shared relay
-│   │   └── adaptors/
-│   │       ├── deepseek/    # DeepSeek adaptor
-│   │       ├── glm/         # GLM (Zhipu/智谱) adaptor
-│   │       ├── qwen/        # Qwen (百炼) adaptor
-│   │       ├── kimi/        # Kimi (Moonshot) adaptor
-│   │       └── minimax/     # MiniMax adaptor
-│   └── fusion/              # 多模型融合引擎
-│       ├── schemas.py
-│       ├── adapters/        # Provider adapters (5 providers)
-│       └── core/            # FusionEngine, Judge, Synthesizer
-└── tests/
-    ├── conftest.py                  # 测试 fixtures + FakeRedisClient
-    ├── test_api.py                  # Phase 1: API 集成 (5 tests)
-    ├── test_deepseek_normalize.py   # Phase 1: DeepSeek 归一化 (23 tests)
-    ├── test_channeltype.py          # 渠道类型测试 (15 tests)
-    ├── test_relay_comparison.py     # Relay 对比测试 (3 tests)
-    ├── phase2/                      # Phase 2: 管理 API (128 tests)
-    ├── phase3/                      # Phase 3: 多格式 (7 tests)
-    ├── phase4/                      # Phase 4: 可扩展性 (14 tests)
-    ├── phase5/                      # Phase 5: 429重试与退路 (273 tests)
-    ├── phase6/                      # Phase 6: 充值 & 兑换码 (48 tests)
-    ├── glm/                         # GLM adaptor (13 tests)
-    ├── test_cache_analytics.py     # Cache analytics (8 tests)
-    ├── manual/                      # 手动测试工具
-    └── live/                        # 实时测试框架
-        ├── live_test.py             # 入口
-        ├── config.py                # 环境变量配置
-        ├── client.py                # HTTP 客户端 (含重试+SSE流式)
-        ├── runner.py                # 运行器 + 报告
-        ├── test_token_accuracy.py   # Token 精度测试
-        └── scenarios/               # 测试场景
-            ├── chat.py              # Chat Completion 测试
-            ├── stream.py            # 流式测试
-            ├── claude_messages.py   # Claude Messages 测试
-            └── tools.py             # 工具调用测试
-```
-
 ## API 端点
 
 ### 管理 API (`/api/*`)
@@ -210,9 +133,7 @@ uniapi-py/
 | `POST /api/user/register` | Public | 注册新用户 |
 | `GET /api/user/logout` | UserAuth | 登出 |
 | `GET /api/user/self` | UserAuth | 当前用户信息 |
-| `PUT /api/user/self` | UserAuth | 更新个人信息 |
-| `GET /api/user/aff` | UserAuth | 推广信息 |
-| `GET /api/user/token` | UserAuth | 获取 access token |
+| `PUT /api/user/self` | UserAuth | 更新个人信息（显示名、邮箱、密码） |
 | `GET /api/user/get-by-token` | UserAuth | 通过 token 获取用户 |
 | `GET /api/user/available_models` | UserAuth | 可用模型 |
 
@@ -226,7 +147,6 @@ uniapi-py/
 | `PUT /api/user/` | 更新用户 |
 | `GET /api/user/{user_id}` | 获取用户详情 |
 | `DELETE /api/user/{user_id}` | 删除用户 |
-| `POST /api/user/totp/disable/{user_id}` | 禁用 TOTP |
 | `GET /api/group/` | 用户组列表 |
 
 #### Token 管理
@@ -316,6 +236,30 @@ uniapi-py/
 | `PUT /api/v1/admin/budgets/{user_id}` | AdminAuth | 更新用户预算 |
 | `POST /api/v1/admin/budgets/reset/{user_id}` | AdminAuth | 重置用户预算 |
 
+#### 认证扩展
+
+| Endpoint | Auth | 描述 |
+|----------|------|------|
+| `GET /api/verification?email=x&turnstile=x` | Public | 发送邮箱验证码 |
+| `GET /api/reset_password?email=x&turnstile=x` | Public | 发送密码重置邮件 |
+| `POST /api/user/reset` | Public | 确认密码重置 |
+| `GET /api/oauth/state` | Public | OAuth CSRF state |
+| `GET /api/oauth/github` | Public | GitHub OAuth 回调 |
+| `GET /api/user/cache-analytics` | UserAuth | 缓存命中分析 |
+
+#### MCP 服务器管理
+
+| Endpoint | Auth | 描述 |
+|----------|------|------|
+| `GET /api/mcp_servers/` | UserAuth | 列出 MCP 服务器 |
+| `GET /api/mcp_servers/{server_id}` | UserAuth | 获取 MCP 服务器详情 |
+| `POST /api/mcp_servers/` | UserAuth | 创建 MCP 服务器 |
+| `PUT /api/mcp_servers/{server_id}` | UserAuth | 更新 MCP 服务器 |
+| `DELETE /api/mcp_servers/{server_id}` | UserAuth | 删除 MCP 服务器 |
+| `POST /api/mcp_servers/{server_id}/sync` | UserAuth | 同步 MCP 工具 |
+| `POST /api/mcp_servers/{server_id}/test` | UserAuth | 测试 MCP 连接 |
+| `GET /api/mcp_servers/{server_id}/tools` | UserAuth | 获取 MCP 工具列表 |
+
 #### 前端页面 (Web)
 
 | Endpoint | 描述 |
@@ -341,40 +285,6 @@ uniapi-py/
 - **中继 API**: Bearer token (`Authorization: Bearer <key>`)，支持 `token_key:channel_id` 格式锚定渠道
 - **响应格式**: `{"success": bool, "message"?: str, "data"?: T, "total"?: int}`
 
-#### 认证扩展
-
-| Endpoint | Auth | 描述 |
-|----------|------|------|
-| `GET /api/verification?email=x&turnstile=x` | Public | 发送邮箱验证码 |
-| `GET /api/reset_password?email=x&turnstile=x` | Public | 发送密码重置邮件 |
-| `POST /api/user/reset` | Public | 确认密码重置 |
-| `GET /api/oauth/state` | Public | OAuth CSRF state |
-| `GET /api/oauth/github` | Public | GitHub OAuth 回调 |
-| `GET /api/user/totp/status` | UserAuth | TOTP 状态查询 |
-| `GET /api/user/totp/setup` | UserAuth | TOTP 设置信息 |
-| `POST /api/user/totp/confirm` | UserAuth | 确认启用 TOTP |
-| `POST /api/user/totp/disable` | UserAuth | 禁用 TOTP |
-| `GET /api/user/passkey` | UserAuth | Passkey 列表 |
-| `POST /api/user/passkey/register/begin` | UserAuth | Passkey 注册开始 |
-| `POST /api/user/passkey/register/finish` | UserAuth | Passkey 注册完成 |
-| `POST /api/user/passkey/login/begin` | Public | Passkey 登录开始 |
-| `POST /api/user/passkey/login/finish` | Public | Passkey 登录完成 |
-| `DELETE /api/user/passkey/{passkey_id}` | UserAuth | 删除 Passkey |
-| `GET /api/user/cache-analytics` | UserAuth | 缓存命中分析 |
-
-#### MCP 服务器管理 (Admin)
-
-| Endpoint | Auth | 描述 |
-|----------|------|------|
-| `GET /api/mcp_servers/` | UserAuth | 列出 MCP 服务器 |
-| `GET /api/mcp_servers/{server_id}` | UserAuth | 获取 MCP 服务器详情 |
-| `POST /api/mcp_servers/` | UserAuth | 创建 MCP 服务器 |
-| `PUT /api/mcp_servers/{server_id}` | UserAuth | 更新 MCP 服务器 |
-| `DELETE /api/mcp_servers/{server_id}` | UserAuth | 删除 MCP 服务器 |
-| `POST /api/mcp_servers/{server_id}/sync` | UserAuth | 同步 MCP 工具 |
-| `POST /api/mcp_servers/{server_id}/test` | UserAuth | 测试 MCP 连接 |
-| `GET /api/mcp_servers/{server_id}/tools` | UserAuth | 获取 MCP 工具列表 |
-
 ## 配置
 
 | Env Var | 默认值 | 说明 |
@@ -383,7 +293,8 @@ uniapi-py/
 | `DEBUG` | false | 调试模式 |
 | `SQLITE_PATH` | uniapi.db | SQLite 数据库路径 |
 | `SQL_DSN` | — | MySQL/PostgreSQL DSN |
-| `SESSION_SECRET` | auto (随机生成，重启后所有会话失效) | Session cookie 签名密钥 |
+| `SESSION_SECRET` | auto (随机生成) | Session cookie 签名密钥 |
+| `SESSION_COOKIE_SECURE` | true | Secure cookie 标志（生产必 true） |
 | `TOKEN_KEY_PREFIX` | sk- | Token 密钥前缀 |
 | `API_RATE_LIMIT` | 480 | 管理 API 每分钟请求上限 |
 | `RELAY_RATE_LIMIT` | 480 | 中继 API 每分钟请求上限 |
@@ -404,7 +315,7 @@ uniapi-py/
 
 ## 测试
 
-### 单元测试 (679 tests, 11 skipped)
+### 单元测试 (745 tests, 11 skipped)
 
 ```bash
 pytest tests/ -v
@@ -414,15 +325,11 @@ pytest tests/ -v
 
 ```bash
 # 启动 uniapi-py 后，另一个终端：
-
 UNIAPI_TOKEN=sk-xxx DEEPSEEK_API_KEY=sk-xxx \
   python -m tests.live.live_test
 
 # 快速运行
 python -m tests.live.live_test --quick
-
-# 仅流式
-python -m tests.live.live_test --stream
 
 # 指定供应商
 UNIAPI_PROVIDER=glm GLM_API_KEY=id.secret \
@@ -450,13 +357,13 @@ UNIAPI_PROVIDER=glm GLM_API_KEY=id.secret \
 # app/relay/adaptors/myprovider/adaptor.py
 class MyProviderAdaptor(BaseAdaptor):
     provider_name = "myprovider"
-    NATIVE_FORMATS = {"chat_completions"}               # 声明原生支持格式
+    NATIVE_FORMATS = {"chat_completions"}
     DEFAULT_BASE_URL = "https://api.myprovider.com/v1"
 
-    def get_request_url(self, meta, relay_mode=1): ...   # URL 构造
-    def setup_request_headers(self, api_key): ...         # 认证
-    async def convert_request(self, body, meta): ...      # 请求转换
-    def get_supported_models(self): ...                   # 模型定价
+    def get_request_url(self, meta, relay_mode=1): ...
+    def setup_request_headers(self, api_key): ...
+    async def convert_request(self, body, meta): ...
+    def get_supported_models(self): ...
 
 # app/relay/registry.py
 from app.relay.adaptors.myprovider.adaptor import MyProviderAdaptor
@@ -484,7 +391,6 @@ registry.register(MY_CHANNEL_TYPE, MyProviderAdaptor)
 |------|------|------|
 | **v0.10.20** | 2026-06-23 | 新增充值 & 兑换码完整子系统（RechargeRequest/RedemptionCode model + schema + service + CRUD endpoint + 48 tests）；MCP 服务器管理后端 CRUD；预算池管理系统 |
 | **v0.10.19** | 2026-06-23 | 修复 relay.py `except Exception` 缺少 `as exc` 导致上游超时后 UnboundLocalError 连环崩溃；修复前端 TS 类型错误（lazy import、recharge 类型对齐） |
-| **v0.10.18** | 2026-06-23 | （版本跳号） |
 | **v0.10.17** | 2026-06-22 | 修复 GLM Coding Plan 特殊错误处理；MiniMax `prompt_tokens=0` 时 `cached_tokens` 解析错误；流式请求配额计算 bug 修复 |
 | **v0.10.16** | 2026-06-22 | 429 exponential backoff retry（同渠道）；新增 `upstream_retry_max` / `upstream_retry_backoff_base` 配置项 |
 | **v0.10.15** | 2026-06-22 | 修复流式中继请求中急切检查上游 HTTP 状态（streaming relay fix） |
@@ -582,8 +488,6 @@ curl https://api.ccbot.chat/api/status  # → {"success":true,"data":{"version":
 | 路径 | 说明 |
 |------|------|
 | **`/www/wwwroot/api.ccbot.chat/uniapi.db`** | **SQLite 数据库文件（主数据库）** |
-| `/www/wwwroot/api.ccbot.chat/uniapi.db-wal` | SQLite WAL 日志（写入缓冲，崩溃恢复用） |
-| `/www/wwwroot/api.ccbot.chat/uniapi.db-shm` | SQLite 共享内存索引（WAL 索引） |
 | `/www/wwwroot/api.ccbot.chat/logs/access.log` | 应用访问日志（stdout） |
 | `/www/wwwroot/api.ccbot.chat/logs/error.log` | 应用错误日志（stderr） |
 | `/www/wwwroot/api.ccbot.chat/.env` | 环境变量配置（首次部署生成，后续不覆盖） |
@@ -591,11 +495,7 @@ curl https://api.ccbot.chat/api/status  # → {"success":true,"data":{"version":
 **数据库备份**（手动执行）：
 
 ```bash
-# 在服务器上备份（WAL 模式下安全复制）
 ssh root@api.ccbot.chat "cd /www/wwwroot/api.ccbot.chat && sqlite3 uniapi.db '.backup /www/wwwroot/api.ccbot.chat/backups/uniapi-$(date +%Y%m%d).db'"
-
-# 拉取到本地
-scp root@api.ccbot.chat:/www/wwwroot/api.ccbot.chat/uniapi.db ./uniapi-backup.db
 ```
 
 **rsync 保护**: `deploy.sh` 的 `--exclude 'uniapi.db'` 确保部署时不会覆盖生产数据库。

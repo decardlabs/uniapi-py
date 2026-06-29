@@ -1,4 +1,4 @@
-"""Tests for user self-service and dashboard endpoints."""
+"""Tests for user self-service endpoints."""
 import pytest
 from httpx import AsyncClient
 
@@ -147,13 +147,3 @@ async def test_update_user_self_strong_password(client: AsyncClient):
         "password": "123456",
         "old_password": new_strong_pwd,
     }, cookies=cookies)
-
-
-@pytest.mark.asyncio
-async def test_user_aff(client: AsyncClient):
-    """GET /api/user/aff should return affiliate info."""
-    cookies = await _login(client)
-    resp = await client.get("/api/user/aff", cookies=cookies)
-    assert resp.status_code == 200
-    data = resp.json()
-    assert data["success"] is True
