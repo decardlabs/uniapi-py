@@ -35,7 +35,6 @@ export function RegisterPage() {
   const [isEmailSent, setIsEmailSent] = useState(false);
   const [turnstileToken, setTurnstileToken] = useState<string>('');
   const navigate = useNavigate();
-  const [searchParams] = useSearchParams();
   const { systemStatus } = useSystemStatus();
 
   const form = useForm<RegisterForm>({
