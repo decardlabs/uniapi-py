@@ -45,6 +45,68 @@ def _json_str(val):
     return str(val)
 
 
+async def _replace_channel_with_keys(
+    db: AsyncSession,
+    current_channel: Channel,
+    body: "ChannelUpdateRequest",
+    new_keys: list[str],
+):
+    """Delete current channel + all siblings (same name), recreate one per key.
+
+    This enables editing a channel from a single API key to multiple keys,
+    achieving the same load-balancing effect as creating with multiple keys.
+    """
+    from sqlalchemy import delete as sa_delete
+
+    now_ms = int(time.time() * 1000)
+    now_s = int(time.time())
+
+    # Build update data from the body (only provided fields)
+    update_data = body.model_dump(exclude_none=True)
+
+    # Delete current channel and all siblings with the same name
+    await db.execute(
+        sa_delete(Channel).where(Channel.name == current_channel.name)
+    )
+
+    def _get(field: str, default=None):
+        """Read from body update if provided, else fall back to current channel."""
+        if field in update_data:
+            val = update_data[field]
+            return _json_str(val) if field in {"model_mapping", "other", "model_configs", "system_prompt", "config"} else val
+        return getattr(current_channel, field, default)
+
+    new_channels = []
+    for key in new_keys:
+        new_ch = Channel(
+            name=_get("name", ""),
+            type=_get("type", 0),
+            key=key,
+            status=_get("status", 1),
+            base_url=_get("base_url", ""),
+            models=_get("models", ""),
+            group=_get("group", _get("groups", "default")),
+            weight=_get("weight", 0),
+            priority=_get("priority", 0),
+            model_mapping=_get("model_mapping"),
+            other=_get("other"),
+            model_configs=_get("model_configs"),
+            system_prompt=_get("system_prompt"),
+            config=_get("config"),
+            rate_limit=update_data.get("ratelimit", current_channel.rate_limit),
+            created_time=now_s,
+            created_at=now_ms,
+            updated_at=now_ms,
+        )
+        db.add(new_ch)
+        new_channels.append(new_ch)
+
+    await db.commit()
+    for ch in new_channels:
+        await db.refresh(ch)
+    return GenericApiResponse(data=_channel_to_dict(new_channels[0]))
+
+
 # ──────────────────────────────────────────────
 # Static routes first (before {channel_id})
 # ──────────────────────────────────────────────
@@ -206,6 +268,15 @@ async def update_channel(
         channel.updated_at = int(time.time() * 1000)
         await db.commit()
         return GenericApiResponse(data=_channel_to_dict(channel))
+
+    # Multi-key expansion on edit: if key field contains multiple lines,
+    # delete all sibling channels (same name) and recreate one per key.
+    # This matches create behavior where multiple keys → multiple channels.
+    new_key_raw = body.key
+    if new_key_raw:
+        new_keys = [k.strip() for k in new_key_raw.split("\n") if k.strip()]
+        if len(new_keys) > 1:
+            return await _replace_channel_with_keys(db, channel, body, new_keys)
 
     # Full field update — extract only non-None fields from the Pydantic model
     text_fields = {"model_mapping", "other", "model_configs", "system_prompt", "config"}
