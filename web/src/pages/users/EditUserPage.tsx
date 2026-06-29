@@ -459,79 +459,72 @@ export function EditUserPage() {
                   />
                 </div>
 
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                  {/* Read-only balance display — use Input disabled for consistent sizing */}
-                  {isEdit && (
+                {/* Group — standalone full-width row */}
+                <FormField
+                  control={form.control}
+                  name="group"
+                  render={({ field }) => (
                     <FormItem>
-                      <FormLabel>{tr('fields.balance.label', 'Balance')}</FormLabel>
-                      <FormControl>
-                        <Input disabled value={formatYuan(balance)} />
-                      </FormControl>
-                      <p className="text-xs text-muted-foreground">
-                        {tr('fields.total_spent.label', 'Spent')}: ¥{totalSpent.toFixed(6)}
-                      </p>
+                      <div className="flex items-center gap-1">
+                        <FormLabel>{tr('fields.group.label', 'Group *')}</FormLabel>
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            <Info
+                              className="h-4 w-4 text-muted-foreground cursor-help"
+                              aria-label={tr('aria.help_group', 'Help: Group')}
+                            />
+                          </TooltipTrigger>
+                          <TooltipContent className="max-w-xs">
+                            {tr('fields.group.help', 'User group controls access and model/channel visibility.')}
+                          </TooltipContent>
+                        </Tooltip>
+                      </div>
+                      <Select onValueChange={field.onChange} value={field.value}>
+                        <FormControl>
+                          <SelectTrigger className={errorClass('group')}>
+                            <SelectValue placeholder={tr('fields.group.placeholder', 'Select a group')} />
+                          </SelectTrigger>
+                        </FormControl>
+                        <SelectContent>
+                          {groupOptions.map((group) => (
+                            <SelectItem key={group.value} value={group.value}>
+                              {group.text}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                      <FormMessage />
                     </FormItem>
                   )}
+                />
 
-                  <FormField
-                    control={form.control}
-                    name="group"
-                    render={({ field }) => (
-                      <FormItem>
-                        <div className="flex items-center gap-1">
-                          <FormLabel>{tr('fields.group.label', 'Group *')}</FormLabel>
-                          <Tooltip>
-                            <TooltipTrigger asChild>
-                              <Info
-                                className="h-4 w-4 text-muted-foreground cursor-help"
-                                aria-label={tr('aria.help_group', 'Help: Group')}
-                              />
-                            </TooltipTrigger>
-                            <TooltipContent className="max-w-xs">
-                              {tr('fields.group.help', 'User group controls access and model/channel visibility.')}
-                            </TooltipContent>
-                          </Tooltip>
-                        </div>
-                        <Select onValueChange={field.onChange} value={field.value}>
-                          <FormControl>
-                            <SelectTrigger className={errorClass('group')}>
-                              <SelectValue placeholder={tr('fields.group.placeholder', 'Select a group')} />
-                            </SelectTrigger>
-                          </FormControl>
-                          <SelectContent>
-                            {groupOptions.map((group) => (
-                              <SelectItem key={group.value} value={group.value}>
-                                {group.text}
-                              </SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                </div>
-
-                {/* Display timestamps for edit mode (read-only) — use Input disabled for consistent sizing */}
-                {isEdit && (createdAt || updatedAt) && (
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6 pt-2 border-t">
-                    {createdAt && createdAt > 0 && (
-                      <FormItem>
-                        <FormLabel>{tr('fields.created_at.label', 'Register Time')}</FormLabel>
-                        <FormControl>
-                          <Input disabled value={formatTimestamp(createdAt)} />
-                        </FormControl>
-                      </FormItem>
-                    )}
-                    {updatedAt && updatedAt > 0 && (
-                      <FormItem>
-                        <FormLabel>{tr('fields.updated_at.label', 'Last Modified')}</FormLabel>
-                        <FormControl>
-                          <Input disabled value={formatTimestamp(updatedAt)} />
-                        </FormControl>
-                      </FormItem>
-                    )}
-                  </div>
+                {/* Read-only fields — each as a standalone full-width row with Input disabled */}
+                {isEdit && (
+                  <FormItem>
+                    <FormLabel>{tr('fields.balance.label', 'Balance')}</FormLabel>
+                    <FormControl>
+                      <Input disabled value={formatYuan(balance)} />
+                    </FormControl>
+                    <p className="text-xs text-muted-foreground">
+                      {tr('fields.total_spent.label', 'Spent')}: ¥{totalSpent.toFixed(6)}
+                    </p>
+                  </FormItem>
+                )}
+                {isEdit && createdAt && createdAt > 0 && (
+                  <FormItem>
+                    <FormLabel>{tr('fields.created_at.label', 'Register Time')}</FormLabel>
+                    <FormControl>
+                      <Input disabled value={formatTimestamp(createdAt)} />
+                    </FormControl>
+                  </FormItem>
+                )}
+                {isEdit && updatedAt && updatedAt > 0 && (
+                  <FormItem>
+                    <FormLabel>{tr('fields.updated_at.label', 'Last Modified')}</FormLabel>
+                    <FormControl>
+                      <Input disabled value={formatTimestamp(updatedAt)} />
+                    </FormControl>
+                  </FormItem>
                 )}
 
                 {form.formState.errors.root && <div className="text-sm text-destructive">{form.formState.errors.root.message}</div>}

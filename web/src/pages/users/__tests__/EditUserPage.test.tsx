@@ -1,39 +1,43 @@
-import { describe, expect, it, vi } from 'vitest';
+import { describe, expect, it } from 'vitest';
 
-// Directly test the formatYuan helper and check that layout components render correctly
-// by testing the structural markup without rendering the full form
+describe('EditUserPage layout', () => {
+  const getSource = (): string => {
+    const path = require('path');
+    const fs = require('fs');
+    return fs.readFileSync(path.resolve(process.cwd(), 'src/pages/users/EditUserPage.tsx'), 'utf-8');
+  };
 
-describe('EditUserPage layout helpers', () => {
-  it('formatYuan converts micro-yuan to yuan string', () => {
-    const formatYuan = (micro: number): string => `¥${(micro / 1_000_000).toFixed(2)}`;
-    expect(formatYuan(1500000)).toBe('¥1.50');
-    expect(formatYuan(0)).toBe('¥0.00');
+  it('Group should be in its own full-width row, not paired with Balance', () => {
+    const source = getSource();
+    // Balance and Group should NOT be inside the same grid row
+    const balanceGridRow = source.match(/grid-cols-1 md:grid-cols-2[\s\S]*?Balance[\s\S]*?Group/);
+    expect(balanceGridRow).toBeNull();
   });
-});
 
-describe('Balance and Timestamp fields use Input disabled', () => {
-  it('Balance section should use Input disabled instead of plain div', async () => {
-    // This test verifies by reading the source file that Balance (lines 455-471)
-    // and timestamp sections (lines 513-536) use Input disabled pattern.
-    // After the code fix, these sections should render <input disabled> instead of <div>.
+  it('Balance should be a standalone full-width row with Input disabled', () => {
+    const source = getSource();
+    // Balance should be wrapped in its own FormItem outside any grid
+    const balanceSection = source.match(/fields\.balance\.label[\s\S]{0,200}Input disabled value=\{formatYuan/);
+    expect(balanceSection).not.toBeNull();
+    // Should NOT be in a grid-cols-2 layout
+    const balanceInGrid = source.match(/grid-cols-1 md:grid-cols-2[\s\S]{0,50}Balance/);
+    expect(balanceInGrid).toBeNull();
+  });
 
-    const path = await import('path');
-    const fs = await import('fs');
-    const sourcePath = path.resolve(process.cwd(), 'src/pages/users/EditUserPage.tsx');
-    const source = fs.readFileSync(sourcePath, 'utf-8');
+  it('Register Time should be a standalone full-width row with Input disabled', () => {
+    const source = getSource();
+    const hasDisabledInput = source.includes("Input disabled value={formatTimestamp(createdAt)}");
+    expect(hasDisabledInput).toBe(true);
+  });
 
-    // Balance section should NOT contain a plain div with formatted balance
-    // It should use <Input disabled> instead
-    const hasBalanceDiv = source.includes('className="p-2 bg-muted rounded-md flex justify-between items-center"');
-    expect(hasBalanceDiv).toBe(false);
+  it('Last Modified should be a standalone full-width row with Input disabled', () => {
+    const source = getSource();
+    const hasDisabledInput = source.includes("Input disabled value={formatTimestamp(updatedAt)}");
+    expect(hasDisabledInput).toBe(true);
+  });
 
-    // Balance should use Input component with disabled prop
-    const hasBalanceInput = source.includes('Input') && source.includes('disabled');
-    expect(hasBalanceInput).toBe(true);
-
-    // Timestamp sections should use Input disabled
-    const hasTimestampDiv = source.includes('className="p-2 bg-muted rounded-md"');
-    // Count occurrences — should be 0 after fix (originally used for both balance and timestamps)
+  it('No plain divs remain for Balance or timestamp display', () => {
+    const source = getSource();
     const divCount = (source.match(/className="p-2 bg-muted rounded-md/g) || []).length;
     expect(divCount).toBe(0);
   });
