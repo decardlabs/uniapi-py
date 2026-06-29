@@ -47,12 +47,6 @@ vi.mock('react-i18next', () => ({
   }),
 }));
 
-vi.mock('qrcode', () => ({
-  default: {
-    toDataURL: vi.fn().mockResolvedValue('data:image/png;base64,qr'),
-  },
-}));
-
 describe('PersonalSettings', () => {
   let currentProfile: {
     username: string;
@@ -100,15 +94,6 @@ describe('PersonalSettings', () => {
             data: {
               ...currentProfile,
             },
-          },
-        });
-      }
-
-      if (url === '/api/user/totp/status') {
-        return Promise.resolve({
-          data: {
-            success: true,
-            data: { totp_enabled: false },
           },
         });
       }

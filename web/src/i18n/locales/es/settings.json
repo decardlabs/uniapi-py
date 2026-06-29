@@ -55,10 +55,6 @@
       "description": "Configura la cuota de usuarios y las recompensas por invitación",
       "pre_consumed_quota": "Cuota preconsumida",
       "pre_consumed_quota_desc": "Cuota reservada al inicio de la solicitud para evitar abusos. El remanente se devuelve tras la facturación.",
-      "quota_for_invitee": "Cuota para el invitado",
-      "quota_for_invitee_desc": "Recompensa de cuota otorgada al invitado tras registrarse con éxito.",
-      "quota_for_inviter": "Cuota para el invitador",
-      "quota_for_inviter_desc": "Recompensa de cuota otorgada a quien invita cuando la invitación se completa.",
       "quota_for_new_user": "Cuota para nuevo usuario",
       "quota_for_new_user_desc": "Cuota inicial otorgada a cada usuario recién registrado.",
       "save": "Guardar ajustes de cuota",
@@ -107,39 +103,6 @@
     }
   },
   "personal_settings": {
-    "access_token": {
-      "description": "Genera tokens de acceso y enlaces de invitación.",
-      "generate_token": "Generar token de acceso",
-      "get_invite_link": "Obtener enlace de invitación",
-      "title": "Token de acceso e invitación"
-    },
-    "passkey": {
-      "delete_button": "Eliminar",
-      "delete_confirm": "¿Estás seguro de que deseas eliminar esta passkey?",
-      "description": "Usa la biometría, llaves de seguridad o tu dispositivo para iniciar sesión sin contraseña.",
-      "errors": {
-        "delete_failed": "Error al eliminar la passkey",
-        "load_failed": "Error al cargar las passkeys",
-        "not_supported": "Las passkeys no son compatibles con este navegador",
-        "register_failed": "Error al registrar la passkey",
-        "rename_failed": "Error al renombrar la passkey",
-        "webauthn_unavailable": "WebAuthn no está disponible"
-      },
-      "list_title": "Tus Passkeys",
-      "name_label": "Nombre de la Passkey",
-      "name_placeholder": "p. ej. MacBook Touch ID",
-      "no_passkeys": "No hay passkeys registradas.",
-      "no_passkeys_desc": "Agrega una passkey para habilitar el inicio de sesión sin contraseña con biometría o una llave de seguridad.",
-      "not_supported_desc": "Tu navegador no es compatible con passkeys. Prueba con un navegador moderno como Chrome, Safari o Edge.",
-      "processing": "Procesando...",
-      "recommended": "Recomendado",
-      "register_button": "Agregar Passkey",
-      "registered": "Registrada",
-      "rename_button": "Renombrar",
-      "rename_placeholder": "Introduce el nuevo nombre",
-      "sign_count": "Número de usos",
-      "title": "Passkeys (WebAuthn)"
-    },
     "profile_info": {
       "bind_email": "Bind Email",
       "bind_success": "Email updated successfully",
@@ -163,7 +126,6 @@
       "username": "Nombre de usuario"
     },
     "security": {
-      "description": "Gestiona cómo inicias sesión y protege tu cuenta.",
       "password": {
         "confirm_password": "Confirmar contraseña",
         "confirm_password_placeholder": "Vuelve a introducir la nueva contraseña",
@@ -176,50 +138,7 @@
         "title": "Contraseña",
         "update_button": "Actualizar contraseña",
         "updating": "Actualizando..."
-      },
-      "status": {
-        "passkey_off": "Sin passkey",
-        "passkey_on": "Passkey habilitada",
-        "password_off": "Sin contraseña",
-        "password_on": "Contraseña establecida",
-        "title": "Resumen de seguridad",
-        "totp_off": "Sin TOTP",
-        "totp_on": "TOTP habilitado"
-      },
-      "title": "Seguridad de la cuenta"
-    },
-    "totp": {
-      "cancel": "Cancelar",
-      "confirm": "Confirmar",
-      "description": "Refuerza la seguridad de tu cuenta con autenticación de dos factores.",
-      "disable_button": "Desactivar TOTP",
-      "disable_placeholder": "Introduce el código TOTP para desactivar",
-      "disabled_desc": "Activa la autenticación de dos factores para proteger tu cuenta.",
-      "disabled_title": "TOTP no está habilitado",
-      "enable_button": "Activar TOTP",
-      "enabled_desc": "Tu cuenta está protegida con autenticación de dos factores.",
-      "enabled_title": "TOTP está habilitado",
-      "errors": {
-        "confirm_failed": "No se pudo confirmar el TOTP",
-        "disable_failed": "No se pudo desactivar el TOTP",
-        "invalid_code": "Introduce un código válido de 6 dígitos",
-        "load_status": "No se pudo cargar el estado de TOTP",
-        "missing_code": "Introduce el código TOTP para desactivar",
-        "setup_failed": "Error al configurar TOTP"
-      },
-      "processing": "Procesando...",
-      "secret_key": "Clave secreta (entrada manual)",
-      "setup_desc": "Sigue estos pasos para proteger tu cuenta con TOTP.",
-      "setup_instructions_title": "Instrucciones de configuración",
-      "setup_step1": "Instala una app autenticadora (Google Authenticator, Authy, etc.)",
-      "setup_step2": "Escanea el código QR o ingresa la clave manualmente",
-      "setup_step3": "Introduce el código de 6 dígitos generado por la app",
-      "setup_step4": "Haz clic en \"Confirmar\" para habilitar TOTP",
-      "setup_title": "Configurar autenticación de dos factores",
-      "title": "Autenticación de dos factores (TOTP)",
-      "verify_code": "Código de verificación",
-      "verify_placeholder": "Introduce el código de 6 dígitos de tu app",
-      "verify_placeholder_mobile": "Introduce un código de 6 dígitos"
+      }
     }
   },
   "settings": {
@@ -236,44 +155,22 @@
     "description": "Configura las opciones y ajustes globales del sistema.",
     "descriptions": {
       "About": "Contenido de la página Acerca de (Markdown/HTML compatibles con el frontend).",
-      "ApproximateTokenEnabled": "Utiliza un conteo aproximado de tokens más rápido para mejorar el rendimiento (ligeramente menos preciso).",
       "AutomaticDisableChannelEnabled": "Desactiva automáticamente los canales con fallas persistentes.",
       "AutomaticEnableChannelEnabled": "Reactiva automáticamente los canales deshabilitados cuando se recuperan.",
       "ChannelDisableThreshold": "Porcentaje de fallas que dispara la desactivación automática del canal. Predeterminado: 5 %.",
       "ChatLink": "Enlace externo de chat/soporte mostrado en la interfaz.",
-      "DisplayInCurrencyEnabled": "Muestra el uso y las cuotas como valores monetarios en la UI.",
-      "DisplayTokenStatEnabled": "Muestra estadísticas de tokens en registros y paneles cuando existan.",
       "EmailDomainRestrictionEnabled": "Permite registros solo desde los dominios listados.",
       "EmailDomainWhitelist": "Dominios de correo permitidos separados por comas (p. ej. gmail.com, example.com).",
       "EmailVerificationEnabled": "Exige verificación por correo para acciones como registro o restablecimiento de contraseña.",
       "Footer": "Texto o HTML del pie de página mostrado en todo el sitio.",
-      "GitHubClientId": "ID de cliente OAuth de GitHub usado para iniciar sesión.",
-      "GitHubClientSecret": "Secreto de cliente OAuth de GitHub usado para canjear códigos (se almacena de forma segura).",
-      "GitHubOAuthEnabled": "Activa el inicio de sesión con GitHub OAuth. Requiere ID de cliente y secreto.",
-      "GroupRatio": "Mapa JSON de ratios de facturación por grupo. Controla descuentos o recargos.",
       "HomePageContent": "Contenido mostrado en la página de inicio.",
-      "LarkClientId": "ID de aplicación Lark para OAuth.",
-      "LarkClientSecret": "Secreto de la aplicación Lark usado durante el flujo OAuth (se almacena de forma segura).",
       "LogConsumeEnabled": "Registra los logs de uso/consumo. Desactívalo para ahorrar almacenamiento.",
       "Logo": "URL del logo mostrada en el encabezado/pantalla de inicio.",
       "MessagePusherAddress": "Endpoint del servicio de alertas/notificaciones para eventos de registro.",
       "MessagePusherToken": "Token de autenticación del servicio de notificaciones (se almacena de forma segura).",
       "Notice": "Contenido del anuncio global mostrado a todos los usuarios.",
-      "OidcAuthorizationEndpoint": "URL del endpoint de autorización OIDC.",
-      "OidcClientId": "ID de cliente OIDC usado al iniciar el flujo.",
-      "OidcClientSecret": "Secreto de cliente OIDC usado durante el intercambio de tokens (se almacena de forma segura).",
-      "OidcEnabled": "Activa el inicio de sesión OpenID Connect. Requiere endpoints e identificadores.",
-      "OidcTokenEndpoint": "URL del endpoint de token OIDC.",
-      "OidcUserinfoEndpoint": "URL del endpoint userinfo OIDC.",
-      "OidcWellKnown": "URL well-known de OIDC (p. ej. https://issuer/.well-known/openid-configuration).",
       "PasswordLoginEnabled": "Permite iniciar sesión con correo y contraseña. Desactívalo para exigir OAuth u otros proveedores.",
       "PasswordRegisterEnabled": "Permite que nuevos usuarios se registren con correo y contraseña.",
-      "PreConsumedQuota": "Cuota reservada al inicio de la solicitud para evitar abusos. Lo no usado se devuelve tras la facturación.",
-      "QuotaForInvitee": "Recompensa de cuota otorgada al invitado después de registrarse.",
-      "QuotaForInviter": "Recompensa de cuota otorgada a quien invita tras una invitación exitosa.",
-      "QuotaForNewUser": "Cuota inicial para cada nuevo usuario registrado.",
-      "QuotaPerUnit": "Relación de conversión para mostrar cuotas como moneda.",
-      "QuotaRemindThreshold": "Se notifica a los usuarios cuando la cuota restante baja de este valor.",
       "RegisterEnabled": "Interruptor maestro para los registros. Desactívalo para bloquear nuevos registros.",
       "RetryTimes": "Reintentos automáticos ante errores transitorios aguas arriba.",
       "SMTPAccount": "Usuario o correo SMTP usado para autenticarse.",
@@ -284,14 +181,7 @@
       "ServerAddress": "URL base pública del servidor (para enlaces y callbacks).",
       "SystemName": "Nombre del sistema mostrado en la interfaz y correos.",
       "Theme": "Tema de la UI (modern).",
-      "TopUpLink": "Enlace externo para comprar o recargar cuota.",
-      "TurnstileCheckEnabled": "Activar Cloudflare Turnstile en acciones críticas (registro/restablecimiento).",
-      "TurnstileSecretKey": "Clave secreta de Turnstile usada por el servidor (mantener privada).",
-      "TurnstileSiteKey": "Clave de sitio Turnstile usada en el frontend.",
-      "WeChatAccountQRCodeImageURL": "URL de la imagen del código QR de la cuenta de WeChat mostrada a los usuarios.",
-      "WeChatAuthEnabled": "Activa el inicio de sesión con WeChat. Requiere la configuración del servidor WeChat.",
-      "WeChatServerAddress": "Base URL del reenviador/servidor de WeChat.",
-      "WeChatServerToken": "Token de verificación para la integración con WeChat (se almacena de forma segura)."
+      "TopUpLink": "Enlace externo para comprar o recargar cuota."
     },
     "disabled": "Desactivado",
     "enabled": "Activado",
@@ -320,21 +210,9 @@
         "description": "Ajusta la observabilidad y las integraciones posteriores.",
         "title": "Registros, métricas e integraciones"
       },
-      "oauth": {
-        "description": "Conecta proveedores de identidad externos para inicios de sesión sin fricción.",
-        "title": "Proveedores OAuth / SSO"
-      },
       "other": {
         "description": "Claves de configuración que aún no tienen categoría.",
         "title": "Otros ajustes"
-      },
-      "quota": {
-        "description": "Gestiona cuotas, ratios de facturación y presentación en moneda.",
-        "title": "Cuota y facturación"
-      },
-      "security": {
-        "description": "Configura la protección anti bots y los controles de seguridad.",
-        "title": "Anti-bot y seguridad"
       }
     },
     "info_about": "Información sobre {{key}}",

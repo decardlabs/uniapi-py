@@ -17,8 +17,6 @@ import * as z from 'zod';
 
 const operationSchema = z.object({
   QuotaForNewUser: z.number().min(0).default(0),
-  QuotaForInviter: z.number().min(0).default(0),
-  QuotaForInvitee: z.number().min(0).default(0),
   QuotaRemindThreshold: z.number().min(0).default(0),
   PreConsumedQuota: z.number().min(0).default(0),
   TopUpLink: z.string().default(''),
@@ -47,8 +45,6 @@ export function OperationSettings() {
     () => ({
       // Quota
       QuotaForNewUser: t('operation_settings.quota.quota_for_new_user_desc'),
-      QuotaForInviter: t('operation_settings.quota.quota_for_inviter_desc'),
-      QuotaForInvitee: t('operation_settings.quota.quota_for_invitee_desc'),
       PreConsumedQuota: t('operation_settings.quota.pre_consumed_quota_desc'),
 
       // General
@@ -75,8 +71,6 @@ export function OperationSettings() {
     resolver: zodResolver(operationSchema),
     defaultValues: {
       QuotaForNewUser: 0,
-      QuotaForInviter: 0,
-      QuotaForInvitee: 0,
       QuotaRemindThreshold: 0,
       PreConsumedQuota: 0,
       TopUpLink: '',
@@ -140,8 +134,6 @@ export function OperationSettings() {
     switch (group) {
       case 'quota':
         await updateOption('QuotaForNewUser', values.QuotaForNewUser);
-        await updateOption('QuotaForInviter', values.QuotaForInviter);
-        await updateOption('QuotaForInvitee', values.QuotaForInvitee);
         await updateOption('PreConsumedQuota', values.PreConsumedQuota);
         break;
       case 'general':
@@ -221,58 +213,6 @@ export function OperationSettings() {
                           </TooltipTrigger>
                           <TooltipContent side="top" align="start" className="max-w-[320px]">
                             {descriptions.QuotaForNewUser}
-                          </TooltipContent>
-                        </Tooltip>
-                      </FormLabel>
-                      <FormControl>
-                        <Input type="number" {...field} onChange={(e) => field.onChange(Number(e.target.value))} />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-
-                <FormField
-                  control={form.control}
-                  name="QuotaForInviter"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel className="flex items-center gap-2">
-                        {t('operation_settings.quota.quota_for_inviter')}
-                        <Tooltip>
-                          <TooltipTrigger asChild>
-                            <button type="button" className="text-muted-foreground hover:text-foreground" aria-label={t('common.info')}>
-                              <Info className="h-4 w-4" />
-                            </button>
-                          </TooltipTrigger>
-                          <TooltipContent side="top" align="start" className="max-w-[320px]">
-                            {descriptions.QuotaForInviter}
-                          </TooltipContent>
-                        </Tooltip>
-                      </FormLabel>
-                      <FormControl>
-                        <Input type="number" {...field} onChange={(e) => field.onChange(Number(e.target.value))} />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-
-                <FormField
-                  control={form.control}
-                  name="QuotaForInvitee"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel className="flex items-center gap-2">
-                        {t('operation_settings.quota.quota_for_invitee')}
-                        <Tooltip>
-                          <TooltipTrigger asChild>
-                            <button type="button" className="text-muted-foreground hover:text-foreground" aria-label={t('common.info')}>
-                              <Info className="h-4 w-4" />
-                            </button>
-                          </TooltipTrigger>
-                          <TooltipContent side="top" align="start" className="max-w-[320px]">
-                            {descriptions.QuotaForInvitee}
                           </TooltipContent>
                         </Tooltip>
                       </FormLabel>

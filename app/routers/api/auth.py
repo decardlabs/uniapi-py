@@ -22,7 +22,6 @@ from app.schemas.user import (
     SelfResponse,
 )
 from app.services.auth import create_session, get_session_user
-from app.services.totp import verify_totp_code
 from app.services.user import login_user, register_user, verify_turnstile
 
 router = APIRouter(tags=["auth"])
@@ -30,8 +29,6 @@ router = APIRouter(tags=["auth"])
 
 @router.post("/api/user/login")
 async def login(body: LoginRequest, db: AsyncSession = Depends(get_db)):
-    from fastapi import HTTPException
-
     # Turnstile check (if enabled globally)
     turnstile_enabled_result = await db.execute(
         select(Option).where(Option.key == "TurnstileCheckEnabled")
@@ -47,35 +44,17 @@ async def login(body: LoginRequest, db: AsyncSession = Depends(get_db)):
                 ).model_dump(),
             )
 
+    from fastapi import HTTPException
     try:
         user = await login_user(db, body.username, body.password)
     except HTTPException as e:
-        # Return structured error with lockout info for the frontend
-        is_locked = e.status_code == 423
         return JSONResponse(
             status_code=e.status_code,
             content=GenericApiResponse(
                 success=False,
                 message=e.detail,
-                data={
-                    "locked": is_locked,
-                },
             ).model_dump(),
         )
-
-    # TOTP check
-    totp_required = bool(user.totp_secret)
-    if totp_required:
-        totp_code = body.totp_code or ""
-        if not totp_code:
-            return GenericApiResponse(
-                success=False,
-                data={"totp_required": True},
-            )
-        if not verify_totp_code(user.totp_secret, totp_code):
-            return GenericApiResponse(
-                success=False, message="Invalid TOTP code"
-            )
 
     session_token = create_session(user)
     response = JSONResponse(
@@ -89,7 +68,6 @@ async def login(body: LoginRequest, db: AsyncSession = Depends(get_db)):
                 balance=user.balance,
                 group=user.group,
                 access_token=user.access_token,
-                totp_required=totp_required,
             ).model_dump()
         ).model_dump()
     )
@@ -132,7 +110,6 @@ async def register(
         display_name=body.display_name,
         email=body.email,
         verification_code=body.verification_code,
-        aff_code=body.aff_code,
     )
     session_token = create_session(user)
     response = JSONResponse(
@@ -214,9 +191,6 @@ async def update_self(
         if strength_error:
             return GenericApiResponse(success=False, message=strength_error)
         user.password = hash_password(new_password)
-        # Reset lock counters — user proved ownership of old password
-        user.failed_login_attempts = 0
-        user.locked_until = None
 
     if body.display_name is not None:
         user.display_name = body.display_name
@@ -242,32 +216,6 @@ async def update_self(
         return resp
 
     return GenericApiResponse(data={"updated": True})
-
-
-@router.get("/api/user/aff")
-async def user_aff(
-    request: Request,
-    db: AsyncSession = Depends(get_db),
-):
-    """Get current user's affiliate info."""
-    user = await get_session_user(request, db)
-    if not user:
-        return GenericApiResponse(success=False, message="Not logged in")
-    return GenericApiResponse(data={
-        "aff_code": user.aff_code or "",
-        "inviter_id": user.inviter_id,
-    })
-
-
-@router.get("/api/user/token")
-async def get_access_token(
-    request: Request,
-    db: AsyncSession = Depends(get_db),
-):
-    user = await get_session_user(request, db)
-    if not user:
-        return GenericApiResponse(success=False, message="Not logged in")
-    return GenericApiResponse(data=user.access_token)
 
 
 @router.get("/api/user/get-by-token")

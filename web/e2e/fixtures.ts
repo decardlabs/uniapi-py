@@ -13,7 +13,6 @@ export class LoginPage {
   readonly submitButton: Locator;
   readonly form: Locator;
   readonly errorMessage: Locator;
-  readonly totpInput: Locator;
   readonly forgotPasswordLink: Locator;
   readonly signUpLink: Locator;
   readonly systemName: Locator;
@@ -26,9 +25,8 @@ export class LoginPage {
     this.submitButton = page.getByRole('button', { name: 'Sign In', exact: true });
     this.form = page.getByTestId('login-form');
     this.errorMessage = page.locator('[class*="text-destructive"]');
-    this.totpInput = page.getByPlaceholder(/6-digit totp code/i);
-    this.forgotPasswordLink = page.getByRole('link', { name: /forgot password/i });
-    this.signUpLink = page.getByRole('link', { name: /sign up/i });
+    this.forgotPasswordLink = page.locator('a').filter({ hasText: /forgot/i });
+    this.signUpLink = page.locator('a').filter({ hasText: /sign up/i });
     this.systemName = page.getByText(/sign in to/i);
   }
 
@@ -58,21 +56,6 @@ export class LoginPage {
     await this.usernameInput.fill(username);
     await this.passwordInput.fill(password);
     await this.submitButton.click();
-  }
-
-  /**
-   * 输入 TOTP 验证码
-   */
-  async enterTotp(code: string) {
-    await this.totpInput.fill(code);
-    await this.page.getByRole('button', { name: /verify totp/i }).click();
-  }
-
-  /**
-   * 返回登录表单（TOTP 模式）
-   */
-  async backToLogin() {
-    await this.page.getByRole('button', { name: /back to login/i }).click();
   }
 
   /**

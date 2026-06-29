@@ -1,4 +1,4 @@
-"""OAuth endpoints for third-party login (GitHub, etc.)."""
+"""OAuth endpoints for third-party login (GitHub, etc.) and email binding."""
 
 from __future__ import annotations
 
@@ -7,7 +7,7 @@ import time
 import uuid
 
 import httpx
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, Query, Request
 from fastapi.responses import JSONResponse
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -18,7 +18,8 @@ from app.models.option import Option
 from app.models.user import User
 from app.schemas.common import GenericApiResponse
 from app.schemas.user import LoginResponse
-from app.services.auth import create_default_token, create_session, hash_password
+from app.services.auth import create_default_token, create_session, get_session_user, hash_password
+from app.services.email import verify_code
 
 router = APIRouter(tags=["oauth"])
 
@@ -154,7 +155,7 @@ async def github_oauth_callback(
                     display_name=user.display_name or user.username,
                     role=user.role,
                     status=user.status,
-                    quota=0,
+                    balance=user.balance,
                     group=user.group,
                     access_token=user.access_token,
                 ).model_dump()
@@ -179,7 +180,6 @@ async def github_oauth_callback(
         username = f"{github_login}_{secrets.token_hex(4)}"
 
     random_password = secrets.token_hex(16)
-    aff_code_val = secrets.token_hex(8)
 
     user = User(
         username=username,
@@ -189,11 +189,9 @@ async def github_oauth_callback(
         status=1,
         email=primary_email,
         github_id=github_id,
-        quota=1000000,
-        used_quota=0,
+        balance=2000000,
         group="default",
         access_token=_uuid4(),
-        aff_code=aff_code_val,
         created_at=now,
         updated_at=now,
     )
@@ -212,7 +210,7 @@ async def github_oauth_callback(
                 display_name=user.display_name or user.username,
                 role=user.role,
                 status=user.status,
-                quota=0,
+                balance=user.balance,
                 group=user.group,
                 access_token=user.access_token,
             ).model_dump()
@@ -227,3 +225,30 @@ async def github_oauth_callback(
         samesite="lax",
     )
     return response
+
+
+@router.get("/api/oauth/email/bind")
+async def bind_email(
+    email: str = Query(..., description="Email address to bind"),
+    code: str = Query(..., description="Verification code"),
+    request: Request = None,
+    db: AsyncSession = Depends(get_db),
+):
+    """Verify a code and bind the email to the current user's account."""
+    user = await get_session_user(request, db)
+    if not user:
+        return GenericApiResponse(success=False, message="Not logged in")
+
+    if not verify_code(email, code):
+        return GenericApiResponse(success=False, message="验证码错误或已过期")
+
+    # Check if email is already used by another user
+    existing = await db.execute(select(User).where(User.email == email, User.id != user.id))
+    if existing.scalar_one_or_none():
+        return GenericApiResponse(success=False, message="该邮箱已被其他用户绑定")
+
+    user.email = email
+    user.updated_at = int(time.time() * 1000)
+    await db.commit()
+
+    return GenericApiResponse(data={"email": email})

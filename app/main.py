@@ -14,7 +14,6 @@ import app.models.channel  # noqa: F401
 import app.models.log  # noqa: F401
 import app.models.mcp_server  # noqa: F401
 import app.models.option  # noqa: F401
-import app.models.passkey  # noqa: F401
 import app.models.recharge  # noqa: F401
 import app.models.redemption  # noqa: F401
 import app.models.token  # noqa: F401
@@ -185,8 +184,6 @@ async def _seed_defaults():
             "WeChatAccountQRCodeImageURL": "",
             # 额度与计费
             "QuotaForNewUser": "1000000",
-            "QuotaForInviter": "50000",
-            "QuotaForInvitee": "50000",
             "QuotaRemindThreshold": "10000",
             "PreConsumedQuota": "5000",
             "GroupRatio": "1",
@@ -276,13 +273,11 @@ def create_app() -> FastAPI:
     from app.routers.api.mcp_servers import router as mcp_servers_router
     from app.routers.api.oauth import router as oauth_router
     from app.routers.api.options import router as options_router
-    from app.routers.api.passkey import router as passkey_router
     from app.routers.api.pool import router as pool_router
     from app.routers.api.redemption import router as redemption_router
     from app.routers.api.status import router as status_router
     from app.routers.api.token import router as token_router
     from app.routers.api.topup import router as topup_router
-    from app.routers.api.totp import router as totp_router
     from app.routers.api.verification import router as verification_router
     from app.routers.api.web import router as web_router
     from app.routers.v1.relay import router as relay_router
@@ -293,8 +288,6 @@ def create_app() -> FastAPI:
     app.include_router(dashboard_router)
     app.include_router(topup_router)
     app.include_router(redemption_router)
-    app.include_router(passkey_router)  # must be before admin_user_router (/api/user/{user_id})
-    app.include_router(totp_router)    # must be before admin_user_router (/api/user/{user_id})
     app.include_router(admin_user_router)
     app.include_router(token_router)
     app.include_router(log_router)

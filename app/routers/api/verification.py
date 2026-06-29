@@ -7,6 +7,7 @@ from fastapi.responses import JSONResponse
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.config import settings
 from app.database import get_db
 from app.models.option import Option
 from app.models.user import User
@@ -143,9 +144,27 @@ async def reset_password_confirm(
 
     import time
     user.password = hash_password(new_password)
-    user.failed_login_attempts = 0
-    user.locked_until = None
     user.updated_at = int(time.time() * 1000)
     await db.commit()
 
     return GenericApiResponse(success=True, message="密码重置成功")
+
+
+@router.get("/api/internal/verification-code")
+async def debug_get_verification_code(
+    email: str = Query(..., description="Email to get the code for"),
+):
+    """Return the stored verification code for the given email.
+
+    ONLY available when DEBUG=true. Used by E2E tests.
+    """
+    if not settings.debug:
+        return GenericApiResponse(success=False, message="Only available in debug mode")
+
+    from app.services.email import get_stored_code
+
+    code = get_stored_code(email)
+    if code is None:
+        return GenericApiResponse(success=False, message="No verification code found for this email")
+
+    return GenericApiResponse(data={"code": code})

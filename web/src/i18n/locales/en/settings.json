@@ -49,16 +49,12 @@
       "quota_remind_threshold": "Quota Remind Threshold",
       "quota_remind_threshold_desc": "When remaining quota falls below this value, users will be reminded.",
       "save": "Save Monitoring Settings",
-      "title": "Monitoring \u0026 Channel Settings"
+      "title": "Monitoring & Channel Settings"
     },
     "quota": {
       "description": "Configure user quota and invitation rewards",
       "pre_consumed_quota": "Pre-consumed Quota",
       "pre_consumed_quota_desc": "Quota reserved at request start to avoid abuse. Unused part is returned after billing.",
-      "quota_for_invitee": "Quota for Invitee",
-      "quota_for_invitee_desc": "Quota reward granted to the invitee upon successful registration.",
-      "quota_for_inviter": "Quota for Inviter",
-      "quota_for_inviter_desc": "Quota reward granted to the inviter after a successful invite.",
       "quota_for_new_user": "Quota for New User",
       "quota_for_new_user_desc": "Initial quota granted to each newly registered user.",
       "save": "Save Quota Settings",
@@ -108,39 +104,6 @@
     }
   },
   "personal_settings": {
-    "access_token": {
-      "description": "Generate access tokens and invitation links.",
-      "generate_token": "Generate Access Token",
-      "get_invite_link": "Get Invitation Link",
-      "title": "Access Token \u0026 Invitation"
-    },
-    "passkey": {
-      "delete_button": "Delete",
-      "delete_confirm": "Are you sure you want to delete this passkey?",
-      "description": "Use biometrics, security keys, or your device to sign in without a password.",
-      "errors": {
-        "delete_failed": "Failed to delete passkey",
-        "load_failed": "Failed to load passkeys",
-        "not_supported": "Passkeys are not supported in this browser",
-        "register_failed": "Failed to register passkey",
-        "rename_failed": "Failed to rename passkey",
-        "webauthn_unavailable": "WebAuthn is not available"
-      },
-      "list_title": "Your Passkeys",
-      "name_label": "Passkey Name",
-      "name_placeholder": "e.g. MacBook Touch ID",
-      "no_passkeys": "No passkeys registered",
-      "no_passkeys_desc": "Passkeys are the most secure way to sign in. Add one to enable fast, passwordless authentication with biometrics or a security key.",
-      "not_supported_desc": "Your browser does not support passkeys. Try using a modern browser like Chrome, Safari, or Edge.",
-      "processing": "Processing...",
-      "recommended": "Recommended",
-      "register_button": "Add Passkey",
-      "registered": "Registered",
-      "rename_button": "Rename",
-      "rename_placeholder": "Enter new name",
-      "sign_count": "Sign count",
-      "title": "Passkeys"
-    },
     "profile_info": {
       "bind_email": "Bind Email",
       "bind_success": "Email updated successfully",
@@ -164,7 +127,6 @@
       "username": "Username"
     },
     "security": {
-      "description": "Manage how you sign in and protect your account.",
       "password": {
         "confirm_password": "Confirm Password",
         "confirm_password_placeholder": "Re-enter new password",
@@ -179,50 +141,7 @@
         "title": "Password",
         "update_button": "Update Password",
         "updating": "Updating..."
-      },
-      "status": {
-        "passkey_off": "No passkey",
-        "passkey_on": "Passkey enabled",
-        "password_off": "No password",
-        "password_on": "Password set",
-        "title": "Security Overview",
-        "totp_off": "No TOTP",
-        "totp_on": "TOTP enabled"
-      },
-      "title": "Account Security"
-    },
-    "totp": {
-      "cancel": "Cancel",
-      "confirm": "Confirm",
-      "description": "Add a second layer of protection with a time-based one-time password from an authenticator app.",
-      "disable_button": "Disable TOTP",
-      "disable_placeholder": "Enter TOTP code to disable",
-      "disabled_desc": "Enable two-factor authentication to secure your account.",
-      "disabled_title": "TOTP is not enabled",
-      "enable_button": "Enable TOTP",
-      "enabled_desc": "Your account is protected with two-factor authentication.",
-      "enabled_title": "TOTP is enabled",
-      "errors": {
-        "confirm_failed": "Failed to confirm TOTP",
-        "disable_failed": "Failed to disable TOTP",
-        "invalid_code": "Enter a valid 6-digit code",
-        "load_status": "Failed to load TOTP status",
-        "missing_code": "Please enter the TOTP code to disable",
-        "setup_failed": "Failed to setup TOTP"
-      },
-      "processing": "Processing...",
-      "secret_key": "Secret Key (manual entry)",
-      "setup_desc": "Follow these steps to secure your account with TOTP.",
-      "setup_instructions_title": "Setup Instructions",
-      "setup_step1": "Install an authenticator app (Google Authenticator, Authy, etc.)",
-      "setup_step2": "Scan the QR code below or manually enter the secret key",
-      "setup_step3": "Enter the 6-digit code from your authenticator app",
-      "setup_step4": "Click \"Confirm\" to enable TOTP",
-      "setup_title": "Setup Two-Factor Authentication",
-      "title": "Two-Factor Authentication (TOTP)",
-      "verify_code": "Verification Code",
-      "verify_placeholder": "Enter 6-digit code from your authenticator app",
-      "verify_placeholder_mobile": "Enter 6-digit code"
+      }
     }
   },
   "settings": {
@@ -239,44 +158,22 @@
     "description": "Configure system-wide settings and options.",
     "descriptions": {
       "About": "About page content (markdown/HTML supported by frontend rendering).",
-      "ApproximateTokenEnabled": "Use a faster approximation for token counting to improve performance (may be slightly less accurate).",
       "AutomaticDisableChannelEnabled": "Automatically disable channels that show sustained failures.",
       "AutomaticEnableChannelEnabled": "Automatically re‑enable previously disabled channels when healthy.",
       "ChannelDisableThreshold": "Failure rate threshold (percentage) to auto‑disable a channel. Default 5%.",
       "ChatLink": "External chat/support link shown in the UI.",
-      "DisplayInCurrencyEnabled": "Show usage and quotas as currency in the UI, based on the configured conversion.",
-      "DisplayTokenStatEnabled": "Display token statistics in logs and dashboards when available.",
       "EmailDomainRestrictionEnabled": "Only allow registrations from domains listed below.",
       "EmailDomainWhitelist": "Comma-separated allowed email domains (e.g., gmail.com, example.com).",
       "EmailVerificationEnabled": "Require email verification for actions like registration or password reset.",
       "Footer": "Footer text or HTML displayed site‑wide.",
-      "GitHubClientId": "GitHub OAuth Client ID used for login.",
-      "GitHubClientSecret": "GitHub OAuth Client Secret used to exchange authorization codes. Stored securely and never displayed.",
-      "GitHubOAuthEnabled": "Enable GitHub OAuth login. Requires GitHub Client ID and Secret.",
-      "GroupRatio": "JSON mapping of group‑specific billing ratios. Controls discounts/premiums by user group.",
       "HomePageContent": "Content displayed on the home page.",
-      "LarkClientId": "Lark app ID for Lark OAuth login.",
-      "LarkClientSecret": "Lark app secret used for completing the OAuth flow. Stored securely and never displayed.",
       "LogConsumeEnabled": "Record usage/consumption logs. Turn off to reduce storage overhead.",
       "Logo": "Logo URL displayed in the header/login screens.",
       "MessagePusherAddress": "Endpoint of the alert/notification pusher service for log events.",
       "MessagePusherToken": "Authentication token for the alert/notification pusher. Stored securely and never displayed.",
       "Notice": "Site‑wide announcement content shown to all users.",
-      "OidcAuthorizationEndpoint": "OIDC authorization endpoint URL.",
-      "OidcClientId": "OIDC Client ID used when initiating the OIDC login flow.",
-      "OidcClientSecret": "OIDC client secret used during the token exchange. Stored securely and never displayed.",
-      "OidcEnabled": "Enable OpenID Connect (OIDC) login. Requires OIDC endpoints and credentials.",
-      "OidcTokenEndpoint": "OIDC token endpoint URL.",
-      "OidcUserinfoEndpoint": "OIDC userinfo endpoint URL.",
-      "OidcWellKnown": "OIDC well-known discovery URL (e.g., https://issuer/.well-known/openid-configuration).",
       "PasswordLoginEnabled": "Allow users to sign in with email and password. Disable to require OAuth or other providers.",
       "PasswordRegisterEnabled": "Allow new users to register with email and password.",
-      "PreConsumedQuota": "Quota reserved at request start to avoid abuse. Unused part is returned after billing.",
-      "QuotaForInvitee": "Quota reward granted to the invitee upon successful registration.",
-      "QuotaForInviter": "Quota reward granted to the inviter after a successful invite.",
-      "QuotaForNewUser": "Initial quota granted to each newly registered user.",
-      "QuotaPerUnit": "Conversion ratio for currency display. Higher value makes each $ represent more quota.",
-      "QuotaRemindThreshold": "When remaining quota falls below this value, users will be reminded.",
       "RegisterEnabled": "Master switch for user registration. Turn off to stop all new sign-ups.",
       "RetryTimes": "Automatic retry attempts for upstream requests on transient errors.",
       "SMTPAccount": "SMTP username or account email used to authenticate.",
@@ -287,29 +184,22 @@
       "ServerAddress": "Public base URL of this server (used in links/callbacks).",
       "SystemName": "System display name shown in the UI and emails.",
       "Theme": "UI theme (modern).",
-      "TopUpLink": "External link for users to purchase or top up quota.",
-      "TurnstileCheckEnabled": "Enable Cloudflare Turnstile on critical actions (registration/reset).",
-      "TurnstileSecretKey": "Cloudflare Turnstile secret key used by the server. Keep this confidential.",
-      "TurnstileSiteKey": "Cloudflare Turnstile site key used by the frontend.",
-      "WeChatAccountQRCodeImageURL": "URL of the WeChat account QR code image displayed to users.",
-      "WeChatAuthEnabled": "Enable WeChat login. Requires WeChat server settings.",
-      "WeChatServerAddress": "WeChat login forwarder/server base URL.",
-      "WeChatServerToken": "Verification token for your WeChat server integration. Stored securely and never displayed."
+      "TopUpLink": "External link for users to purchase or top up quota."
     },
     "disabled": "Disabled",
     "enabled": "Enabled",
     "groups": {
       "authentication": {
         "description": "Control how users sign up and sign in to your workspace.",
-        "title": "Authentication \u0026 Registration"
+        "title": "Authentication & Registration"
       },
       "branding": {
         "description": "Customize the look and feel of the product experience.",
-        "title": "Branding \u0026 Content"
+        "title": "Branding & Content"
       },
       "channels": {
         "description": "Automatically react to upstream channel health and retry behavior.",
-        "title": "Channels \u0026 Reliability"
+        "title": "Channels & Reliability"
       },
       "email": {
         "description": "Set up outbound email delivery.",
@@ -321,23 +211,11 @@
       },
       "logging": {
         "description": "Tune observability and downstream integrations.",
-        "title": "Logging, Metrics \u0026 Integrations"
-      },
-      "oauth": {
-        "description": "Connect third-party identity providers for seamless sign-in.",
-        "title": "OAuth / SSO Providers"
+        "title": "Logging, Metrics & Integrations"
       },
       "other": {
         "description": "Configuration keys that are not yet categorized.",
         "title": "Other Settings"
-      },
-      "quota": {
-        "description": "Manage quotas, billing ratios, and currency presentation.",
-        "title": "Quota \u0026 Billing"
-      },
-      "security": {
-        "description": "Configure bot protection and security checks.",
-        "title": "Anti-bot \u0026 Security"
       }
     },
     "info_about": "Info about {{key}}",

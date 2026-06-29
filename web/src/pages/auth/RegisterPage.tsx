@@ -10,7 +10,7 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { useTranslation } from 'react-i18next';
-import { Link, useNavigate, useSearchParams } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import * as z from 'zod';
 
 const registerSchema = (t: (key: string) => string) =>
@@ -21,7 +21,6 @@ const registerSchema = (t: (key: string) => string) =>
       password2: z.string().min(8, t('auth.register.password_confirm_required')),
       email: z.string().email(t('auth.register.email_required')),
       verification_code: z.string().min(1, t('auth.register.verification_code_required')),
-      aff_code: z.string().optional(),
     })
     .refine((data) => data.password === data.password2, {
       message: t('auth.register.passwords_mismatch'),
@@ -39,9 +38,6 @@ export function RegisterPage() {
   const [searchParams] = useSearchParams();
   const { systemStatus } = useSystemStatus();
 
-  // Extract affiliate code from URL parameter
-  const affCodeFromUrl = searchParams.get('aff') || '';
-
   const form = useForm<RegisterForm>({
     resolver: zodResolver(registerSchema(t)),
     defaultValues: {
@@ -50,7 +46,6 @@ export function RegisterPage() {
       password2: '',
       email: '',
       verification_code: '',
-      aff_code: affCodeFromUrl,
     },
   });
 
@@ -106,14 +101,12 @@ export function RegisterPage() {
 
   const onSubmit = async (data: RegisterForm) => {
     setIsLoading(true);
-    data.aff_code = data.aff_code?.trim() || '';
     try {
       const payload = {
         username: data.username,
         password: data.password,
         email: data.email,
         verification_code: data.verification_code,
-        ...(data.aff_code && { aff_code: data.aff_code }),
       };
 
       // Unified API call - complete URL with /api prefix
@@ -228,20 +221,6 @@ export function RegisterPage() {
                     <FormLabel>{t('auth.register.verification_code')}</FormLabel>
                     <FormControl>
                       <Input placeholder={t('auth.register.enter_verification_code')} {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-
-              <FormField
-                control={form.control}
-                name="aff_code"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>{t('auth.register.aff_code')}</FormLabel>
-                    <FormControl>
-                      <Input placeholder={t('auth.register.enter_invitation_code')} {...field} />
                     </FormControl>
                     <FormMessage />
                   </FormItem>

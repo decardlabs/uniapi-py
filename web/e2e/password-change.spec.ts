@@ -1,15 +1,30 @@
 import { expect, test, LoginPage } from './fixtures';
 
 /**
- * Password change E2E tests — all share the same DB, so run serially
- * and always restore the original password at the end.
+ * Password change E2E tests — uses a dedicated test user to avoid
+ * interfering with root user used by login tests.
  */
 test.describe('密码修改', () => {
   test.describe.configure({ mode: 'serial' });
 
-  const ORIGINAL_PASSWORD = 'RootPass123';
+  const TEST_USER = 'pwtest_' + Date.now();
+  const TEST_PASS = 'InitPass1';
   const PASSWORD_A = 'FirstNewP1!';
   const PASSWORD_B = 'SecondNewP2!';
+
+  /** Create a test user via registration API */
+  async function createTestUser(request: import('@playwright/test').APIRequestContext) {
+    const res = await request.post('/api/user/register', {
+      data: {
+        username: TEST_USER,
+        password: TEST_PASS,
+        display_name: 'PWTest',
+      },
+    });
+    const body = await res.json();
+    // Registration returns a session cookie — accept it silently
+    return body;
+  }
 
   /** Fill the password change form and submit */
   async function changePassword(
@@ -50,47 +65,49 @@ test.describe('密码修改', () => {
     await expect(page.getByTestId('login-form')).toBeVisible({ timeout: 10000 });
   }
 
-  test('完整流程: 修改 → 登出 → 新密码登录 → 改回', async ({ page }) => {
+  test('完整流程: 修改 → 登出 → 新密码登录 → 改回', async ({ page, request }) => {
+    // 创建测试用户
+    await createTestUser(request);
+
     const loginPage = new LoginPage(page);
 
-    // 数据库初始密码是 123456，先升到强密码 ORIGINAL_PASSWORD
+    // 用测试用户登录
     await loginPage.goto();
-    await loginPage.login('root', '123456');
-    await page.waitForURL(/\/(dashboard|users\/edit|settings)/, { timeout: 10000 });
+    await loginPage.login(TEST_USER, TEST_PASS);
+    await page.waitForURL(/\/(dashboard|settings)/, { timeout: 10000 });
 
     await page.goto('/settings');
     await page.waitForLoadState('networkidle');
-    await changePassword(page, '123456', ORIGINAL_PASSWORD, ORIGINAL_PASSWORD);
 
-    // ORIGINAL_PASSWORD → PASSWORD_A
-    await changePassword(page, ORIGINAL_PASSWORD, PASSWORD_A, PASSWORD_A);
+    // 改密码
+    await changePassword(page, TEST_PASS, PASSWORD_A, PASSWORD_A);
 
-    // Logout
+    // 登出
     await logout(page);
 
-    // Login with new password
-    await loginPage.login('root', PASSWORD_A);
-    await page.waitForURL(/\/(dashboard|users\/edit|settings)/, { timeout: 10000 });
+    // 用新密码登录
+    await loginPage.login(TEST_USER, PASSWORD_A);
+    await page.waitForURL(/\/(dashboard|settings)/, { timeout: 10000 });
 
-    // Back to settings and restore
+    // 再改回去（方便后续手动测试）
     await page.goto('/settings');
     await page.waitForLoadState('networkidle');
-    await changePassword(page, PASSWORD_A, ORIGINAL_PASSWORD, ORIGINAL_PASSWORD);
+    await changePassword(page, PASSWORD_A, TEST_PASS, TEST_PASS);
   });
 
   test('连续改两次密码（不刷新页面、不改密码间不登出）', async ({ page }) => {
     const loginPage = new LoginPage(page);
 
-    // 上一个测试已经把密码恢复为 ORIGINAL_PASSWORD
+    // 上一个测试已经把密码恢复为 TEST_PASS
     await loginPage.goto();
-    await loginPage.login('root', ORIGINAL_PASSWORD);
-    await page.waitForURL(/\/(dashboard|users\/edit|settings)/, { timeout: 10000 });
+    await loginPage.login(TEST_USER, TEST_PASS);
+    await page.waitForURL(/\/(dashboard|settings)/, { timeout: 10000 });
 
     await page.goto('/settings');
     await page.waitForLoadState('networkidle');
 
-    // 第一次: ORIGINAL_PASSWORD → PASSWORD_A
-    await changePassword(page, ORIGINAL_PASSWORD, PASSWORD_A, PASSWORD_A);
+    // 第一次: TEST_PASS → PASSWORD_A
+    await changePassword(page, TEST_PASS, PASSWORD_A, PASSWORD_A);
 
     // 不刷新、不登出，验证表单已清空
     const currentInput = page.getByPlaceholder('Enter current password', { exact: true });
@@ -106,7 +123,7 @@ test.describe('密码修改', () => {
     // 第二次: PASSWORD_A → PASSWORD_B
     await changePassword(page, PASSWORD_A, PASSWORD_B, PASSWORD_B);
 
-    // 第三次: PASSWORD_B → 123456（恢复原始密码）
-    await changePassword(page, PASSWORD_B, ORIGINAL_PASSWORD, ORIGINAL_PASSWORD);
+    // 第三次: PASSWORD_B → TEST_PASS（恢复原始密码）
+    await changePassword(page, PASSWORD_B, TEST_PASS, TEST_PASS);
   });
 });

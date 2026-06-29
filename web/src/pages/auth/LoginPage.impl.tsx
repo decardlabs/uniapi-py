@@ -1,3 +1,9 @@
+import { useEffect, useState } from 'react';
+import { useForm } from 'react-hook-form';
+import { useTranslation } from 'react-i18next';
+import { Link, useLocation, useNavigate, useSearchParams } from 'react-router-dom';
+import * as z from 'zod';
+import { zodResolver } from '@hookform/resolvers/zod';
 import Turnstile from '@/components/Turnstile';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -8,24 +14,11 @@ import { useSystemStatus } from '@/hooks/useSystemStatus';
 import { api } from '@/lib/api';
 import { buildGitHubOAuthUrl, getOAuthState } from '@/lib/oauth';
 import { useAuthStore } from '@/lib/stores/auth';
-import { zodResolver } from '@hookform/resolvers/zod';
-import { browserSupportsWebAuthn, startAuthentication } from '@simplewebauthn/browser';
-import { useEffect, useRef, useState } from 'react';
-import { useForm } from 'react-hook-form';
-import { useTranslation } from 'react-i18next';
-import { Link, useLocation, useNavigate, useSearchParams } from 'react-router-dom';
-import * as z from 'zod';
 
 const loginSchema = (t: (key: string) => string) =>
   z.object({
     username: z.string().min(1, t('auth.login.username_required')),
     password: z.string().min(1, t('auth.login.password_required')),
-    totp_code: z
-      .string()
-      .optional()
-      .refine((val) => !val || val.length === 6, {
-        message: t('auth.login.totp_invalid'),
-      }),
   });
 
 type LoginForm = z.infer<ReturnType<typeof loginSchema>>;
@@ -33,14 +26,9 @@ type LoginForm = z.infer<ReturnType<typeof loginSchema>>;
 export function LoginPage() {
   const { t } = useTranslation();
   const [isLoading, setIsLoading] = useState(false);
-  const [totpRequired, setTotpRequired] = useState(false);
   const [successMessage, setSuccessMessage] = useState<string>('');
-  const [totpValue, setTotpValue] = useState('');
   const [turnstileToken, setTurnstileToken] = useState('');
   const [turnstileRequired, setTurnstileRequired] = useState(false);
-  const [isLocked, setIsLocked] = useState(false);
-  const [lockedUsername, setLockedUsername] = useState('');
-  const totpRef = useRef<HTMLInputElement | null>(null);
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const location = useLocation();
@@ -49,61 +37,10 @@ export function LoginPage() {
   const turnstileEnabled = Boolean(systemStatus?.turnstile_check);
   // Only show Turnstile after the server tells us it's required (i.e. after a failed login attempt).
   const turnstileRenderable = turnstileRequired && turnstileEnabled && Boolean(systemStatus?.turnstile_site_key);
-  const [passkeyLoading, setPasskeyLoading] = useState(false);
-  const passkeySupported = typeof window !== 'undefined' && browserSupportsWebAuthn();
-
-  const onPasskeyLogin = async () => {
-    setPasskeyLoading(true);
-    form.clearErrors('root');
-    try {
-      // Step 1: Get assertion options
-      const beginRes = await api.post('/api/user/passkey/login/begin');
-      if (!beginRes.data.success) {
-        form.setError('root', { message: beginRes.data.message || t('auth.login.passkey_failed') });
-        return;
-      }
-
-      // Step 2: Authenticate via browser WebAuthn API
-      const assertionResp = await startAuthentication({ optionsJSON: beginRes.data.data.publicKey });
-
-      // Step 3: Send assertion to server
-      const finishRes = await api.post('/api/user/passkey/login/finish', assertionResp);
-      const { success, message, data: respData } = finishRes.data;
-
-      if (success) {
-        login(respData, '');
-        const redirectTo = searchParams.get('redirect_to');
-        if (redirectTo) {
-          try {
-            const decodedPath = decodeURIComponent(redirectTo);
-            if (decodedPath.startsWith('/')) {
-              navigate(decodedPath);
-            } else {
-              navigate('/dashboard');
-            }
-          } catch {
-            navigate('/dashboard');
-          }
-        } else {
-          navigate('/dashboard');
-        }
-      } else {
-        form.setError('root', { message: message || t('auth.login.passkey_failed') });
-      }
-    } catch (error: unknown) {
-      const msg = error instanceof Error ? error.message : t('auth.login.passkey_failed');
-      // Don't show error if user cancelled
-      if (!msg.includes('cancelled') && !msg.includes('AbortError')) {
-        form.setError('root', { message: msg });
-      }
-    } finally {
-      setPasskeyLoading(false);
-    }
-  };
 
   const form = useForm<LoginForm>({
     resolver: zodResolver(loginSchema(t)),
-    defaultValues: { username: '', password: '', totp_code: '' },
+    defaultValues: { username: '', password: '' },
   });
 
   useEffect(() => {
@@ -155,38 +92,15 @@ export function LoginPage() {
         username: data.username,
         password: data.password,
       };
-      if (totpRequired && totpValue) payload.totp_code = totpValue;
       // Only include Turnstile token when it's required and available.
       const query = turnstileRequired && turnstileToken ? `?turnstile=${encodeURIComponent(turnstileToken)}` : '';
       const response = await api.post(`/api/user/login${query}`, payload);
       const { success, message, data: respData } = response.data;
-      const m = typeof message === 'string' ? message.trim().toLowerCase() : '';
-      const dataTotp = !!(
-        respData &&
-        (respData.totp_required === true || respData.totp_required === 'true' || respData.totp_required === 1)
-      );
-      const needsTotp = !success && (dataTotp || m === 'totp_required' || m.includes('totp'));
 
       // Check if the server is now requiring Turnstile (after failed login).
       if (!success && respData?.turnstile_required) {
         setTurnstileRequired(true);
         setTurnstileToken('');
-      }
-
-      // Check if account is locked
-      if (!success && respData?.locked) {
-        setIsLocked(true);
-        setLockedUsername(data.username);
-        form.setError('root', { message: message || t('auth.login.locked_message') });
-        return;
-      }
-
-      if (needsTotp) {
-        setTotpRequired(true);
-        setTotpValue('');
-        form.setValue('totp_code', '');
-        form.setError('root', { message: t('auth.login.totp_required') });
-        return;
       }
 
       if (success) {
@@ -197,7 +111,7 @@ export function LoginPage() {
 
         // Handle default root password warning
         if (data.username === 'root' && data.password === '123456') {
-          navigate('/users/edit');
+          navigate('/dashboard');
           console.warn(t('auth.login.root_password_warning'));
         } else if (redirectTo) {
           // Decode and navigate to the original page
@@ -218,7 +132,7 @@ export function LoginPage() {
         }
       } else {
         form.setError('root', {
-          message: m === 'totp_required' ? t('auth.login.totp_required') : message || t('auth.login.failed'),
+          message: message || t('auth.login.failed'),
         });
       }
     } catch (error) {
@@ -230,15 +144,11 @@ export function LoginPage() {
     }
   };
 
-  useEffect(() => {
-    if (totpRequired && totpRef.current) totpRef.current.focus();
-  }, [totpRequired]);
-
   const hasOAuthOptions = systemStatus.github_oauth || systemStatus.lark_client_id;
 
   const handleTurnstileVerify = (token: string) => {
     setTurnstileToken(token);
-    if (!totpRequired && form.formState.errors.root?.message) {
+    if (form.formState.errors.root?.message) {
       form.clearErrors('root');
     }
   };
@@ -277,7 +187,7 @@ export function LoginPage() {
                   <FormItem>
                     <FormLabel htmlFor="login-username">{t('common.username')}</FormLabel>
                     <FormControl>
-                      <Input id="login-username" {...field} disabled={totpRequired || isLocked} />
+                      <Input id="login-username" {...field} />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -290,71 +200,26 @@ export function LoginPage() {
                   <FormItem>
                     <FormLabel htmlFor="login-password">{t('common.password')}</FormLabel>
                     <FormControl>
-                      <Input id="login-password" type="password" {...field} disabled={totpRequired || isLocked} />
+                      <Input id="login-password" type="password" {...field} />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
                 )}
               />
-              {totpRequired && (
-                <FormField
-                  control={form.control}
-                  name="totp_code"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>{t('auth.login.totp_label')}</FormLabel>
-                      <FormControl>
-                        <Input
-                          maxLength={6}
-                          placeholder={t('auth.login.totp_placeholder')}
-                          {...field}
-                          ref={totpRef}
-                          inputMode="numeric"
-                          pattern="[0-9]*"
-                          onChange={(e) => {
-                            field.onChange(e);
-                            setTotpValue(e.target.value);
-                          }}
-                        />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-              )}
               {successMessage && (
                 <div className="text-sm text-success-foreground bg-success-muted p-3 rounded-md border border-success-border">
                   {successMessage}
                 </div>
               )}
               {form.formState.errors.root && (
-                <div className="text-sm text-destructive">
-                  {totpRequired ? t('auth.login.totp_required') : form.formState.errors.root.message}
-                </div>
-              )}
-              {isLocked && (
-                <div className="p-4 rounded-md border border-destructive/30 bg-destructive/10 space-y-3">
-                  <p className="text-sm font-semibold text-destructive">{t('auth.login.locked_title')}</p>
-                  <p className="text-sm text-destructive/80">{t('auth.login.locked_message')}</p>
-                  <Button
-                    type="button"
-                    variant="destructive"
-                    size="sm"
-                    className="w-full"
-                    onClick={() => navigate('/reset')}
-                  >
-                    {t('auth.login.locked_action')}
-                  </Button>
-                </div>
+                <div className="text-sm text-destructive">{form.formState.errors.root.message}</div>
               )}
               <Button
                 type="submit"
                 className="w-full"
-                disabled={
-                  isLocked || isLoading || (totpRequired && totpValue.length !== 6) || (turnstileRequired && turnstileEnabled && !turnstileToken)
-                }
+                disabled={isLoading || (turnstileRequired && turnstileEnabled && !turnstileToken)}
               >
-                {isLoading ? t('auth.login.signing_in') : totpRequired ? t('auth.login.verify_totp') : t('auth.login.title')}
+                {isLoading ? t('auth.login.signing_in') : t('auth.login.title')}
               </Button>
 
               {turnstileRenderable && systemStatus?.turnstile_site_key && (
@@ -364,57 +229,6 @@ export function LoginPage() {
                   onExpire={handleTurnstileExpire}
                   className="mt-2 flex justify-center"
                 />
-              )}
-
-              {totpRequired && (
-                <Button
-                  type="button"
-                  variant="outline"
-                  className="w-full"
-                  onClick={() => {
-                    setTotpRequired(false);
-                    setTotpValue('');
-                    form.setValue('totp_code', '');
-                    form.clearErrors('root');
-                  }}
-                >
-                  {t('auth.login.back_to_login')}
-                </Button>
-              )}
-
-              {passkeySupported && !totpRequired && (
-                <>
-                  <div className="relative my-2">
-                    <div className="absolute inset-0 flex items-center">
-                      <span className="w-full border-t" />
-                    </div>
-                    <div className="relative flex justify-center text-xs uppercase">
-                      <span className="bg-card px-2 text-muted-foreground">{t('auth.login.or_use_passkey')}</span>
-                    </div>
-                  </div>
-                  <Button
-                    type="button"
-                    variant="outline"
-                    className="w-full"
-                    onClick={onPasskeyLogin}
-                    disabled={passkeyLoading || isLoading}
-                  >
-                    <svg
-                      className="w-4 h-4 mr-2"
-                      viewBox="0 0 24 24"
-                      fill="none"
-                      stroke="currentColor"
-                      strokeWidth="2"
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      aria-hidden="true"
-                    >
-                      <path d="M2 18v3c0 .6.4 1 1 1h4v-3h3v-3h2l1.4-1.4a6.5 6.5 0 1 0-4-4Z" />
-                      <circle cx="16.5" cy="7.5" r=".5" />
-                    </svg>
-                    {passkeyLoading ? t('auth.login.passkey_signing_in') : t('auth.login.passkey_login')}
-                  </Button>
-                </>
               )}
 
               <div className="text-center text-sm space-y-2">

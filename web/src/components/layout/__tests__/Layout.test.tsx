@@ -27,9 +27,6 @@ vi.mock('../Header', () => ({
 vi.mock('../Footer', () => ({
   Footer: vi.fn(() => <footer data-testid="footer">Footer</footer>),
 }));
-vi.mock('@/components/auth/PasskeyPromptBanner', () => ({
-  PasskeyPromptBanner: vi.fn(() => null),
-}));
 
 describe('Layout', () => {
   beforeEach(() => {

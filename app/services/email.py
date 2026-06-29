@@ -121,6 +121,20 @@ def _store_code(email: str, code: str) -> None:
     }
 
 
+def get_stored_code(email: str) -> str | None:
+    """Return the stored verification code for an email, or None if not found.
+
+    Used by E2E tests via the debug endpoint. Returns the code without consuming it.
+    """
+    record = _verification_codes.get(email)
+    if not record:
+        return None
+    if int(time.time()) > record["expires"]:
+        _verification_codes.pop(email, None)
+        return None
+    return record["code"]
+
+
 def verify_code(email: str, code: str) -> bool:
     """Verify a verification code. Returns True if valid.
 

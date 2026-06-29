@@ -151,7 +151,7 @@ async def _relay_setup(deepseek_key: str, token_name: str):
         now = int(time.time() * 1000)
         root = User(username="root", password=hash_password("123456"),
                     display_name="Root", role=100, status=1,
-                    quota=10_000_000, group="default",
+                    balance=2000000, group="default",
                     access_token="root-access-token-test",
                     created_at=now, updated_at=now)
         db.add(root)

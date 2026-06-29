@@ -1,4 +1,3 @@
-import { PasskeyPromptBanner } from '@/components/auth/PasskeyPromptBanner';
 import { useIsDesktop, useIsMobile } from '@/hooks/useResponsive';
 import { useAuthStore } from '@/lib/stores/auth';
 import { cn } from '@/lib/utils';
@@ -59,8 +58,6 @@ export function Layout() {
       {/* Right area: Header + Content + Footer */}
       <div className="flex flex-col min-h-dvh">
         <Header />
-
-        <PasskeyPromptBanner />
 
         {/* Main content — grows to fill space */}
         <main
