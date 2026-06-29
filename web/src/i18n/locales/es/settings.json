@@ -1,107 +1,4 @@
 {
-  "operation_settings": {
-    "general": {
-      "approximate_token": "Habilitar el conteo aproximado de tokens",
-      "approximate_token_desc": "Usa una estimación más rápida del conteo de tokens para mejorar el rendimiento (con una ligera pérdida de precisión).",
-      "chat_link": "Enlace de chat",
-      "chat_link_desc": "Enlace externo de chat o soporte mostrado en la interfaz.",
-      "description": "Configura los parámetros operativos generales",
-      "display_in_currency": "Mostrar en moneda",
-      "display_in_currency_desc": "Muestra el uso y los cuotas en formato monetario según la conversión configurada.",
-      "display_unit": "Unidad de visualización",
-      "display_unit_desc": "Elija cómo mostrar las cuotas: cantidad de tokens, USD o CNY. Los cambios se aplican globalmente.",
-      "unit_token": "Tokens",
-      "unit_token_desc": "Mostrar cuota como cantidad de tokens.",
-      "unit_usd": "USD ($)",
-      "unit_usd_desc": "Mostrar cuota en dólares estadounidenses.",
-      "unit_cny": "CNY (¥)",
-      "unit_cny_desc": "Mostrar cuota en yuanes chinos (RMB).",
-      "display_token_stat": "Mostrar estadísticas de tokens",
-      "display_token_stat_desc": "Muestra las estadísticas de tokens en registros y paneles cuando estén disponibles.",
-      "log_consume_enabled": "Activar registros de consumo",
-      "log_consume_enabled_desc": "Registra los logs de uso/consumo. Desactívalo para reducir el almacenamiento requerido.",
-      "quota_per_unit": "Cuota por unidad",
-      "quota_per_unit_desc": "Relación de conversión para mostrar valores en moneda. Un valor más alto hace que cada $ represente más cuota.",
-      "retry_times": "Reintentos",
-      "retry_times_desc": "Número de reintentos automáticos para solicitudes aguas arriba ante errores transitorios.",
-      "save": "Guardar ajustes generales",
-      "title": "Ajustes generales",
-      "top_up_link": "Enlace de recarga",
-      "top_up_link_desc": "Enlace externo para que los usuarios compren o recarguen cuota."
-    },
-    "loading": "Cargando ajustes operativos...",
-    "logs": {
-      "clear_button": "Borrar registros antes de esta fecha",
-      "clear_failed": "No se pudieron borrar los registros: {{message}}",
-      "clear_warning": "Esto eliminará permanentemente todos los registros anteriores a la fecha seleccionada.",
-      "cleared_success": "¡{{count}} registros borrados!",
-      "description": "Elimina registros históricos para liberar espacio",
-      "title": "Gestión de registros"
-    },
-    "monitoring": {
-      "automatic_disable_channel": "Desactivación automática de canales",
-      "automatic_disable_channel_desc": "Desactiva automáticamente los canales con fallas persistentes.",
-      "automatic_enable_channel": "Reactivación automática",
-      "automatic_enable_channel_desc": "Reactiva automáticamente los canales deshabilitados cuando vuelven a estar saludables.",
-      "channel_disable_threshold": "Umbral de desactivación",
-      "channel_disable_threshold_desc": "Porcentaje de fallas a partir del cual se desactiva automáticamente un canal. Predeterminado: 5 %.",
-      "description": "Configura los umbrales de monitoreo y la gestión de canales",
-      "quota_remind_threshold": "Umbral de recordatorio de cuota",
-      "quota_remind_threshold_desc": "Cuando la cuota restante baja de este valor, se notifica a los usuarios.",
-      "save": "Guardar ajustes de monitoreo",
-      "title": "Monitoreo y canales"
-    },
-    "quota": {
-      "description": "Configura la cuota de usuarios y las recompensas por invitación",
-      "pre_consumed_quota": "Cuota preconsumida",
-      "pre_consumed_quota_desc": "Cuota reservada al inicio de la solicitud para evitar abusos. El remanente se devuelve tras la facturación.",
-      "quota_for_new_user": "Cuota para nuevo usuario",
-      "quota_for_new_user_desc": "Cuota inicial otorgada a cada usuario recién registrado.",
-      "save": "Guardar ajustes de cuota",
-      "title": "Ajustes de cuota"
-    }
-  },
-  "other_settings": {
-    "branding": {
-      "description": "Configura el nombre del sistema, el logo y la apariencia visual",
-      "logo_url": "URL del logo",
-      "logo_url_desc": "URL de la imagen del logo mostrada en el encabezado/pantalla de inicio de sesión.",
-      "save": "Guardar",
-      "system_name": "Nombre del sistema",
-      "system_name_desc": "Nombre que se muestra en la interfaz y en los correos.",
-      "theme": "Tema",
-      "theme_desc": "Nombre del tema de la UI. Soportados: modern.",
-      "title": "Identidad del sistema"
-    },
-    "content": {
-      "about": "Contenido de la página Acerca de (compatible con Markdown)",
-      "about_desc": "Contenido que se muestra en la página Acerca de.",
-      "about_placeholder": "Introduce el contenido de la página Acerca de...",
-      "description": "Configura anuncios, la página Acerca de y el contenido de inicio",
-      "footer": "Contenido del pie de página (compatible con HTML)",
-      "footer_desc": "Contenido de pie de página renderizado en todo el sitio. HTML permitido; úsalo con responsabilidad.",
-      "footer_placeholder": "Introduce el contenido del pie de página...",
-      "home_page": "Contenido de la página de inicio (Markdown)",
-      "home_page_desc": "Contenido mostrado en la página de inicio.",
-      "home_page_placeholder": "Introduce el contenido de la página de inicio...",
-      "notice": "Anuncio (Markdown)",
-      "notice_desc": "Anuncio global mostrado a todos los usuarios.",
-      "notice_placeholder": "Introduce el contenido del anuncio...",
-      "save_about": "Guardar Acerca de",
-      "save_footer": "Guardar pie de página",
-      "save_home_page": "Guardar página de inicio",
-      "save_notice": "Guardar anuncio",
-      "title": "Gestión de contenido"
-    },
-    "loading": "Cargando otros ajustes...",
-    "updates": {
-      "check_update": "Buscar actualizaciones",
-      "description": "Verifica actualizaciones y gestiona la versión del sistema",
-      "title": "Actualizaciones del sistema",
-      "update_available": "Actualización disponible: {{version}}",
-      "view_versions": "Ver etiquetas de GitHub"
-    }
-  },
   "personal_settings": {
     "profile_info": {
       "bind_email": "Bind Email",
@@ -144,8 +41,6 @@
   "settings": {
     "description": "Configura tu cuenta y los ajustes del sistema",
     "tabs": {
-      "operation": "Operación",
-      "other": "Otros",
       "personal": "Personal",
       "system": "Sistema"
     },
@@ -155,24 +50,16 @@
     "description": "Configura las opciones y ajustes globales del sistema.",
     "descriptions": {
       "About": "Contenido de la página Acerca de (Markdown/HTML compatibles con el frontend).",
-      "AutomaticDisableChannelEnabled": "Desactiva automáticamente los canales con fallas persistentes.",
-      "AutomaticEnableChannelEnabled": "Reactiva automáticamente los canales deshabilitados cuando se recuperan.",
-      "ChannelDisableThreshold": "Porcentaje de fallas que dispara la desactivación automática del canal. Predeterminado: 5 %.",
       "ChatLink": "Enlace externo de chat/soporte mostrado en la interfaz.",
-      "EmailDomainRestrictionEnabled": "Permite registros solo desde los dominios listados.",
-      "EmailDomainWhitelist": "Dominios de correo permitidos separados por comas (p. ej. gmail.com, example.com).",
       "EmailVerificationEnabled": "Exige verificación por correo para acciones como registro o restablecimiento de contraseña.",
       "Footer": "Texto o HTML del pie de página mostrado en todo el sitio.",
       "HomePageContent": "Contenido mostrado en la página de inicio.",
       "LogConsumeEnabled": "Registra los logs de uso/consumo. Desactívalo para ahorrar almacenamiento.",
       "Logo": "URL del logo mostrada en el encabezado/pantalla de inicio.",
-      "MessagePusherAddress": "Endpoint del servicio de alertas/notificaciones para eventos de registro.",
-      "MessagePusherToken": "Token de autenticación del servicio de notificaciones (se almacena de forma segura).",
       "Notice": "Contenido del anuncio global mostrado a todos los usuarios.",
       "PasswordLoginEnabled": "Permite iniciar sesión con correo y contraseña. Desactívalo para exigir OAuth u otros proveedores.",
       "PasswordRegisterEnabled": "Permite que nuevos usuarios se registren con correo y contraseña.",
       "RegisterEnabled": "Interruptor maestro para los registros. Desactívalo para bloquear nuevos registros.",
-      "RetryTimes": "Reintentos automáticos ante errores transitorios aguas arriba.",
       "SMTPAccount": "Usuario o correo SMTP usado para autenticarse.",
       "SMTPFrom": "Dirección del remitente para correos salientes.",
       "SMTPPort": "Puerto del servidor SMTP (p. ej. 587 para STARTTLS, 465 para SMTPS).",
@@ -181,7 +68,8 @@
       "ServerAddress": "URL base pública del servidor (para enlaces y callbacks).",
       "SystemName": "Nombre del sistema mostrado en la interfaz y correos.",
       "Theme": "Tema de la UI (modern).",
-      "TopUpLink": "Enlace externo para comprar o recargar cuota."
+      "TopUpLink": "Enlace externo para comprar o recargar cuota.",
+      "QuotaForNewUser": "Saldo inicial otorgado a cada usuario recién registrado (en micro-yuan)."
     },
     "disabled": "Desactivado",
     "enabled": "Activado",
@@ -194,10 +82,6 @@
         "description": "Personaliza la apariencia y experiencia del producto.",
         "title": "Marca y contenido"
       },
-      "channels": {
-        "description": "Reacciona automáticamente al estado de los canales y su comportamiento de reintento.",
-        "title": "Canales y confiabilidad"
-      },
       "email": {
         "description": "Configura el envío de correo saliente.",
         "title": "Correo (SMTP)"
@@ -206,13 +90,30 @@
         "description": "Controla los enlaces externos expuestos a los usuarios finales.",
         "title": "Enlaces"
       },
-      "logging": {
-        "description": "Ajusta la observabilidad y las integraciones posteriores.",
-        "title": "Registros, métricas e integraciones"
-      },
       "other": {
         "description": "Claves de configuración que aún no tienen categoría.",
         "title": "Otros ajustes"
+      },
+      "operations": {
+        "title": "Operaciones y Registros",
+        "description": "Configurar asignación de cuotas y registro de consumo."
+      },
+      "display_unit": {
+        "title": "Unidad de Visualización",
+        "description": "Elija cómo se muestran las cuotas en la interfaz.",
+        "unit_token": "Tokens",
+        "unit_token_desc": "Mostrar cuota como cantidad de tokens.",
+        "unit_usd": "USD ($)",
+        "unit_usd_desc": "Mostrar cuota en dólares estadounidenses.",
+        "unit_cny": "CNY (¥)",
+        "unit_cny_desc": "Mostrar cuota en yuanes chinos."
+      },
+      "updates": {
+        "title": "Actualizaciones del Sistema",
+        "description": "Verificar actualizaciones y gestionar la versión del sistema.",
+        "check_update": "Buscar Actualizaciones",
+        "view_versions": "Ver Etiquetas de GitHub",
+        "update_available": "Actualización Disponible: {{version}}"
       }
     },
     "info_about": "Información sobre {{key}}",

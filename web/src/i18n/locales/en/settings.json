@@ -1,108 +1,4 @@
 {
-  "operation_settings": {
-    "general": {
-      "approximate_token": "Enable Approximate Token Counting",
-      "approximate_token_desc": "Use a faster approximation for token counting to improve performance (may be slightly less accurate).",
-      "chat_link": "Chat Link",
-      "chat_link_desc": "External chat/support link shown in the UI.",
-      "description": "Configure general operation parameters",
-      "display_in_currency": "Display in Currency",
-      "display_in_currency_desc": "Show usage and quotas as currency in the UI, based on the configured conversion.",
-      "display_unit": "Display Unit",
-      "display_unit_desc": "Choose how quotas are displayed: Token count, USD, or CNY. Changes take effect globally.",
-      "unit_token": "Tokens",
-      "unit_token_desc": "Show quota as token count — the most intuitive view for API usage.",
-      "unit_usd": "USD ($)",
-      "unit_usd_desc": "Show quota as US dollars.",
-      "unit_cny": "CNY (¥)",
-      "unit_cny_desc": "Show quota as Chinese Yuan (RMB).",
-      "display_token_stat": "Display Token Statistics",
-      "display_token_stat_desc": "Display token statistics in logs and dashboards when available.",
-      "log_consume_enabled": "Enable Consumption Logging",
-      "log_consume_enabled_desc": "Record usage/consumption logs. Turn off to reduce storage overhead.",
-      "quota_per_unit": "Quota per Unit",
-      "quota_per_unit_desc": "Conversion ratio for currency display. Higher value makes each $ represent more quota.",
-      "retry_times": "Retry Times",
-      "retry_times_desc": "Automatic retry attempts for upstream requests on transient errors.",
-      "save": "Save General Settings",
-      "title": "General Settings",
-      "top_up_link": "Top-up Link",
-      "top_up_link_desc": "External link for users to purchase or top up quota."
-    },
-    "loading": "Loading operation settings...",
-    "logs": {
-      "clear_button": "Clear Logs Before This Date",
-      "clear_failed": "Failed to clear logs: {{message}}",
-      "clear_warning": "This will permanently delete all logs before the selected date.",
-      "cleared_success": "Cleared {{count}} logs!",
-      "description": "Clear historical logs to free up storage space",
-      "title": "Log Management"
-    },
-    "monitoring": {
-      "automatic_disable_channel": "Automatic Channel Disable",
-      "automatic_disable_channel_desc": "Automatically disable channels that show sustained failures.",
-      "automatic_enable_channel": "Automatic Channel Enable",
-      "automatic_enable_channel_desc": "Automatically re‑enable previously disabled channels when healthy.",
-      "channel_disable_threshold": "Channel Disable Threshold",
-      "channel_disable_threshold_desc": "Failure rate threshold (percentage) to auto‑disable a channel. Default 5%.",
-      "description": "Configure monitoring thresholds and channel management",
-      "quota_remind_threshold": "Quota Remind Threshold",
-      "quota_remind_threshold_desc": "When remaining quota falls below this value, users will be reminded.",
-      "save": "Save Monitoring Settings",
-      "title": "Monitoring & Channel Settings"
-    },
-    "quota": {
-      "description": "Configure user quota and invitation rewards",
-      "pre_consumed_quota": "Pre-consumed Quota",
-      "pre_consumed_quota_desc": "Quota reserved at request start to avoid abuse. Unused part is returned after billing.",
-      "quota_for_new_user": "Quota for New User",
-      "quota_for_new_user_desc": "Initial quota granted to each newly registered user.",
-      "save": "Save Quota Settings",
-      "title": "Quota Settings"
-    }
-  },
-  "other_settings": {
-    "branding": {
-      "description": "Configure system name, logo, and visual appearance",
-      "logo_url": "Logo URL",
-      "logo_url_desc": "Logo image URL displayed in the header/login screens.",
-      "save": "Save",
-      "system_name": "System Name",
-      "system_name_desc": "System display name shown in the UI and emails.",
-      "theme": "Theme",
-      "theme_desc": "UI theme name. Supported: modern.",
-      "theme_fixed_desc": "Only the Modern theme is supported. The theme cannot be changed.",
-      "title": "System Branding"
-    },
-    "content": {
-      "about": "About Page Content (supports Markdown)",
-      "about_desc": "Content for the About page. Markdown supported.",
-      "about_placeholder": "Enter about page content...",
-      "description": "Configure notices, about page, and home page content",
-      "footer": "Footer Content (supports HTML)",
-      "footer_desc": "Footer content rendered site‑wide. HTML allowed; use responsibly.",
-      "footer_placeholder": "Enter footer content...",
-      "home_page": "Home Page Content (supports Markdown)",
-      "home_page_desc": "Content displayed on the home page. Markdown supported.",
-      "home_page_placeholder": "Enter home page content...",
-      "notice": "Notice (supports Markdown)",
-      "notice_desc": "Site‑wide announcement content shown to all users. Markdown supported.",
-      "notice_placeholder": "Enter notice content...",
-      "save_about": "Save About",
-      "save_footer": "Save Footer",
-      "save_home_page": "Save Home Content",
-      "save_notice": "Save Notice",
-      "title": "Content Management"
-    },
-    "loading": "Loading other settings...",
-    "updates": {
-      "check_update": "Check for Updates",
-      "description": "Check for updates and manage system version",
-      "title": "System Updates",
-      "update_available": "Update Available: {{version}}",
-      "view_versions": "View GitHub Tags"
-    }
-  },
   "personal_settings": {
     "profile_info": {
       "bind_email": "Bind Email",
@@ -147,8 +43,6 @@
   "settings": {
     "description": "Configure your account and system settings",
     "tabs": {
-      "operation": "Operation",
-      "other": "Other",
       "personal": "Personal",
       "system": "System"
     },
@@ -158,24 +52,16 @@
     "description": "Configure system-wide settings and options.",
     "descriptions": {
       "About": "About page content (markdown/HTML supported by frontend rendering).",
-      "AutomaticDisableChannelEnabled": "Automatically disable channels that show sustained failures.",
-      "AutomaticEnableChannelEnabled": "Automatically re‑enable previously disabled channels when healthy.",
-      "ChannelDisableThreshold": "Failure rate threshold (percentage) to auto‑disable a channel. Default 5%.",
       "ChatLink": "External chat/support link shown in the UI.",
-      "EmailDomainRestrictionEnabled": "Only allow registrations from domains listed below.",
-      "EmailDomainWhitelist": "Comma-separated allowed email domains (e.g., gmail.com, example.com).",
       "EmailVerificationEnabled": "Require email verification for actions like registration or password reset.",
       "Footer": "Footer text or HTML displayed site‑wide.",
       "HomePageContent": "Content displayed on the home page.",
       "LogConsumeEnabled": "Record usage/consumption logs. Turn off to reduce storage overhead.",
       "Logo": "Logo URL displayed in the header/login screens.",
-      "MessagePusherAddress": "Endpoint of the alert/notification pusher service for log events.",
-      "MessagePusherToken": "Authentication token for the alert/notification pusher. Stored securely and never displayed.",
       "Notice": "Site‑wide announcement content shown to all users.",
       "PasswordLoginEnabled": "Allow users to sign in with email and password. Disable to require OAuth or other providers.",
       "PasswordRegisterEnabled": "Allow new users to register with email and password.",
       "RegisterEnabled": "Master switch for user registration. Turn off to stop all new sign-ups.",
-      "RetryTimes": "Automatic retry attempts for upstream requests on transient errors.",
       "SMTPAccount": "SMTP username or account email used to authenticate.",
       "SMTPFrom": "From address used in outgoing emails (e.g., no-reply@yourdomain).",
       "SMTPPort": "SMTP server port (e.g., 587 for STARTTLS, 465 for SMTPS).",
@@ -184,7 +70,8 @@
       "ServerAddress": "Public base URL of this server (used in links/callbacks).",
       "SystemName": "System display name shown in the UI and emails.",
       "Theme": "UI theme (modern).",
-      "TopUpLink": "External link for users to purchase or top up quota."
+      "TopUpLink": "External link for users to purchase or top up quota.",
+      "QuotaForNewUser": "Initial balance granted to each newly registered user (in micro-yuan)."
     },
     "disabled": "Disabled",
     "enabled": "Enabled",
@@ -197,10 +84,6 @@
         "description": "Customize the look and feel of the product experience.",
         "title": "Branding & Content"
       },
-      "channels": {
-        "description": "Automatically react to upstream channel health and retry behavior.",
-        "title": "Channels & Reliability"
-      },
       "email": {
         "description": "Set up outbound email delivery.",
         "title": "Email (SMTP)"
@@ -209,13 +92,30 @@
         "description": "Control external links exposed to your end users.",
         "title": "Links"
       },
-      "logging": {
-        "description": "Tune observability and downstream integrations.",
-        "title": "Logging, Metrics & Integrations"
-      },
       "other": {
         "description": "Configuration keys that are not yet categorized.",
         "title": "Other Settings"
+      },
+      "operations": {
+        "title": "Operations & Logging",
+        "description": "Configure quota allocation and consumption logging."
+      },
+      "display_unit": {
+        "title": "Display Unit",
+        "description": "Choose how quotas are displayed across the UI.",
+        "unit_token": "Tokens",
+        "unit_token_desc": "Show quota as token count.",
+        "unit_usd": "USD ($)",
+        "unit_usd_desc": "Show quota as US dollars.",
+        "unit_cny": "CNY (¥)",
+        "unit_cny_desc": "Show quota as Chinese Yuan."
+      },
+      "updates": {
+        "title": "System Updates",
+        "description": "Check for updates and manage system version.",
+        "check_update": "Check for Updates",
+        "view_versions": "View GitHub Tags",
+        "update_available": "Update Available: {{version}}"
       }
     },
     "info_about": "Info about {{key}}",

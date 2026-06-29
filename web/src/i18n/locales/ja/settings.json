@@ -1,107 +1,4 @@
 {
-  "operation_settings": {
-    "general": {
-      "approximate_token": "概算トークン計測を有効化",
-      "approximate_token_desc": "やや精度が下がるものの、より高速な概算トークン計測でパフォーマンスを向上させます。",
-      "chat_link": "チャットリンク",
-      "chat_link_desc": "UI に表示される外部チャット／サポートリンクです。",
-      "description": "一般的な運用パラメータを設定します",
-      "display_in_currency": "通貨表示",
-      "display_in_currency_desc": "設定したレートに基づき、利用量とクォータを通貨として表示します。",
-      "display_unit": "表示単位",
-      "display_unit_desc": "クォータの表示方法を選択：トークン数、USD、またはCNY。変更は全体に適用されます。",
-      "unit_token": "トークン数",
-      "unit_token_desc": "トークン数でクォータを表示します。",
-      "unit_usd": "USD ($)",
-      "unit_usd_desc": "米ドルでクォータを表示します。",
-      "unit_cny": "CNY (¥)",
-      "unit_cny_desc": "人民元でクォータを表示します。",
-      "display_token_stat": "トークン統計を表示",
-      "display_token_stat_desc": "利用可能な場合、ログやダッシュボードにトークン統計を表示します。",
-      "log_consume_enabled": "消費ログを有効化",
-      "log_consume_enabled_desc": "利用／消費ログを記録します。無効化するとストレージ使用量を抑えられます。",
-      "quota_per_unit": "単位あたりのクォータ",
-      "quota_per_unit_desc": "通貨表示用の換算レートです。値が大きいほど 1 ドルあたりのクォータが増えます。",
-      "retry_times": "再試行回数",
-      "retry_times_desc": "上流リクエストで一時的なエラーが発生した際の自動再試行回数です。",
-      "save": "一般設定を保存",
-      "title": "一般設定",
-      "top_up_link": "チャージリンク",
-      "top_up_link_desc": "ユーザーがクォータを購入・チャージするための外部リンクです。"
-    },
-    "loading": "運用設定を読み込み中...",
-    "logs": {
-      "clear_button": "この日付以前のログを削除",
-      "clear_failed": "ログの削除に失敗しました: {{message}}",
-      "clear_warning": "選択した日付より前のログはすべて完全に削除されます。",
-      "cleared_success": "{{count}} 件のログを削除しました！",
-      "description": "保存領域を確保するため、古いログを削除します",
-      "title": "ログ管理"
-    },
-    "monitoring": {
-      "automatic_disable_channel": "チャネル自動停止",
-      "automatic_disable_channel_desc": "失敗が続くチャネルを自動的に無効化します。",
-      "automatic_enable_channel": "チャネル自動再開",
-      "automatic_enable_channel_desc": "状態が回復した無効化済みチャネルを自動で再有効化します。",
-      "channel_disable_threshold": "無効化の閾値",
-      "channel_disable_threshold_desc": "チャネルを自動停止する失敗率（%）です。既定値は 5%。",
-      "description": "監視閾値とチャネル管理を設定します",
-      "quota_remind_threshold": "クォータ警告閾値",
-      "quota_remind_threshold_desc": "残りクォータがこの値を下回るとユーザーへ通知されます。",
-      "save": "監視設定を保存",
-      "title": "監視とチャネル設定"
-    },
-    "quota": {
-      "description": "ユーザークォータと招待ボーナスを設定します",
-      "pre_consumed_quota": "事前消費クォータ",
-      "pre_consumed_quota_desc": "悪用防止のため、リクエスト開始時にクォータを確保します。未使用分は課金後に返還されます。",
-      "quota_for_new_user": "新規ユーザーの初期クォータ",
-      "quota_for_new_user_desc": "新しく登録したユーザーに付与される初期クォータです。",
-      "save": "クォータ設定を保存",
-      "title": "クォータ設定"
-    }
-  },
-  "other_settings": {
-    "branding": {
-      "description": "システム名・ロゴ・外観を設定します",
-      "logo_url": "ロゴ URL",
-      "logo_url_desc": "ヘッダーやログイン画面に表示されるロゴ画像の URL です。",
-      "save": "保存",
-      "system_name": "システム名",
-      "system_name_desc": "UI やメールに表示されるシステムの表示名です。",
-      "theme": "テーマ",
-      "theme_desc": "UI テーマ名（modern）。",
-      "title": "システムブランディング"
-    },
-    "content": {
-      "about": "About ページの内容（Markdown 対応）",
-      "about_desc": "About ページに表示するコンテンツです。",
-      "about_placeholder": "About ページの内容を入力...",
-      "description": "お知らせ、About、ホームページのコンテンツを設定します",
-      "footer": "フッター内容（HTML 対応）",
-      "footer_desc": "サイト全体で表示されるフッター。HTML も使用できます。",
-      "footer_placeholder": "フッターの内容を入力...",
-      "home_page": "ホームページの内容（Markdown 対応）",
-      "home_page_desc": "ホームページに表示されるコンテンツです。",
-      "home_page_placeholder": "ホームページの内容を入力...",
-      "notice": "お知らせ（Markdown 対応）",
-      "notice_desc": "全ユーザーに表示されるサイト全体のお知らせです。",
-      "notice_placeholder": "お知らせの内容を入力...",
-      "save_about": "About を保存",
-      "save_footer": "フッターを保存",
-      "save_home_page": "ホームページを保存",
-      "save_notice": "お知らせを保存",
-      "title": "コンテンツ管理"
-    },
-    "loading": "その他の設定を読み込み中...",
-    "updates": {
-      "check_update": "更新を確認",
-      "description": "更新を確認し、システムバージョンを管理します",
-      "title": "システム更新",
-      "update_available": "利用可能な更新: {{version}}",
-      "view_versions": "GitHub のタグを見る"
-    }
-  },
   "personal_settings": {
     "profile_info": {
       "bind_email": "Bind Email",
@@ -144,8 +41,6 @@
   "settings": {
     "description": "アカウントおよびシステムの設定を構成します",
     "tabs": {
-      "operation": "運用",
-      "other": "その他",
       "personal": "個人",
       "system": "システム"
     },
@@ -155,24 +50,16 @@
     "description": "システム全体の設定とオプションを管理します。",
     "descriptions": {
       "About": "About ページのコンテンツ（Markdown/HTML 対応）。",
-      "AutomaticDisableChannelEnabled": "失敗が継続するチャネルを自動的に無効化します。",
-      "AutomaticEnableChannelEnabled": "状態が回復したチャネルを自動で再有効化します。",
-      "ChannelDisableThreshold": "チャネルを自動停止する失敗率（%）。既定値は 5%。",
       "ChatLink": "UI に表示される外部チャット／サポートリンクです。",
-      "EmailDomainRestrictionEnabled": "下記のドメインのみ登録を許可します。",
-      "EmailDomainWhitelist": "許可されたメールドメイン（カンマ区切り。例: gmail.com, example.com）。",
       "EmailVerificationEnabled": "登録やパスワードリセットなどでメール認証を必須にします。",
       "Footer": "サイト全体で表示されるフッターのテキスト／HTML。",
       "HomePageContent": "ホームページに表示する内容です。",
       "LogConsumeEnabled": "利用／消費ログを記録します。オフでストレージを節約できます。",
       "Logo": "ヘッダー／ログイン画面に表示されるロゴ URL。",
-      "MessagePusherAddress": "ログイベント通知サービスのエンドポイント。",
-      "MessagePusherToken": "通知サービスの認証トークン（安全に保存）。",
       "Notice": "全ユーザー向けのお知らせ内容です。",
       "PasswordLoginEnabled": "メール＋パスワードでのログインを許可します。無効化すると OAuth 等が必須になります。",
       "PasswordRegisterEnabled": "メール＋パスワードでの新規登録を許可します。",
       "RegisterEnabled": "ユーザー登録のマスタースイッチです。オフにすると新規登録が停止します。",
-      "RetryTimes": "上流への再試行回数を自動制御します。",
       "SMTPAccount": "SMTP 認証に使用するユーザー名／メールアドレス。",
       "SMTPFrom": "送信メールに使用する送信元アドレス。",
       "SMTPPort": "SMTP サーバーのポート（例: STARTTLS=587, SMTPS=465）。",
@@ -181,7 +68,8 @@
       "ServerAddress": "このサーバーの公開ベース URL（リンクやコールバックで使用）。",
       "SystemName": "UI やメールに表示されるシステム名。",
       "Theme": "UI テーマ（modern）。",
-      "TopUpLink": "ユーザーがクォータを購入・チャージするための外部リンク。"
+      "TopUpLink": "ユーザーがクォータを購入・チャージするための外部リンク。",
+      "QuotaForNewUser": "新規登録ユーザーに付与される初期残高（マイクロ元）。"
     },
     "disabled": "無効",
     "enabled": "有効",
@@ -194,10 +82,6 @@
         "description": "製品体験の見た目と雰囲気をカスタマイズします。",
         "title": "ブランディングとコンテンツ"
       },
-      "channels": {
-        "description": "上流チャネルの健全性や再試行挙動に自動対応します。",
-        "title": "チャネルと信頼性"
-      },
       "email": {
         "description": "送信メール設定を構成します。",
         "title": "メール（SMTP）"
@@ -206,13 +90,30 @@
         "description": "エンドユーザーに公開する外部リンクを制御します。",
         "title": "リンク"
       },
-      "logging": {
-        "description": "可観測性と下流連携を調整します。",
-        "title": "ログ・メトリクス・連携"
-      },
       "other": {
         "description": "まだカテゴリ化されていない設定キーです。",
         "title": "その他の設定"
+      },
+      "operations": {
+        "title": "運用とログ",
+        "description": "クォータ割り当てと消費ログを設定します。"
+      },
+      "display_unit": {
+        "title": "表示単位",
+        "description": "UI全体でのクォータ表示方法を選択します。",
+        "unit_token": "トークン",
+        "unit_token_desc": "クォータをトークン数で表示。",
+        "unit_usd": "米ドル ($)",
+        "unit_usd_desc": "クォータを米ドルで表示。",
+        "unit_cny": "人民元 (¥)",
+        "unit_cny_desc": "クォータを人民元で表示。"
+      },
+      "updates": {
+        "title": "システム更新",
+        "description": "アップデートを確認し、システムバージョンを管理します。",
+        "check_update": "アップデートを確認",
+        "view_versions": "GitHubタグを表示",
+        "update_available": "アップデートがあります: {{version}}"
       }
     },
     "info_about": "{{key}} の情報",

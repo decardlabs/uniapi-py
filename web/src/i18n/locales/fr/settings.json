@@ -1,107 +1,4 @@
 {
-  "operation_settings": {
-    "general": {
-      "approximate_token": "Activer le comptage approximatif des tokens",
-      "approximate_token_desc": "Utilisez une estimation plus rapide du comptage des tokens pour améliorer les performances (au prix d'une légère perte de précision).",
-      "chat_link": "Lien de chat",
-      "chat_link_desc": "Lien externe de chat/assistance affiché dans l'interface.",
-      "description": "Configurer les paramètres opérationnels généraux",
-      "display_in_currency": "Afficher en devise",
-      "display_in_currency_desc": "Afficher l'utilisation et les quotas en devise dans l'interface, selon la conversion configurée.",
-      "display_unit": "Unité d'affichage",
-      "display_unit_desc": "Choisissez comment afficher les quotas : nombre de tokens, USD ou CNY. Les changements s'appliquent globalement.",
-      "unit_token": "Tokens",
-      "unit_token_desc": "Afficher le quota en nombre de tokens.",
-      "unit_usd": "USD ($)",
-      "unit_usd_desc": "Afficher le quota en dollars américains.",
-      "unit_cny": "CNY (¥)",
-      "unit_cny_desc": "Afficher le quota en yuans chinois (RMB).",
-      "display_token_stat": "Afficher les statistiques de tokens",
-      "display_token_stat_desc": "Afficher les statistiques de tokens dans les journaux et tableaux de bord lorsque disponibles.",
-      "log_consume_enabled": "Activer les journaux de consommation",
-      "log_consume_enabled_desc": "Enregistrer les journaux d'utilisation/consommation. Désactivez pour réduire le stockage nécessaire.",
-      "quota_per_unit": "Quota par unité",
-      "quota_per_unit_desc": "Ratio de conversion pour l'affichage en devise. Plus la valeur est élevée, plus 1 $ représente de quota.",
-      "retry_times": "Nombre de tentatives",
-      "retry_times_desc": "Nombre de tentatives automatiques pour les requêtes amont en cas d'erreurs transitoires.",
-      "save": "Enregistrer les paramètres généraux",
-      "title": "Paramètres généraux",
-      "top_up_link": "Lien de recharge",
-      "top_up_link_desc": "Lien externe permettant aux utilisateurs d'acheter ou de recharger du quota."
-    },
-    "loading": "Chargement des paramètres opérationnels...",
-    "logs": {
-      "clear_button": "Effacer les journaux avant cette date",
-      "clear_failed": "Impossible d'effacer les journaux : {{message}}",
-      "clear_warning": "Cela supprimera définitivement tous les journaux antérieurs à la date sélectionnée.",
-      "cleared_success": "{{count}} journaux effacés !",
-      "description": "Nettoyez les journaux historiques pour libérer de l'espace de stockage",
-      "title": "Gestion des journaux"
-    },
-    "monitoring": {
-      "automatic_disable_channel": "Désactivation automatique des canaux",
-      "automatic_disable_channel_desc": "Désactive automatiquement les canaux présentant des échecs répétés.",
-      "automatic_enable_channel": "Réactivation automatique",
-      "automatic_enable_channel_desc": "Réactive automatiquement les canaux précédemment désactivés lorsqu'ils redeviennent stables.",
-      "channel_disable_threshold": "Seuil de désactivation",
-      "channel_disable_threshold_desc": "Taux d'échec (en %) à partir duquel un canal est désactivé automatiquement. Valeur par défaut : 5 %.",
-      "description": "Configurer les seuils de surveillance et la gestion des canaux",
-      "quota_remind_threshold": "Seuil d'alerte de quota",
-      "quota_remind_threshold_desc": "Lorsque le quota restant passe sous cette valeur, les utilisateurs sont avertis.",
-      "save": "Enregistrer les paramètres de surveillance",
-      "title": "Surveillance et canaux"
-    },
-    "quota": {
-      "description": "Configurer le quota utilisateur et les récompenses d'invitation",
-      "pre_consumed_quota": "Quota préconsommé",
-      "pre_consumed_quota_desc": "Quota réservé au début d'une requête pour éviter les abus. La partie non utilisée est restituée après facturation.",
-      "quota_for_new_user": "Quota pour un nouvel utilisateur",
-      "quota_for_new_user_desc": "Quota initial accordé à chaque nouvel utilisateur inscrit.",
-      "save": "Enregistrer les paramètres de quota",
-      "title": "Paramètres de quota"
-    }
-  },
-  "other_settings": {
-    "branding": {
-      "description": "Configurer le nom du système, le logo et l'apparence visuelle",
-      "logo_url": "URL du logo",
-      "logo_url_desc": "URL de l'image de logo affichée dans l'en-tête/l'écran de connexion.",
-      "save": "Enregistrer",
-      "system_name": "Nom du système",
-      "system_name_desc": "Nom d'affichage du système utilisé dans l'interface et les e-mails.",
-      "theme": "Thème",
-      "theme_desc": "Nom du thème UI (modern).",
-      "title": "Image de marque du système"
-    },
-    "content": {
-      "about": "Contenu de la page À propos (Markdown pris en charge)",
-      "about_desc": "Contenu de la page À propos. Markdown pris en charge.",
-      "about_placeholder": "Saisissez le contenu de la page À propos...",
-      "description": "Configurer les annonces, la page À propos et le contenu d'accueil",
-      "footer": "Contenu du pied de page (HTML pris en charge)",
-      "footer_desc": "Contenu du pied de page affiché sur tout le site. HTML autorisé ; à utiliser avec précaution.",
-      "footer_placeholder": "Saisissez le contenu du pied de page...",
-      "home_page": "Contenu de la page d'accueil (Markdown)",
-      "home_page_desc": "Contenu affiché sur la page d'accueil. Markdown pris en charge.",
-      "home_page_placeholder": "Saisissez le contenu de la page d'accueil...",
-      "notice": "Annonce (Markdown pris en charge)",
-      "notice_desc": "Annonce globale affichée à tous les utilisateurs. Markdown pris en charge.",
-      "notice_placeholder": "Saisissez le contenu de l'annonce...",
-      "save_about": "Enregistrer la page À propos",
-      "save_footer": "Enregistrer le pied de page",
-      "save_home_page": "Enregistrer la page d'accueil",
-      "save_notice": "Enregistrer l'annonce",
-      "title": "Gestion du contenu"
-    },
-    "loading": "Chargement des autres paramètres...",
-    "updates": {
-      "check_update": "Rechercher des mises à jour",
-      "description": "Vérifier les mises à jour et gérer la version du système",
-      "title": "Mises à jour du système",
-      "update_available": "Mise à jour disponible : {{version}}",
-      "view_versions": "Voir les tags GitHub"
-    }
-  },
   "personal_settings": {
     "profile_info": {
       "bind_email": "Bind Email",
@@ -144,8 +41,6 @@
   "settings": {
     "description": "Configurez votre compte et les paramètres du système",
     "tabs": {
-      "operation": "Opération",
-      "other": "Autres",
       "personal": "Personnel",
       "system": "Système"
     },
@@ -155,24 +50,16 @@
     "description": "Configurer les paramètres et options globaux du système.",
     "descriptions": {
       "About": "Contenu de la page À propos (Markdown/HTML pris en charge côté frontend).",
-      "AutomaticDisableChannelEnabled": "Désactiver automatiquement les canaux présentant des échecs répétés.",
-      "AutomaticEnableChannelEnabled": "Réactiver automatiquement les canaux désactivés lorsqu'ils redeviennent stables.",
-      "ChannelDisableThreshold": "Taux d'échec (en %) entraînant la désactivation automatique d'un canal. Par défaut : 5 %.",
       "ChatLink": "Lien externe de chat/assistance affiché dans l'interface.",
-      "EmailDomainRestrictionEnabled": "N'autoriser l'inscription qu'aux domaines listés ci-dessous.",
-      "EmailDomainWhitelist": "Domaines e-mail autorisés séparés par des virgules (ex. gmail.com, example.com).",
       "EmailVerificationEnabled": "Exiger la vérification par e-mail pour l'inscription ou la réinitialisation du mot de passe.",
       "Footer": "Texte ou HTML du pied de page affiché sur tout le site.",
       "HomePageContent": "Contenu affiché sur la page d'accueil.",
       "LogConsumeEnabled": "Enregistrer les journaux d'utilisation/consommation. Désactivez pour réduire le stockage.",
       "Logo": "URL du logo affiché dans l'en-tête/l'écran de connexion.",
-      "MessagePusherAddress": "Adresse de l'outil de notifications/alertes pour les journaux.",
-      "MessagePusherToken": "Jeton d'authentification du service d'alertes (stocké de façon sécurisée).",
       "Notice": "Annonce globale affichée à tous les utilisateurs.",
       "PasswordLoginEnabled": "Autoriser la connexion par e-mail et mot de passe. Désactivez pour imposer OAuth ou d'autres fournisseurs.",
       "PasswordRegisterEnabled": "Autoriser les nouvelles inscriptions par e-mail/mot de passe.",
       "RegisterEnabled": "Interrupteur principal des inscriptions utilisateur. Désactivez pour bloquer les nouveaux comptes.",
-      "RetryTimes": "Nombre de tentatives automatiques pour les erreurs amont transitoires.",
       "SMTPAccount": "Nom d'utilisateur ou adresse e-mail SMTP utilisé pour l'authentification.",
       "SMTPFrom": "Adresse d'expéditeur utilisée pour les e-mails sortants.",
       "SMTPPort": "Port du serveur SMTP (ex. 587 pour STARTTLS, 465 pour SMTPS).",
@@ -181,7 +68,8 @@
       "ServerAddress": "URL publique de ce serveur (utilisée dans les liens/rappels).",
       "SystemName": "Nom d'affichage du système dans l'interface et les e-mails.",
       "Theme": "Thème UI (modern).",
-      "TopUpLink": "Lien externe permettant d'acheter ou recharger du quota."
+      "TopUpLink": "Lien externe permettant d'acheter ou recharger du quota.",
+      "QuotaForNewUser": "Solde initial accordé à chaque nouvel utilisateur inscrit (en micro-yuan)."
     },
     "disabled": "Désactivé",
     "enabled": "Activé",
@@ -194,10 +82,6 @@
         "description": "Personnalisez l'apparence et l'expérience produit.",
         "title": "Image de marque et contenu"
       },
-      "channels": {
-        "description": "Réagissez automatiquement à l'état des canaux amont et à leur stratégie de reprise.",
-        "title": "Canaux et fiabilité"
-      },
       "email": {
         "description": "Configurer l'envoi d'e-mails sortants.",
         "title": "E-mail (SMTP)"
@@ -206,13 +90,30 @@
         "description": "Contrôlez les liens externes exposés aux utilisateurs finaux.",
         "title": "Liens"
       },
-      "logging": {
-        "description": "Ajustez l'observabilité et les intégrations aval.",
-        "title": "Journalisation, métriques et intégrations"
-      },
       "other": {
         "description": "Clés de configuration non encore catégorisées.",
         "title": "Autres paramètres"
+      },
+      "operations": {
+        "title": "Opérations et Journaux",
+        "description": "Configurer l'allocation de quota et la journalisation de la consommation."
+      },
+      "display_unit": {
+        "title": "Unité d'Affichage",
+        "description": "Choisissez comment les quotas sont affichés dans l'interface.",
+        "unit_token": "Tokens",
+        "unit_token_desc": "Afficher le quota comme nombre de tokens.",
+        "unit_usd": "USD ($)",
+        "unit_usd_desc": "Afficher le quota en dollars américains.",
+        "unit_cny": "CNY (¥)",
+        "unit_cny_desc": "Afficher le quota en yuans chinois."
+      },
+      "updates": {
+        "title": "Mises à Jour Système",
+        "description": "Vérifier les mises à jour et gérer la version du système.",
+        "check_update": "Vérifier les Mises à Jour",
+        "view_versions": "Voir les Tags GitHub",
+        "update_available": "Mise à Jour Disponible: {{version}}"
       }
     },
     "info_about": "Infos sur {{key}}",

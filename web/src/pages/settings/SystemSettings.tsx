@@ -22,6 +22,23 @@ interface OptionGroup {
   keys: string[];
 }
 
+const DEAD_OPTION_KEYS = new Set<string>([
+  'AutomaticDisableChannelEnabled',
+  'AutomaticEnableChannelEnabled',
+  'ChannelDisableThreshold',
+  'EmailDomainRestrictionEnabled',
+  'EmailDomainWhitelist',
+  'MessagePusherAddress',
+  'MessagePusherToken',
+  'PreConsumedQuota',
+  'QuotaPerUnit',
+  'QuotaRemindThreshold',
+  'RetryTimes',
+  'DisplayInCurrencyEnabled',
+  'DisplayTokenStatEnabled',
+  'ApproximateTokenEnabled',
+]);
+
 const OPTION_GROUPS: OptionGroup[] = [
   {
     id: 'authentication',
@@ -32,8 +49,6 @@ const OPTION_GROUPS: OptionGroup[] = [
       'PasswordRegisterEnabled',
       'RegisterEnabled',
       'EmailVerificationEnabled',
-      'EmailDomainRestrictionEnabled',
-      'EmailDomainWhitelist',
     ],
   },
   {
@@ -55,22 +70,15 @@ const OPTION_GROUPS: OptionGroup[] = [
     keys: ['TopUpLink', 'ChatLink', 'ServerAddress'],
   },
   {
-    id: 'channels',
-    title: 'Channels & Reliability',
-    description: 'Automatically react to upstream channel health and retry behavior.',
-    keys: ['AutomaticDisableChannelEnabled', 'AutomaticEnableChannelEnabled', 'ChannelDisableThreshold', 'RetryTimes'],
-  },
-  {
-    id: 'logging',
-    title: 'Logging, Metrics & Integrations',
-    description: 'Tune observability and downstream integrations.',
-    keys: ['LogConsumeEnabled', 'MessagePusherAddress', 'MessagePusherToken'],
+    id: 'operations',
+    title: 'Operations & Logging',
+    description: 'Configure quota allocation and consumption logging.',
+    keys: ['LogConsumeEnabled', 'QuotaForNewUser'],
   },
 ];
 
 const SENSITIVE_OPTION_KEYS = new Set<string>([
   'SMTPToken',
-  'MessagePusherToken',
 ]);
 
 const OPTION_GROUP_KEY_SET = new Set(OPTION_GROUPS.flatMap((group) => group.keys));
@@ -82,9 +90,6 @@ const BOOLEAN_OPTION_KEYS = new Set<string>([
   'PasswordRegisterEnabled',
   'RegisterEnabled',
   'EmailVerificationEnabled',
-  'EmailDomainRestrictionEnabled',
-  'AutomaticDisableChannelEnabled',
-  'AutomaticEnableChannelEnabled',
   'LogConsumeEnabled',
 ]);
 
@@ -108,8 +113,6 @@ export function SystemSettings() {
           'PasswordRegisterEnabled',
           'RegisterEnabled',
           'EmailVerificationEnabled',
-          'EmailDomainRestrictionEnabled',
-          'EmailDomainWhitelist',
         ],
       },
       {
@@ -131,16 +134,10 @@ export function SystemSettings() {
         keys: ['TopUpLink', 'ChatLink', 'ServerAddress'],
       },
       {
-        id: 'channels',
-        title: t('system_settings.groups.channels.title'),
-        description: t('system_settings.groups.channels.description'),
-        keys: ['AutomaticDisableChannelEnabled', 'AutomaticEnableChannelEnabled', 'ChannelDisableThreshold', 'RetryTimes'],
-      },
-      {
-        id: 'logging',
-        title: t('system_settings.groups.logging.title'),
-        description: t('system_settings.groups.logging.description'),
-        keys: ['LogConsumeEnabled', 'MessagePusherAddress', 'MessagePusherToken'],
+        id: 'operations',
+        title: t('system_settings.groups.operations.title'),
+        description: t('system_settings.groups.operations.description'),
+        keys: ['LogConsumeEnabled', 'QuotaForNewUser'],
       },
     ],
     [t]
@@ -154,8 +151,6 @@ export function SystemSettings() {
       PasswordRegisterEnabled: t('system_settings.descriptions.PasswordRegisterEnabled'),
       RegisterEnabled: t('system_settings.descriptions.RegisterEnabled'),
       EmailVerificationEnabled: t('system_settings.descriptions.EmailVerificationEnabled'),
-      EmailDomainRestrictionEnabled: t('system_settings.descriptions.EmailDomainRestrictionEnabled'),
-      EmailDomainWhitelist: t('system_settings.descriptions.EmailDomainWhitelist'),
 
       // Email (SMTP)
       SMTPServer: t('system_settings.descriptions.SMTPServer'),
@@ -178,16 +173,9 @@ export function SystemSettings() {
       ChatLink: t('system_settings.descriptions.ChatLink'),
       ServerAddress: t('system_settings.descriptions.ServerAddress'),
 
-      // Channels & Reliability
-      AutomaticDisableChannelEnabled: t('system_settings.descriptions.AutomaticDisableChannelEnabled'),
-      AutomaticEnableChannelEnabled: t('system_settings.descriptions.AutomaticEnableChannelEnabled'),
-      ChannelDisableThreshold: t('system_settings.descriptions.ChannelDisableThreshold'),
-      RetryTimes: t('system_settings.descriptions.RetryTimes'),
-
-      // Logging / Metrics / Integrations
+      // Operations
       LogConsumeEnabled: t('system_settings.descriptions.LogConsumeEnabled'),
-      MessagePusherAddress: t('system_settings.descriptions.MessagePusherAddress'),
-      MessagePusherToken: t('system_settings.descriptions.MessagePusherToken'),
+      QuotaForNewUser: t('system_settings.descriptions.QuotaForNewUser'),
     }),
     [t]
   );
@@ -248,7 +236,10 @@ export function SystemSettings() {
     return map;
   }, [options]);
 
-  const uncategorizedOptions = useMemo(() => options.filter((opt) => !OPTION_GROUP_KEY_SET.has(opt.key)), [options]);
+  const uncategorizedOptions = useMemo(
+    () => options.filter((opt) => !OPTION_GROUP_KEY_SET.has(opt.key) && !DEAD_OPTION_KEYS.has(opt.key)),
+    [options]
+  );
 
   return (
     <Card>
