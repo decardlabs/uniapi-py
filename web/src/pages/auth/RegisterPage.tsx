@@ -17,7 +17,15 @@ const registerSchema = (t: (key: string) => string) =>
   z
     .object({
       username: z.string().min(3, t('auth.register.username_min_length')),
-      password: z.string().min(8, t('auth.register.password_min_length')),
+      password: z
+        .string()
+        .min(8, t('auth.register.password_min_length'))
+        .refine((val) => /[A-Z]/.test(val), {
+          message: t('auth.register.password_uppercase') || 'Password must contain at least one uppercase letter',
+        })
+        .refine((val) => /\d/.test(val), {
+          message: t('auth.register.password_digit') || 'Password must contain at least one digit',
+        }),
       password2: z.string().min(8, t('auth.register.password_confirm_required')),
       email: z.string().email(t('auth.register.email_required')),
       verification_code: z.string().min(1, t('auth.register.verification_code_required')),
@@ -111,16 +119,31 @@ export function RegisterPage() {
       // Unified API call - complete URL with /api prefix
       const path = `/api/user/register${systemStatus?.turnstile_check ? `?turnstile=${encodeURIComponent(turnstileToken)}` : ''}`;
       const response = await api.post(path, payload);
-      const { success, message } = response.data;
+      const body = response.data;
+
+      // Handle both GenericApiResponse format ({success, message}) and
+      // http_exception_handler format ({detail, success, error: {message}})
+      const success = body.success;
+      const message = body.message || body.detail || body.error?.message || '';
 
       if (success) {
         navigate('/login', {
           state: { message: t('auth.register.success') },
         });
       } else {
-        form.setError('root', {
-          message: message || t('auth.register.failed'),
-        });
+        // Map backend error messages to the correct form field
+        const msg = message.toLowerCase();
+        if (msg.includes('username')) {
+          form.setError('username', { message });
+        } else if (msg.includes('password') || msg.includes('uppercase') || msg.includes('digit') || msg.includes('special') || msg.includes('character')) {
+          form.setError('password', { message });
+        } else if (msg.includes('验证码') || msg.includes('code')) {
+          form.setError('verification_code', { message });
+        } else {
+          form.setError('root', {
+            message: message || t('auth.register.failed'),
+          });
+        }
       }
     } catch (error) {
       form.setError('root', {

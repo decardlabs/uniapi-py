@@ -103,14 +103,24 @@ async def register(
                 ).model_dump(),
             )
 
-    user = await register_user(
-        db,
-        username=body.username,
-        password=body.password,
-        display_name=body.display_name,
-        email=body.email,
-        verification_code=body.verification_code,
-    )
+    from fastapi import HTTPException
+    try:
+        user = await register_user(
+            db,
+            username=body.username,
+            password=body.password,
+            display_name=body.display_name,
+            email=body.email,
+            verification_code=body.verification_code,
+        )
+    except HTTPException as e:
+        return JSONResponse(
+            status_code=e.status_code,
+            content=GenericApiResponse(
+                success=False,
+                message=e.detail,
+            ).model_dump(),
+        )
     session_token = create_session(user)
     response = JSONResponse(
         content=GenericApiResponse(
