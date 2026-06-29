@@ -162,6 +162,9 @@ jobs:
           asyncio.run(seed())
           SEED_SCRIPT
 
+      - name: Seed E2E test data (channels, pools)
+        run: SQLITE_PATH=/tmp/uniapi_ci.db python3 scripts/seed_e2e.py
+
       - name: Start backend and frontend
         run: |
           # Backend API on 8000 (DEBUG=true enables E2E debug endpoint)
