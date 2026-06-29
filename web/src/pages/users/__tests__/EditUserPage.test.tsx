@@ -17,11 +17,10 @@ describe('Balance and Timestamp fields use Input disabled', () => {
     // and timestamp sections (lines 513-536) use Input disabled pattern.
     // After the code fix, these sections should render <input disabled> instead of <div>.
 
+    const path = await import('path');
     const fs = await import('fs');
-    const source = fs.readFileSync(
-      '/Users/macairm5/Documents/uniapi-py/web/src/pages/users/EditUserPage.tsx',
-      'utf-8'
-    );
+    const sourcePath = path.resolve(process.cwd(), 'src/pages/users/EditUserPage.tsx');
+    const source = fs.readFileSync(sourcePath, 'utf-8');
 
     // Balance section should NOT contain a plain div with formatted balance
     // It should use <Input disabled> instead
