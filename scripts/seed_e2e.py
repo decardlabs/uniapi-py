@@ -13,11 +13,18 @@ import time
 
 os.environ.setdefault("SQLITE_PATH", "/tmp/uniapi_ci.db")
 
-from app.database import async_session_factory
+from app.database import async_session_factory, engine
+from app.models.base import Base
+
+# Ensure all channel-related tables exist (the main seed only imports User/Option)
+import app.models.channel  # noqa: F401 — register Channel in Base.metadata
 from app.models.channel import Channel
 
 
 async def seed_e2e():
+    # Create tables if they don't exist yet
+    async with engine.begin() as conn:
+        await conn.run_sync(Base.metadata.create_all)
     now_ms = int(time.time() * 1000)
     now_s = int(time.time())
 
