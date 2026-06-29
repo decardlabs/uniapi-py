@@ -94,11 +94,6 @@
     "redirecting": "Redirecting to home in {{seconds}}s...",
     "stay_here": "Stay on this page"
   },
-  "passkey_prompt": {
-    "dismiss": "Dismiss",
-    "message": "Enhance your account security — set up a passkey for fast, passwordless sign-in.",
-    "setup_button": "Set up Passkey"
-  },
   "status": {
     "badges": {
       "auto_disabled": "Auto Disabled",

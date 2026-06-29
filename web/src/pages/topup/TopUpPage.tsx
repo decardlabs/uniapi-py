@@ -16,17 +16,15 @@ import { useTranslation } from 'react-i18next';
 import * as z from 'zod';
 
 interface UserInfo {
-  id: number; // eslint-disable-line @typescript-eslint/no-explicit-any
+  id: number;
   username: string;
   display_name?: string;
-  quota: number;
 }
 
 interface TopUpRequest {
   id: number;
   user_id: number;
   amount: number;
-  quota: number;
   status: number;
   remark: string;
   admin_remark: string;

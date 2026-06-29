@@ -94,11 +94,6 @@
     "redirecting": "{{seconds}} 秒後にホームへリダイレクトします...",
     "stay_here": "このページに留まる"
   },
-  "passkey_prompt": {
-    "dismiss": "閉じる",
-    "message": "アカウントのセキュリティを強化 — パスキーを設定して、パスワードなしで素早くログインできます。",
-    "setup_button": "パスキーを設定"
-  },
   "status": {
     "badges": {
       "auto_disabled": "自動で無効化",

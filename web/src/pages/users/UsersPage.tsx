@@ -578,7 +578,7 @@ function TopUpDialog({
   username?: string;
   onDone: () => void;
 }) {
-  const [pools, setPools] = useState<{ id: number; name: string; available_quota: number }[]>([]);
+  const [pools, setPools] = useState<{ id: number; name: string; available: number }[]>([]);
   const [poolsLoading, setPoolsLoading] = useState(false);
   const schema = z.object({
     amount: z.coerce.number().positive('Amount must be greater than 0'),
@@ -606,7 +606,7 @@ function TopUpDialog({
       .get('/api/pool/', { params: { status: 'active', page: 1, page_size: 50 } })
       .then((res) => {
         if (res.data?.success) {
-          setPools(res.data.data?.items || []);
+          setPools(res.data?.data || []);
         }
       })
       .catch(() => {
@@ -667,7 +667,7 @@ function TopUpDialog({
                         <SelectItem value="0">{tr('fields.pool_id.direct', 'Direct top-up')}</SelectItem>
                         {pools.map((pool) => (
                           <SelectItem key={pool.id} value={String(pool.id)}>
-                            {pool.name} (¥{pool.available_quota.toFixed(2)})
+                            {pool.name} (¥{pool.available.toFixed(2)})
                           </SelectItem>
                         ))}
                       </SelectContent>

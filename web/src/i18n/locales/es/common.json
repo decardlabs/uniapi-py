@@ -94,11 +94,6 @@
     "redirecting": "Redirigiendo al inicio en {{seconds}} s...",
     "stay_here": "Quedarse en esta página"
   },
-  "passkey_prompt": {
-    "dismiss": "Cerrar",
-    "message": "Mejora la seguridad de tu cuenta — configura una passkey para iniciar sesión rápidamente sin contraseña.",
-    "setup_button": "Configurar Passkey"
-  },
   "status": {
     "badges": {
       "auto_disabled": "Deshabilitado automáticamente",

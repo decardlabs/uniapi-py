@@ -12,7 +12,6 @@ const HomePage = lazy(() => import('@/pages/HomePage').then((m) => ({ default: m
 const NotFoundPage = lazy(() => import('@/pages/NotFoundPage'));
 const AboutPage = lazy(() => import('@/pages/about/AboutPage'));
 const GitHubOAuthPage = lazy(() => import('@/pages/auth/GitHubOAuthPage'));
-const LarkOAuthPage = lazy(() => import('@/pages/auth/LarkOAuthPage'));
 const LoginPage = lazy(() => import('@/pages/auth/LoginPage'));
 const PasswordResetConfirmPage = lazy(() => import('@/pages/auth/PasswordResetConfirmPage'));
 const PasswordResetPage = lazy(() => import('@/pages/auth/PasswordResetPage'));
@@ -90,7 +89,6 @@ function App() {
                 <Route path="/reset" element={<PasswordResetPage />} />
                 <Route path="/user/reset" element={<PasswordResetConfirmPage />} />
                 <Route path="/oauth/github" element={<GitHubOAuthPage />} />
-                <Route path="/oauth/lark" element={<LarkOAuthPage />} />
 
                 {/* Public routes with layout */}
                 <Route path="/" element={<Layout />}>

@@ -63,12 +63,12 @@
     "realtime": "实时对话",
     "recharges": "充值管理",
     "register": "注册",
-      "refresh": "刷新",
+    "refresh": "刷新",
     "remove": "移除",
-      "reset": "重置",
-      "search": "搜索",
-      "search_for": "搜索：",
-      "search_placeholder": "搜索...",
+    "reset": "重置",
+    "search": "搜索",
+    "search_for": "搜索：",
+    "search_placeholder": "搜索...",
     "remove_item": "移除 {{item}}",
     "selected_count": "已选 ({{count}})",
     "settings": "设置",
@@ -104,11 +104,6 @@
     "message": "页面不存在",
     "redirecting": "将在 {{seconds}} 秒后返回首页...",
     "stay_here": "留在此页"
-  },
-  "passkey_prompt": {
-    "dismiss": "关闭",
-    "message": "提升账户安全 — 设置通行密钥，享受快速无密码登录。",
-    "setup_button": "设置通行密钥"
   },
   "status": {
     "badges": {

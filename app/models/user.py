@@ -19,9 +19,6 @@ class User(Base):
     status: Mapped[int] = mapped_column(Integer, default=1)  # 1=Enabled, 2=Disabled, 3=Deleted
     email: Mapped[Optional[str]] = mapped_column(String(50), index=True, nullable=True)
     github_id: Mapped[Optional[str]] = mapped_column("github_id", String(64), index=True, nullable=True)
-    wechat_id: Mapped[Optional[str]] = mapped_column("wechat_id", String(64), index=True, nullable=True)
-    lark_id: Mapped[Optional[str]] = mapped_column("lark_id", String(64), index=True, nullable=True)
-    oidc_id: Mapped[Optional[str]] = mapped_column("oidc_id", String(64), index=True, nullable=True)
     access_token: Mapped[Optional[str]] = mapped_column(String(64), unique=True, nullable=True)
     balance: Mapped[int] = mapped_column(BigInteger, default=0)  # micro-yuan (10^-6 yuan), ¥1 = 1_000_000
     request_count: Mapped[int] = mapped_column(Integer, default=0)

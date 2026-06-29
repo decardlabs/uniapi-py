@@ -73,13 +73,6 @@ export function LoginPage() {
     }
   };
 
-  const onLarkOAuth = () => {
-    if (systemStatus.lark_client_id) {
-      const redirectUri = `${window.location.origin}/oauth/lark`;
-      window.location.href = `https://open.larksuite.com/open-apis/authen/v1/index?app_id=${encodeURIComponent(systemStatus.lark_client_id)}&redirect_uri=${encodeURIComponent(redirectUri)}`;
-    }
-  };
-
   const onSubmit = async (data: LoginForm) => {
     // Only gate on Turnstile if it's been required (after a prior failed attempt).
     if (turnstileRequired && turnstileEnabled && !turnstileToken) {
@@ -144,7 +137,7 @@ export function LoginPage() {
     }
   };
 
-  const hasOAuthOptions = systemStatus.github_oauth || systemStatus.lark_client_id;
+  const hasOAuthOptions = systemStatus.github_oauth;
 
   const handleTurnstileVerify = (token: string) => {
     setTurnstileToken(token);
@@ -260,14 +253,6 @@ export function LoginPage() {
                     </Button>
                   )}
                   {/* WeChat OAuth: hidden until implementation is complete */}
-                  {systemStatus.lark_client_id && (
-                    <Button variant="outline" size="sm" onClick={onLarkOAuth}>
-                      <svg className="w-4 h-4 mr-2" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
-                        <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z" />
-                      </svg>
-                      Lark
-                    </Button>
-                  )}
                 </div>
               </div>
             </>
