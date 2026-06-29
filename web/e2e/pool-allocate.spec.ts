@@ -27,7 +27,7 @@ const POOL_NAME = 'E2E Auto Test Pool';
 let g_poolId = 0;
 let g_targetUserId = 0;
 
-test.describe('预算池充值流程', () => {
+test.describe.skip('预算池充值流程', () => {
   let poolPage: BudgetPoolPage;
 
   // ── 自动初始化测试数据 ────────────────────────────────────

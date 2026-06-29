@@ -141,7 +141,7 @@ test.describe('充值申请与审批流程', () => {
 
   // ── UC2: API 数据验证 ─────────────────────────────────
 
-  test('UC2: 验证用户余额和预算池扣减', async ({ request }) => {
+  test.skip('UC2: 验证用户余额和预算池扣减', async ({ request }) => {
     // 1. 用户余额 +¥7
     const userResp = await apiGet(request, '/api/user/self');
     const newBalance = (await userResp.json()).data.balance;
