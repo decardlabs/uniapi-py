@@ -94,7 +94,6 @@ async def test_models_display_groups_by_channel_type(client: AsyncClient):
     """Channels of the same provider type should be merged into one display entry."""
     from app.database import async_session_factory
     from app.models.channel import Channel
-    from sqlalchemy import select
     import time
 
     now_s = int(time.time())
