@@ -109,6 +109,7 @@ async def login_user(
     user = result.scalar_one_or_none()
 
     if not user:
+        await db.flush()
         raise HTTPException(status_code=401, detail="用户名或密码错误")
 
     if user.status != 1:
