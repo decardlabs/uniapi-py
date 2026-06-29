@@ -6,7 +6,6 @@ import { Input } from '@/components/ui/input';
 import { useNotifications } from '@/components/ui/notifications';
 import { ResponsivePageContainer } from '@/components/ui/responsive-container';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { TimestampDisplay } from '@/components/ui/timestamp';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { api } from '@/lib/api';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -19,6 +18,15 @@ import * as z from 'zod';
 
 // Helper function to format balance (micro-yuan → yuan)
 const formatYuan = (micro: number): string => `¥${(micro / 1_000_000).toFixed(2)}`;
+
+// Helper function to format timestamp for display
+const formatTimestamp = (ts: number): string => {
+  try {
+    return new Date(ts).toLocaleString();
+  } catch {
+    return '-';
+  }
+};
 
 type UserForm = {
   username: string;
@@ -452,22 +460,17 @@ export function EditUserPage() {
                 </div>
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                  {/* Read-only balance display — balance is managed via Top Up */}
+                  {/* Read-only balance display — use Input disabled for consistent sizing */}
                   {isEdit && (
-                    <div className="space-y-2">
-                      <label className="text-sm font-medium">
-                        {tr('fields.balance.label', 'Balance')}
-                      </label>
-                      <div className="p-2 bg-muted rounded-md flex justify-between items-center">
-                        <span className="text-lg font-semibold text-primary">{formatYuan(balance)}</span>
-                        <span className="text-xs text-muted-foreground">
-                          {tr('fields.total_spent.label', 'Spent')}: ¥{totalSpent.toFixed(6)}
-                        </span>
-                      </div>
+                    <FormItem>
+                      <FormLabel>{tr('fields.balance.label', 'Balance')}</FormLabel>
+                      <FormControl>
+                        <Input disabled value={formatYuan(balance)} />
+                      </FormControl>
                       <p className="text-xs text-muted-foreground">
-                        {tr('fields.balance.help', 'Managed via Top Up from budget pool')}
+                        {tr('fields.total_spent.label', 'Spent')}: ¥{totalSpent.toFixed(6)}
                       </p>
-                    </div>
+                    </FormItem>
                   )}
 
                   <FormField
@@ -509,28 +512,24 @@ export function EditUserPage() {
                   />
                 </div>
 
-                {/* Display timestamps for edit mode (read-only) */}
+                {/* Display timestamps for edit mode (read-only) — use Input disabled for consistent sizing */}
                 {isEdit && (createdAt || updatedAt) && (
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-6 pt-2 border-t">
                     {createdAt && createdAt > 0 && (
-                      <div className="space-y-2">
-                        <label className="text-sm font-medium text-muted-foreground">
-                          {tr('fields.created_at.label', 'Register Time')}
-                        </label>
-                        <div className="p-2 bg-muted rounded-md">
-                          <TimestampDisplay timestamp={createdAt} className="text-sm" fallback="-" />
-                        </div>
-                      </div>
+                      <FormItem>
+                        <FormLabel>{tr('fields.created_at.label', 'Register Time')}</FormLabel>
+                        <FormControl>
+                          <Input disabled value={formatTimestamp(createdAt)} />
+                        </FormControl>
+                      </FormItem>
                     )}
                     {updatedAt && updatedAt > 0 && (
-                      <div className="space-y-2">
-                        <label className="text-sm font-medium text-muted-foreground">
-                          {tr('fields.updated_at.label', 'Last Modified')}
-                        </label>
-                        <div className="p-2 bg-muted rounded-md">
-                          <TimestampDisplay timestamp={updatedAt} className="text-sm" fallback="-" />
-                        </div>
-                      </div>
+                      <FormItem>
+                        <FormLabel>{tr('fields.updated_at.label', 'Last Modified')}</FormLabel>
+                        <FormControl>
+                          <Input disabled value={formatTimestamp(updatedAt)} />
+                        </FormControl>
+                      </FormItem>
                     )}
                   </div>
                 )}
