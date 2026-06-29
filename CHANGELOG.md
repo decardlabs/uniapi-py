@@ -5,6 +5,23 @@ All notable changes to UniAPI are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.0.4] — 2026-06-30
+
+### Fixed
+- EditUserPage layout: Group now standalone full-width row; Balance, Register Time,
+  Last Modified each as separate full-width rows with Input disabled.
+- All fields now use consistent Input component sizing (h-9, px-3 py-2).
+
+### Removed
+- Dead import `TimestampDisplay` from EditUserPage.
+- Dead code: `make_chat_completion_response()`, `BaseAdaptor.convert_image_request()`,
+  `b64url()` in glm/auth.py.
+
+### Changed
+- `__import__("time")` replaced with proper `import time` in dependencies.py and sse_converter.py.
+- `_replace_channel_with_keys` now correctly reads `groups` field from request body.
+- Cross-type channel name collision in models_display appends provider name instead of silent overwrite.
+
 ## [1.0.3] — 2026-06-29
 
 ### Added
