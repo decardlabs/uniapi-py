@@ -501,6 +501,7 @@ async def _refund_and_raise_connection_error(
     request: Request,
     db: AsyncSession,
     provisional_log: Any,
+    model_name: str = "",
 ) -> None:
     """Refund the user and raise an UpstreamException for a connection error.
 
@@ -527,7 +528,7 @@ async def _refund_and_raise_connection_error(
         await budget_arbiter.post_settle(
             user_id=user.id, period=bi["period"], frozen_amount=bi["frozen_amount"],
             monthly_budget=bi["monthly_budget"], request_id=provisional_log.request_id,
-            actual_usage=ActualUsage(model="", input_tokens=0, output_tokens=0),
+            actual_usage=ActualUsage(model=model_name, input_tokens=0, output_tokens=0),
             db_session=db,
         )
     await db.commit()
@@ -839,7 +840,13 @@ async def _handle_relay(request: Request, db: AsyncSession):
             message=f"No adaptor configured for channel type {channel_type}",
         )
     supported = adaptor.get_supported_models()
-    model_config = supported[model_name]
+    model_config = supported.get(model_name)
+    if model_config is None:
+        raise RelayException(
+            code="UNIAPI_MODEL_NOT_SUPPORTED",
+            message=f"Model '{model_name}' not found in adaptor's supported models. This should not happen after model resolution.",
+            details={"model": model_name},
+        )
 
     # Token model permissions (final check after any model resolution/selection)
     if token_allowed_models and model_name not in token_allowed_models:
@@ -1161,6 +1168,7 @@ async def _handle_relay(request: Request, db: AsyncSession):
                                             request=request,
                                             db=db,
                                             provisional_log=provisional_log,
+                                            model_name=model_name,
                                         )
                                 else:
                                     logger.info("FALLBACK skip | prepare_fallback returned None")
@@ -1295,6 +1303,7 @@ async def _handle_relay(request: Request, db: AsyncSession):
                 request=request,
                 db=db,
                 provisional_log=provisional_log,
+                model_name=model_name,
             )
 
     if stream:
