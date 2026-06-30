@@ -22,6 +22,16 @@ def test_mask_api_key():
     assert "..." in masked, "Should have ellipsis"
 
 
+@pytest.mark.asyncio
+async def test_channel_sort_injection_safe(client: AsyncClient):
+    """Invalid sort parameter should fallback to default sort."""
+    cookies = await _login(client)
+    resp = await client.get("/api/channel/?sort=__class__", cookies=cookies)
+    assert resp.status_code == 200  # Should not crash
+    resp = await client.get("/api/channel/?sort=nonexistent", cookies=cookies)
+    assert resp.status_code == 200  # Should fallback gracefully
+
+
 def test_mask_api_key_short():
     """Short keys should not be masked (likely already truncated or test keys)."""
     from app.routers.api.channel import _mask_key

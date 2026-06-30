@@ -122,6 +122,8 @@ async def list_channels(
     _=Depends(admin_auth),
 ):
     """List channels (paginated, sortable)."""
+    ALLOWED_CHANNEL_SORT_COLUMNS = {"id", "name", "type", "status", "priority", "weight", "created_time", "created_at", "group"}
+    sort = sort if sort in ALLOWED_CHANNEL_SORT_COLUMNS else "id"
     sort_col = getattr(Channel, sort, Channel.id)
     order_fn = sort_col.desc() if order == "desc" else sort_col.asc()
 

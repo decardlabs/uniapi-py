@@ -81,6 +81,8 @@ async def list_mcp_servers(
     db: AsyncSession = Depends(get_db),
     _=Depends(admin_auth),
 ):
+    ALLOWED_MCP_SORT_COLUMNS = {"id", "name", "type", "status", "priority", "created_time", "created_at"}
+    sort = sort if sort in ALLOWED_MCP_SORT_COLUMNS else "id"
     sort_col = getattr(MCPServer, sort, MCPServer.id)
     order_fn = sort_col.desc() if order == "desc" else sort_col.asc()
 
