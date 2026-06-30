@@ -31,6 +31,8 @@ class FusionMeta:
     fallback_triggered: bool = False
     judge_prompt_tokens: int = 0
     judge_completion_tokens: int = 0
+    synth_prompt_tokens: int = 0
+    synth_completion_tokens: int = 0
 
 
 @dataclass
@@ -135,5 +137,7 @@ class ChatResponse:
                 "fallback_triggered": self.fusion_meta.fallback_triggered,
                 "judge_prompt_tokens": self.fusion_meta.judge_prompt_tokens,
                 "judge_completion_tokens": self.fusion_meta.judge_completion_tokens,
+                "synth_prompt_tokens": self.fusion_meta.synth_prompt_tokens,
+                "synth_completion_tokens": self.fusion_meta.synth_completion_tokens,
             }
         return d

@@ -441,14 +441,9 @@ class TestFusionEngine:
         assert "unavailable" in response.choices[0]["message"]["content"]
         assert response.usage.total_tokens == 0
 
-
-# ===================================================================
-# ChatRequest helpers
-# ===================================================================
-
     @pytest.mark.asyncio
-    async def test_fusion_meta_includes_judge_tokens(self, default_config, sample_request):
-        """FusionMeta should include judge token usage."""
+    async def test_fusion_meta_includes_judge_and_synth_tokens(self, default_config, sample_request):
+        """FusionMeta should include judge and synth-only token usage."""
         registry = AdapterRegistry()
         for m in ["result-A", "result-B", "result-C"]:
             _reg(registry, m)
@@ -466,7 +461,13 @@ class TestFusionEngine:
         assert meta is not None
         assert meta.judge_prompt_tokens == 500
         assert meta.judge_completion_tokens == 200
+        assert meta.synth_prompt_tokens == 800
+        assert meta.synth_completion_tokens == 400
 
+
+# ===================================================================
+# ChatRequest helpers
+# ===================================================================
 
 class TestChatRequestHelpers:
     def test_is_fusion(self):

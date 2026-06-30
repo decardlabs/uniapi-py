@@ -660,13 +660,13 @@ async def _handle_relay(request: Request, db: AsyncSession):
                     except KeyError:
                         logger.warning("Fusion billing: unknown judge model %s", fb.judge_model)
 
-                # Synthesizer model costs (the final response IS the synth output)
-                if fb.synthesizer_model and response.usage:
+                # Synthesizer model costs — use synth-only tokens (not the aggregated total)
+                if fb.synthesizer_model and response.fusion_meta:
                     try:
                         total_cost_micro += calculate_cost_micro(
                             fb.synthesizer_model,
-                            response.usage.prompt_tokens or 0,
-                            response.usage.completion_tokens or 0,
+                            response.fusion_meta.synth_prompt_tokens,
+                            response.fusion_meta.synth_completion_tokens,
                         )
                     except KeyError:
                         logger.warning("Fusion billing: unknown synthesizer model %s", fb.synthesizer_model)

@@ -135,8 +135,11 @@ class FusionEngine:
 
     def _build_response(self, request_id: str, final: ModelResponse, panel_responses: list[ModelResponse | None], judge_analysis: dict | None, start_time: float, fallback: bool = False) -> ChatResponse:
         latency_ms = int((time.monotonic() - start_time) * 1000)
-        total_prompt = final.usage.prompt_tokens
-        total_completion = final.usage.completion_tokens
+        # Save synth-only tokens BEFORE aggregation (used for billing, not double-counted)
+        synth_prompt = final.usage.prompt_tokens
+        synth_completion = final.usage.completion_tokens
+        total_prompt = synth_prompt
+        total_completion = synth_completion
         breakdown = {}
         for model_id, resp in zip(self.config.panel, panel_responses):
             if resp is not None:
@@ -162,5 +165,5 @@ class FusionEngine:
                 prompt_tokens=total_prompt, completion_tokens=total_completion, total_tokens=total_prompt + total_completion,
                 fusion_breakdown=FusionBreakdown(panel=breakdown, judge_model=self.config.judge, synthesizer_model=self.config.synthesizer, fallback_triggered=fallback),
             ),
-            fusion_meta=FusionMeta(panel_models=self.config.panel, judge_model=self.config.judge if judge_analysis else "", synthesizer_model=self.config.synthesizer, judge_confidence=confidence, latency_ms=latency_ms, fallback_triggered=fallback, judge_prompt_tokens=judge_prompt, judge_completion_tokens=judge_completion),
+            fusion_meta=FusionMeta(panel_models=self.config.panel, judge_model=self.config.judge if judge_analysis else "", synthesizer_model=self.config.synthesizer, judge_confidence=confidence, latency_ms=latency_ms, fallback_triggered=fallback, judge_prompt_tokens=judge_prompt, judge_completion_tokens=judge_completion, synth_prompt_tokens=synth_prompt, synth_completion_tokens=synth_completion),
         )
