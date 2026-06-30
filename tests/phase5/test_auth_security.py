@@ -16,6 +16,18 @@ class TestSessionCookieFlags:
             pytest.skip("SESSION_COOKIE_SECURE=false in local .env")
         assert settings.session_cookie_secure is True
 
+    async def test_register_endpoint_uses_config_secure(self, client):
+        """Register endpoint's session cookie must respect settings.session_cookie_secure."""
+        resp = await client.post(
+            "/api/user/register",
+            json={"username": "secure_test_user", "password": "SecurePass123"},
+        )
+        if not settings.session_cookie_secure:
+            pytest.skip("SESSION_COOKIE_SECURE=false in local .env")
+        cookie_header = resp.headers.get("set-cookie", "")
+        assert "Secure" in cookie_header, \
+            f"Expected Secure flag in Set-Cookie, got: {cookie_header}"
+
 
 class TestPasswordStrength:
     """Task 2: Registration rejects weak passwords."""

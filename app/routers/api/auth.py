@@ -141,7 +141,7 @@ async def register(
         value=session_token,
         max_age=3600 * 168,
         httponly=True,
-        secure=False,
+        secure=settings.session_cookie_secure,
         samesite="lax",
     )
     return response

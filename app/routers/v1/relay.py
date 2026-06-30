@@ -185,7 +185,7 @@ def _make_stream_usage_callback(
                 session.add(cr)
                 await session.commit()
             except Exception:
-                pass
+                logger.warning("CostRecord write failed (stream path)", exc_info=True)
 
             # Real-time pool consumption sync (stream path)
             try:
@@ -198,7 +198,7 @@ def _make_stream_usage_callback(
                     request_id=log_entry.request_id or "",
                 )
             except Exception:
-                pass
+                logger.warning("Pool sync failed (stream path)", exc_info=True)
 
     return _on_usage
 
@@ -1165,6 +1165,7 @@ async def _handle_relay(request: Request, db: AsyncSession):
         try:
             yuan_cost = calculate_cost(model_name, prompt_tokens, completion_tokens, cache_hit)
         except Exception:
+            logger.warning("CostRecord calculation failed", exc_info=True)
             yuan_cost = 0.0
         db.add(CostRecord(
             request_id=provisional_log.request_id,
