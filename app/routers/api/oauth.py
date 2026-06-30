@@ -2,15 +2,14 @@
 
 from __future__ import annotations
 
-import re
 import secrets
 import time
 import uuid
 
 import httpx
-from fastapi import APIRouter, Depends, Query, Request
-from pydantic import BaseModel, Field
+from fastapi import APIRouter, Depends, Request
 from fastapi.responses import JSONResponse
+from pydantic import BaseModel, Field
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 

@@ -486,7 +486,7 @@ class TestFusionEngine:
             extra_body={"fusion": {}, "custom_param": "value"},
         )
         engine = FusionEngine(registry, default_config)
-        response = await engine.execute(request)
+        await engine.execute(request)
         # Verify the adapter was called with extra_params containing custom_param
         call_kwargs = a.chat.call_args
         assert call_kwargs is not None

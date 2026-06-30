@@ -157,7 +157,6 @@ async def reset_password_confirm(
     if not user:
         return GenericApiResponse(success=False, message="用户不存在")
 
-    import time
     user.password = hash_password(new_password)
     user.updated_at = int(time.time() * 1000)
     await db.commit()

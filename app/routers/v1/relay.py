@@ -687,6 +687,7 @@ async def _handle_relay(request: Request, db: AsyncSession):
             result = response.to_dict()
 
             # ── Bill fusion request ──
+            fusion_request_id = uuid.uuid4().hex
             total_cost_micro = 0
             fb = response.usage.fusion_breakdown
             if fb:
@@ -750,7 +751,7 @@ async def _handle_relay(request: Request, db: AsyncSession):
                     user_id=user.id, period=bi["period"],
                     frozen_amount=bi["frozen_amount"],
                     monthly_budget=bi["monthly_budget"],
-                    request_id=log_entry.request_id,
+                    request_id=fusion_request_id,
                     actual_usage=ActualUsage(
                         model="fusion",
                         input_tokens=total_input,
@@ -766,7 +767,7 @@ async def _handle_relay(request: Request, db: AsyncSession):
                 content=f"Fusion: {model_name}",
                 username=user.username, token_name=token.name,
                 model_name="fusion", cost=total_cost_micro,
-                channel_id=0, request_id=uuid.uuid4().hex,
+                channel_id=0, request_id=fusion_request_id,
                 is_stream=False,
             )
             db.add(log_entry)

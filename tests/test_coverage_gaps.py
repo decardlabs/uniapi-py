@@ -5,7 +5,6 @@ from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
 
-
 # ---------------------------------------------------------------------------
 # app/schemas/relay.py — 0% coverage (66 lines)
 # Simply importing and instantiating the models covers all class-body lines.

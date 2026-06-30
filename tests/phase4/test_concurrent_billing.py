@@ -68,8 +68,9 @@ async def test_concurrent_deductions_dont_overdraft(client: AsyncClient):
 @pytest.mark.asyncio
 async def test_for_update_in_balance_deduction():
     """Verify the relay uses FOR UPDATE when deducting balance."""
-    from app.routers.v1.relay import _handle_relay
     import inspect
+
+    from app.routers.v1.relay import _handle_relay
 
     source = inspect.getsource(_handle_relay)
     assert "with_for_update()" in source, "relay should use FOR UPDATE in balance deduction"

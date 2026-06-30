@@ -92,9 +92,10 @@ async def test_models_display(client: AsyncClient):
 @pytest.mark.asyncio
 async def test_models_display_groups_by_channel_type(client: AsyncClient):
     """Channels of the same provider type should be merged into one display entry."""
+    import time
+
     from app.database import async_session_factory
     from app.models.channel import Channel
-    import time
 
     now_s = int(time.time())
     now_ms = now_s * 1000

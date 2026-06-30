@@ -1,8 +1,5 @@
 """Tests for email binding endpoint (POST /api/oauth/email/bind)."""
-import pytest
 from httpx import AsyncClient
-
-from app.services.email import verify_code, _verification_codes
 
 
 async def _login(client: AsyncClient) -> dict:

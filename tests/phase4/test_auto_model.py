@@ -13,11 +13,11 @@ from app.models.base import Base
 from app.models.channel import Channel
 from app.models.token import Token
 from app.models.user import User
+from app.routers.v1.relay import _channel_cooldowns as relay_cooldowns
 from app.routers.v1.relay import (
     _cooldown_channel,
     _select_auto_channel,
 )
-from app.routers.v1.relay import _channel_cooldowns as relay_cooldowns
 
 
 @pytest.fixture(autouse=True)
@@ -273,7 +273,6 @@ async def test_relay_model_auto_integration(client):
     Even though the upstream call fails (no real API key), the auto
     selection should resolve to a channel model correctly.
     """
-    from httpx import AsyncClient
 
     # Login as root
     resp = await client.post("/api/user/login", json={
