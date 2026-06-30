@@ -505,6 +505,18 @@ class TestFusionEngine:
         )
         assert "[...剩余内容已截断]" in prompt
 
+    def test_truncation_in_synthesizer_prompt(self):
+        """Synthesizer prompt should include truncation marker for long content."""
+        from app.fusion.core.synthesizer import SynthesizerModule
+
+        module = SynthesizerModule(AdapterRegistry(), "s")
+        prompt = module._build_synthesizer_prompt(
+            ChatRequest(messages=[{"role": "user", "content": "test?"}]),
+            [ModelResponse(model="a", content="x" * 7000)],  # exceeds 6000 char limit
+            {"consensus": [], "confidence": 0.5},
+        )
+        assert "[...剩余内容已截断]" in prompt
+
 
 # ===================================================================
 # ChatRequest helpers

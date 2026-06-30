@@ -74,7 +74,7 @@ class FusionEngine:
                 continue
             extra_params = {}
             if request.extra_body:
-                extra_params = dict(request.extra_body)
+                extra_params = {k: v for k, v in request.extra_body.items() if k != "fusion"}
             model_request = ModelRequest(
                 model=model_id,
                 messages=request.messages,
@@ -125,7 +125,7 @@ class FusionEngine:
             return self._error_response(request_id, fallback_model, start_time)
         return self._build_response(request_id, response, [], None, start_time, fallback=True)
 
-    def _error_response(self, request_id, model, start_time):
+    def _error_response(self, request_id: str, model: str, start_time: float) -> ChatResponse:
         return ChatResponse(
             id=request_id, model=model,
             choices=[{"index": 0, "message": {"role": "assistant", "content": f"All models unavailable, including fallback '{model}'."}, "finish_reason": "error"}],
@@ -156,8 +156,8 @@ class FusionEngine:
         if judge_analysis:
             total_prompt += judge_analysis.get("usage", {}).get("prompt_tokens", 0)
             total_completion += judge_analysis.get("usage", {}).get("completion_tokens", 0)
-            judge_prompt = judge_analysis["usage"].get("prompt_tokens", 0)
-            judge_completion = judge_analysis["usage"].get("completion_tokens", 0)
+            judge_prompt = judge_analysis.get("usage", {}).get("prompt_tokens", 0)
+            judge_completion = judge_analysis.get("usage", {}).get("completion_tokens", 0)
             confidence = judge_analysis.get("confidence", 0.0)
         else:
             confidence = 0.0
