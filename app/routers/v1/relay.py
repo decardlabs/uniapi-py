@@ -633,6 +633,72 @@ async def _handle_relay(request: Request, db: AsyncSession):
             chat_request = ChatRequest.from_dict(body)
             response = await engine.execute(chat_request)
             result = response.to_dict()
+
+            # ── Bill fusion request ──
+            total_cost_micro = 0
+            fb = response.usage.fusion_breakdown
+            if fb:
+                # Panel model costs
+                for model_id, token_usage in (fb.panel or {}).items():
+                    try:
+                        total_cost_micro += calculate_cost_micro(
+                            model_id,
+                            token_usage.get("prompt_tokens", 0),
+                            token_usage.get("completion_tokens", 0),
+                        )
+                    except KeyError:
+                        logger.warning("Fusion billing: unknown panel model %s", model_id)
+
+                # Judge model costs
+                if fb.judge_model and response.fusion_meta:
+                    try:
+                        total_cost_micro += calculate_cost_micro(
+                            fb.judge_model,
+                            response.fusion_meta.judge_prompt_tokens,
+                            response.fusion_meta.judge_completion_tokens,
+                        )
+                    except KeyError:
+                        logger.warning("Fusion billing: unknown judge model %s", fb.judge_model)
+
+                # Synthesizer model costs (the final response IS the synth output)
+                if fb.synthesizer_model and response.usage:
+                    try:
+                        total_cost_micro += calculate_cost_micro(
+                            fb.synthesizer_model,
+                            response.usage.prompt_tokens or 0,
+                            response.usage.completion_tokens or 0,
+                        )
+                    except KeyError:
+                        logger.warning("Fusion billing: unknown synthesizer model %s", fb.synthesizer_model)
+
+            # Deduct balance
+            user.balance -= total_cost_micro
+
+            # Write Log
+            now_ms = int(time.time() * 1000)
+            log_entry = Log(
+                user_id=user.id, created_at=now_ms, type=2,
+                content=f"Fusion: {model_name}",
+                username=user.username, token_name=token.name,
+                model_name="fusion", cost=total_cost_micro,
+                channel_id=0, request_id=uuid.uuid4().hex,
+                is_stream=False,
+            )
+            db.add(log_entry)
+            await db.flush()
+
+            # Write CostRecord
+            db.add(CostRecord(
+                request_id=log_entry.request_id, user_id=user.id,
+                model="fusion",
+                input_tokens=response.usage.prompt_tokens or 0,
+                output_tokens=response.usage.completion_tokens or 0,
+                cache_hit_tokens=0,
+                cost=round(total_cost_micro / 1_000_000, 6),
+                status="success",
+                created_at=int(time.time() * 1000),
+            ))
+
             await db.commit()
             return result
 

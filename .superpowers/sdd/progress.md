@@ -1,20 +1,16 @@
-# Security Upgrade Login - Progress Ledger
+# Fusion Engine Bug Fix - Progress Ledger
 
-Plan: docs/superpowers/plans/2026-06-25-login-security-upgrade.md
-Branch: security-upgrade-login
-Started: 2026-06-25
+Plan: docs/superpowers/plans/2026-06-30-fusion-engine-bug-fix-plan.md
+Branch: main
+Started: 2026-06-30
 
 ## Task Status
 
-- [ ] Task 1: Session Cookie Secure 标志
-- [ ] Task 2: 注册密码强度检查
-- [ ] Task 3: TOTP Pending 状态持久化
-- [ ] Task 4: 登录页 Turnstile 集成
-- [ ] Task 5: 锁定语义精确化
-- [ ] Task 6: Passkey RP ID 配置化
-- [ ] Task 7: 部署与配置
-- [ ] Task 8: 综合安全测试
+- [x] Task 1: Fix fallback double-counting + breakdown misalignment (#2, #4) — commit c2babe3, review clean
+- [ ] Task 2: Fix fusion billing bypass (#1)
+- [ ] Task 3: Config consolidation + content truncation + extra_body (#5, #6, #8)
+- [ ] Task 4: Run full regression suite
 - [ ] Final Code Review
 
 ## Minor Findings (collect for final review)
-
+- _error_response() missing type annotations (Task 1)

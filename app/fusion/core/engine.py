@@ -144,11 +144,16 @@ class FusionEngine:
                 total_completion += resp.usage.completion_tokens
                 breakdown[model_id] = {"prompt_tokens": resp.usage.prompt_tokens, "completion_tokens": resp.usage.completion_tokens}
 
+        judge_prompt = 0
+        judge_completion = 0
         if judge_analysis:
             total_prompt += judge_analysis.get("usage", {}).get("prompt_tokens", 0)
             total_completion += judge_analysis.get("usage", {}).get("completion_tokens", 0)
-
-        confidence = judge_analysis.get("confidence", 0.0) if judge_analysis else 0.0
+            judge_prompt = judge_analysis["usage"].get("prompt_tokens", 0)
+            judge_completion = judge_analysis["usage"].get("completion_tokens", 0)
+            confidence = judge_analysis.get("confidence", 0.0)
+        else:
+            confidence = 0.0
 
         return ChatResponse(
             id=request_id, model="fusion",
@@ -157,5 +162,5 @@ class FusionEngine:
                 prompt_tokens=total_prompt, completion_tokens=total_completion, total_tokens=total_prompt + total_completion,
                 fusion_breakdown=FusionBreakdown(panel=breakdown, judge_model=self.config.judge, synthesizer_model=self.config.synthesizer, fallback_triggered=fallback),
             ),
-            fusion_meta=FusionMeta(panel_models=self.config.panel, judge_model=self.config.judge if judge_analysis else "", synthesizer_model=self.config.synthesizer, judge_confidence=confidence, latency_ms=latency_ms, fallback_triggered=fallback),
+            fusion_meta=FusionMeta(panel_models=self.config.panel, judge_model=self.config.judge if judge_analysis else "", synthesizer_model=self.config.synthesizer, judge_confidence=confidence, latency_ms=latency_ms, fallback_triggered=fallback, judge_prompt_tokens=judge_prompt, judge_completion_tokens=judge_completion),
         )

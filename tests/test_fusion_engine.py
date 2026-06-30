@@ -446,6 +446,28 @@ class TestFusionEngine:
 # ChatRequest helpers
 # ===================================================================
 
+    @pytest.mark.asyncio
+    async def test_fusion_meta_includes_judge_tokens(self, default_config, sample_request):
+        """FusionMeta should include judge token usage."""
+        registry = AdapterRegistry()
+        for m in ["result-A", "result-B", "result-C"]:
+            _reg(registry, m)
+        _reg(registry, "judge").chat.return_value = ModelResponse(
+            model="judge",
+            content='{"consensus":["x"],"contradictions":[],"coverage_gaps":[],"unique_insights":{},"blind_spots":[],"confidence":0.8,"recommendation":"ok"}',
+            usage=UsageInfo(500, 200, 700),
+        )
+        _reg(registry, "synth").chat.return_value = ModelResponse(
+            model="synth", content="Final.", usage=UsageInfo(800, 400, 1200),
+        )
+        engine = FusionEngine(registry, default_config)
+        response = await engine.execute(sample_request)
+        meta = response.fusion_meta
+        assert meta is not None
+        assert meta.judge_prompt_tokens == 500
+        assert meta.judge_completion_tokens == 200
+
+
 class TestChatRequestHelpers:
     def test_is_fusion(self):
         assert ChatRequest(model="FUSION").is_fusion

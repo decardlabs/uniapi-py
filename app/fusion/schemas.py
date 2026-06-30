@@ -29,6 +29,8 @@ class FusionMeta:
     judge_confidence: float = 0.0
     latency_ms: int = 0
     fallback_triggered: bool = False
+    judge_prompt_tokens: int = 0
+    judge_completion_tokens: int = 0
 
 
 @dataclass
@@ -131,5 +133,7 @@ class ChatResponse:
                 "judge_confidence": self.fusion_meta.judge_confidence,
                 "latency_ms": self.fusion_meta.latency_ms,
                 "fallback_triggered": self.fusion_meta.fallback_triggered,
+                "judge_prompt_tokens": self.fusion_meta.judge_prompt_tokens,
+                "judge_completion_tokens": self.fusion_meta.judge_completion_tokens,
             }
         return d
