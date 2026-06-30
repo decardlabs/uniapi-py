@@ -262,3 +262,68 @@ async def test_auto_select_empty_models_falls_back_to_adaptor(db):
     # deepseek-v4-flash (¥3/M) < deepseek-v4-pro (¥9/M)
     assert model == "deepseek-v4-flash"
     assert channel.id == 9001
+
+
+# ── Integration test: model="auto" through the full relay pipeline ──────────
+
+
+@pytest.mark.asyncio
+async def test_relay_model_auto_integration(client):
+    """Full HTTP relay request with model='auto' resolves correctly.
+
+    Even though the upstream call fails (no real API key), the auto
+    selection should resolve to a channel model correctly.
+    """
+    from httpx import AsyncClient
+
+    # Login as root
+    resp = await client.post("/api/user/login", json={
+        "username": "root", "password": "123456",
+    })
+    cookies = resp.cookies
+
+    # Get root's token key for Bearer auth
+    resp = await client.get("/api/token/?p=0&size=5", cookies=cookies)
+    tokens = resp.json().get("data", [])
+    assert len(tokens) > 0, "No tokens found — seed may have failed"
+    token_key = tokens[0]["key"]
+
+    # Create high-priority channel (priority=100)
+    await client.post("/api/channel/", json={
+        "name": "High-Pri Pro",
+        "type": 39,
+        "key": "sk-high-pri",
+        "models": "deepseek-v4-pro",
+        "status": 1,
+        "priority": 100,
+    }, cookies=cookies)
+
+    # Create low-priority channel (priority=10)
+    await client.post("/api/channel/", json={
+        "name": "Low-Pri Flash",
+        "type": 39,
+        "key": "sk-low-pri",
+        "models": "deepseek-v4-flash",
+        "status": 1,
+        "priority": 10,
+    }, cookies=cookies)
+
+    # Send relay request with model="auto"
+    response = await client.post(
+        "/v1/chat/completions",
+        json={
+            "model": "auto",
+            "messages": [{"role": "user", "content": "hello"}],
+        },
+        headers={"Authorization": f"Bearer {token_key}"},
+    )
+
+    # The relay will fail (no real upstream credentials), but NOT because
+    # of model resolution. Verify the error is about upstream, not
+    # "model not found" or "channel unavailable".
+    assert response.status_code != 422, f"Unexpected validation error: {response.text[:500]}"
+
+    body = response.json()
+    error_msg = str(body).lower()
+    assert "model not found" not in error_msg, f"Model resolution failed: {body}"
+    assert "channel unavailable" not in error_msg, f"Channel resolution failed: {body}"
