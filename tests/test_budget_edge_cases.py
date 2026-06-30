@@ -1,5 +1,4 @@
 """Tests for billing edge cases: zero cost, cache optimization, minimum charges, overdraft."""
-import pytest
 
 
 class TestBillingEdgeCases:
