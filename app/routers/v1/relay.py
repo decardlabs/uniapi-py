@@ -636,6 +636,46 @@ async def _handle_relay(request: Request, db: AsyncSession):
             from app.fusion.schemas import ChatRequest
 
             chat_request = ChatRequest.from_dict(body)
+
+            # ── Balance check (must precede budget pre_check to avoid freeze leaks) ──
+            budget_arbiter: BudgetArbiter | None = getattr(request.app.state, "budget_arbiter", None)
+            # Rough estimate: average panel model pricing * estimated tokens * 2 (judge+synth overhead)
+            est_prompt = _estimate_input_tokens(body, None)
+            est_output = min(body.get("max_tokens", body.get("max_output_tokens", 256)), 4096)
+            # Use the first panel model price as a rough benchmark
+            try:
+                from app.budget.pricing import get_model_pricing
+                mp = get_model_pricing(panel[0])
+                est_cost = (est_prompt * mp["input"] + est_output * mp["output"]) * 6  # 3 calls * 2x overhead
+            except (KeyError, IndexError):
+                est_cost = est_prompt * 3 + est_output * 6  # fallback per-token estimate
+            if user.balance < est_cost and user.balance - est_cost < -MAX_OVERDRAFT_MICRO:
+                raise RelayException(
+                    code="UNIAPI_QUOTA_EXHAUSTED",
+                    message="Insufficient user balance",
+                )
+
+            # ── Budget pre-check for fusion ──
+            if budget_arbiter and settings.budget_enabled:
+                estimated_input = _estimate_input_tokens(body, None)
+                estimated_output = min(body.get("max_tokens", body.get("max_output_tokens", 256)), 4096)
+                decision = await budget_arbiter.pre_check(
+                    user_id=user.id,
+                    model="fusion",
+                    estimated_input_tokens=estimated_input,
+                    estimated_output_tokens=min(int(estimated_output), 4096),
+                )
+                if decision.status == "rejected":
+                    raise RelayException(
+                        code="UNIAPI_QUOTA_EXHAUSTED",
+                        message=decision.error_message or "Budget exceeded for fusion request",
+                    )
+                request.state.budget_info = {
+                    "period": budget_arbiter._compute_period(),
+                    "frozen_amount": decision.estimated_cost,
+                    "monthly_budget": decision.monthly_budget,
+                }
+
             response = await engine.execute(chat_request)
             result = response.to_dict()
 
@@ -683,6 +723,34 @@ async def _handle_relay(request: Request, db: AsyncSession):
             fus_locked = fus_result.scalar_one()
             fus_locked.balance -= total_cost_micro
             user.balance = fus_locked.balance
+
+            # ── Budget post-settle for fusion ──
+            if budget_arbiter and settings.budget_enabled and hasattr(request.state, "budget_info") and request.state.budget_info:
+                bi = request.state.budget_info
+                fb = response.usage.fusion_breakdown
+                total_input = 0
+                total_output = 0
+                if fb:
+                    for model_id, token_usage in (fb.panel or {}).items():
+                        total_input += token_usage.get("prompt_tokens", 0)
+                        total_output += token_usage.get("completion_tokens", 0)
+                if response.fusion_meta:
+                    total_input += response.fusion_meta.judge_prompt_tokens
+                    total_output += response.fusion_meta.judge_completion_tokens
+                    total_input += response.fusion_meta.synth_prompt_tokens
+                    total_output += response.fusion_meta.synth_completion_tokens
+                await budget_arbiter.post_settle(
+                    user_id=user.id, period=bi["period"],
+                    frozen_amount=bi["frozen_amount"],
+                    monthly_budget=bi["monthly_budget"],
+                    request_id=log_entry.request_id,
+                    actual_usage=ActualUsage(
+                        model="fusion",
+                        input_tokens=total_input,
+                        output_tokens=total_output,
+                    ),
+                    db_session=db,
+                )
 
             # Write Log
             now_ms = int(time.time() * 1000)
