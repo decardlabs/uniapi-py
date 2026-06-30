@@ -1,17 +1,17 @@
-# Fusion Engine Bug Fix - Progress Ledger
+# Codebase Security Fix - Round 1 Progress
 
-Plan: docs/superpowers/plans/2026-06-30-fusion-engine-bug-fix-plan.md
+Plan: docs/superpowers/plans/2026-06-30-full-codebase-fix-plan.md
 Branch: main
 Started: 2026-06-30
 
 ## Task Status
 
-- [x] Task 1: Fix fallback double-counting + breakdown misalignment (#2, #4) — commit c2babe3, review clean
-- [x] Task 2: Fix fusion billing bypass (#1) — commits 7deb35a..47b6aaf, review clean after fix
-- [x] Task 3: Content truncation + extra_body passthrough (#6, #8) — review clean
-- [x] Task 4: Run full regression suite — 241 tests passed
-- [ ] Final Code Review
+- [ ] R1-1: Fix hardcoded root credentials
+- [ ] R1-2: Fix token expiry unit mismatch
+- [ ] R1-3: Fix sort parameter injection
+- [ ] R1-4: Add Pydantic schema validation to MCP endpoints
+- [ ] R1-5: Add session rotation on password change
+- [ ] R1-6: Move reset token from URL to body
+- [ ] Final Code Review (Round 1)
 
-## Minor Findings (collect for final review)
-- _error_response() missing type annotations (Task 1)
-- Fallback model billed at synth rate (edge case, out of scope)
+## Minor Findings

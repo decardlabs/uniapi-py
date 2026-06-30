@@ -124,7 +124,7 @@ async def token_auth(
     if token.status != 1:
         raise UnauthorizedException(message="Token is disabled or expired")
 
-    if token.expired_time > 0 and token.expired_time < time.time():
+    if token.expired_time > 0 and token.expired_time < time.time() * 1000:
         raise UnauthorizedException(message="Token has expired")
 
     # Enforce IP/subnet restriction if configured on the token

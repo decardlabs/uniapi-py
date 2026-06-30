@@ -172,3 +172,25 @@ async def test_token_key_prefix(client: AsyncClient):
     )
     data = resp.json()["data"]
     assert data["key"].startswith("sk-")
+
+
+@pytest.mark.asyncio
+async def test_token_expired_is_rejected(client):
+    """Token past its expired_time should be rejected for relay access."""
+    cookies = await _login(client)
+
+    # Create a token with expired_time in the past (1 ms after epoch)
+    resp = await client.post("/api/token/", json={
+        "name": "expired-test",
+        "expired_time": "1",  # 1 ms after epoch = already expired
+    }, cookies=cookies)
+    data = resp.json()
+    token_key = data["data"]["key"]
+
+    # Try using it for relay — should fail
+    resp = await client.post(
+        "/v1/chat/completions",
+        json={"model": "deepseek-v4-flash", "messages": [{"role": "user", "content": "hi"}]},
+        headers={"Authorization": f"Bearer {token_key}"},
+    )
+    assert resp.status_code in (401, 403), f"Expected auth error, got {resp.status_code}"
