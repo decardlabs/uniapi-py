@@ -464,6 +464,47 @@ class TestFusionEngine:
         assert meta.synth_prompt_tokens == 800
         assert meta.synth_completion_tokens == 400
 
+    @pytest.mark.asyncio
+    async def test_extra_body_passthrough(self, default_config, sample_request):
+        """extra_body from ChatRequest should be forwarded to panel models."""
+        registry = AdapterRegistry()
+        a = _reg(registry, "result-A")
+        _reg(registry, "result-B")
+        _reg(registry, "result-C")
+        _reg(registry, "judge").chat.return_value = ModelResponse(
+            model="judge",
+            content='{"consensus":[],"contradictions":[],"coverage_gaps":[],"unique_insights":{},"blind_spots":[],"confidence":0.5,"recommendation":""}',
+            usage=UsageInfo(10, 5, 15),
+        )
+        _reg(registry, "synth").chat.return_value = ModelResponse(
+            model="synth", content="ok", usage=UsageInfo(10, 5, 15),
+        )
+
+        request = ChatRequest(
+            model="fusion",
+            messages=[{"role": "user", "content": "test"}],
+            extra_body={"fusion": {}, "custom_param": "value"},
+        )
+        engine = FusionEngine(registry, default_config)
+        response = await engine.execute(request)
+        # Verify the adapter was called with extra_params containing custom_param
+        call_kwargs = a.chat.call_args
+        assert call_kwargs is not None
+        called_request = call_kwargs[0][0]
+        assert hasattr(called_request, 'extra_params')
+        assert called_request.extra_params.get("custom_param") == "value"
+
+    def test_truncation_in_judge_prompt(self):
+        """Judge prompt should include truncation marker for long content."""
+        from app.fusion.core.judge import JudgeModule
+
+        module = JudgeModule(AdapterRegistry(), "j")
+        prompt = module._build_judge_prompt(
+            ChatRequest(messages=[{"role": "user", "content": "test?"}]),
+            [ModelResponse(model="a", content="x" * 5000)],  # exceeds 4000 char limit
+        )
+        assert "[...剩余内容已截断]" in prompt
+
 
 # ===================================================================
 # ChatRequest helpers

@@ -91,6 +91,8 @@ class JudgeModule:
         parts = [f"## 原始问题\n{original_question}\n", "## 各模型回答\n"]
         for resp in panel_responses:
             content = resp.content[:4000]
+            if len(resp.content) > 4000:
+                content += "\n\n[...剩余内容已截断]"
             parts.append(f"### {resp.model} 的回答\n{content}\n")
         parts.append("\n请基于以上回答进行严格的交叉分析，输出 JSON 格式的分析报告。")
         return "\n".join(parts)

@@ -69,7 +69,12 @@ class SynthesizerModule:
                 original_question = msg.get("content", "")
             history_parts.append(f"[{msg.get('role', 'unknown')}] {msg.get('content', '')[:2000]}")
 
-        panel_parts = [f"### {r.model}\n{r.content[:6000]}" for r in panel_responses]
+        def _truncate(content: str, limit: int) -> str:
+            if len(content) > limit:
+                return content[:limit] + "\n\n[...剩余内容已截断]"
+            return content
+
+        panel_parts = [f"### {r.model}\n{_truncate(r.content, 6000)}" for r in panel_responses]
         judge_section = json.dumps(judge_analysis, ensure_ascii=False, indent=2)
 
         return (

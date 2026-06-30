@@ -72,6 +72,9 @@ class FusionEngine:
             if adapter is None:
                 tasks.append(asyncio.sleep(0, result=None))
                 continue
+            extra_params = {}
+            if request.extra_body:
+                extra_params = dict(request.extra_body)
             model_request = ModelRequest(
                 model=model_id,
                 messages=request.messages,
@@ -79,6 +82,7 @@ class FusionEngine:
                 max_tokens=self.config.max_tokens,
                 tools=request.tools,
                 stream=False,
+                extra_params=extra_params,
             )
             tasks.append(self._call_with_retry(adapter, model_request, model_id))
 
