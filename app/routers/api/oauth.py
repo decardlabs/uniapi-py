@@ -2,12 +2,14 @@
 
 from __future__ import annotations
 
+import re
 import secrets
 import time
 import uuid
 
 import httpx
 from fastapi import APIRouter, Depends, Query, Request
+from pydantic import BaseModel, Field
 from fastapi.responses import JSONResponse
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -227,10 +229,15 @@ async def github_oauth_callback(
     return response
 
 
-@router.get("/api/oauth/email/bind")
+class BindEmailRequest(BaseModel):
+    """POST /api/oauth/email/bind"""
+    email: str = Field(..., pattern=r"^[^\s@]+@[^\s@]+\.[^\s@]+$")
+    code: str = Field(..., min_length=1, max_length=10)
+
+
+@router.post("/api/oauth/email/bind")
 async def bind_email(
-    email: str = Query(..., description="Email address to bind"),
-    code: str = Query(..., description="Verification code"),
+    body: BindEmailRequest,
     request: Request = None,
     db: AsyncSession = Depends(get_db),
 ):
@@ -239,16 +246,16 @@ async def bind_email(
     if not user:
         return GenericApiResponse(success=False, message="Not logged in")
 
-    if not verify_code(email, code):
+    if not verify_code(body.email, body.code):
         return GenericApiResponse(success=False, message="验证码错误或已过期")
 
     # Check if email is already used by another user
-    existing = await db.execute(select(User).where(User.email == email, User.id != user.id))
+    existing = await db.execute(select(User).where(User.email == body.email, User.id != user.id))
     if existing.scalar_one_or_none():
         return GenericApiResponse(success=False, message="该邮箱已被其他用户绑定")
 
-    user.email = email
+    user.email = body.email
     user.updated_at = int(time.time() * 1000)
     await db.commit()
 
-    return GenericApiResponse(data={"email": email})
+    return GenericApiResponse(data={"email": body.email})

@@ -186,9 +186,10 @@ export function PersonalSettings() {
     setEmailVerificationError('');
 
     try {
-      const response = await api.get(
-        `/api/oauth/email/bind?email=${encodeURIComponent(email)}&code=${encodeURIComponent(emailVerificationCode.trim())}`
-      );
+      const response = await api.post('/api/oauth/email/bind', {
+        email: email,
+        code: emailVerificationCode.trim(),
+      });
       const { success, message } = response.data;
 
       if (success) {

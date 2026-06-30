@@ -107,7 +107,11 @@ describe('PersonalSettings', () => {
         });
       }
 
-      if (url.startsWith('/api/oauth/email/bind?')) {
+      return Promise.resolve({ data: { success: true } });
+    });
+
+    (api.post as any).mockImplementation((url: string, _data: any) => {
+      if (url === '/api/oauth/email/bind') {
         currentProfile = {
           ...currentProfile,
           email: 'new@example.com',
@@ -118,7 +122,6 @@ describe('PersonalSettings', () => {
           },
         });
       }
-
       return Promise.resolve({ data: { success: true } });
     });
 
@@ -184,7 +187,10 @@ describe('PersonalSettings', () => {
     fireEvent.click(screen.getByRole('button', { name: 'personal_settings.profile_info.bind_email' }));
 
     await waitFor(() => {
-      expect(api.get).toHaveBeenCalledWith('/api/oauth/email/bind?email=new%40example.com&code=123456');
+      expect(api.post).toHaveBeenCalledWith('/api/oauth/email/bind', {
+        email: 'new@example.com',
+        code: '123456',
+      });
     });
 
     await waitFor(() => {
