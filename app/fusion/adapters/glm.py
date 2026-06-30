@@ -9,6 +9,7 @@ import httpx
 
 from app.fusion.adapters.base import BaseAdapter
 from app.fusion.schemas import ModelRequest, ModelResponse, UsageInfo
+from app.relay.adaptors.glm.auth import generate_glm_token
 
 logger = logging.getLogger(__name__)
 
@@ -19,7 +20,8 @@ class GLMAdapter(BaseAdapter):
     async def chat(self, request: ModelRequest) -> ModelResponse:
         payload = self.adapt_request(request.to_dict())
         url = f"{self.openai_base_url}/chat/completions"
-        headers = {"Authorization": f"Bearer {self.api_key}", "Content-Type": "application/json"}
+        token = generate_glm_token(self.api_key)
+        headers = {"Authorization": token, "Content-Type": "application/json"}
         async with httpx.AsyncClient(timeout=60.0) as client:
             resp = await client.post(url, json=payload, headers=headers)
             resp.raise_for_status()
@@ -30,7 +32,8 @@ class GLMAdapter(BaseAdapter):
         payload = self.adapt_request(request.to_dict())
         payload["stream"] = True
         url = f"{self.openai_base_url}/chat/completions"
-        headers = {"Authorization": f"Bearer {self.api_key}", "Content-Type": "application/json"}
+        token = generate_glm_token(self.api_key)
+        headers = {"Authorization": token, "Content-Type": "application/json"}
         async with httpx.AsyncClient(timeout=120.0) as client:
             async with client.stream("POST", url, json=payload, headers=headers) as resp:
                 resp.raise_for_status()
