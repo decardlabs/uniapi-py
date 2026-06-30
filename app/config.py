@@ -1,7 +1,10 @@
 from __future__ import annotations
 
 import secrets
+import sys
+import warnings
 
+from pydantic import model_validator
 from pydantic_settings import BaseSettings
 
 
@@ -9,6 +12,7 @@ class Settings(BaseSettings):
     # Server
     server_port: int = 8000
     debug: bool = False
+    cors_origins: list[str] = ["*"]
 
     # Database
     sql_dsn: str = ""
@@ -66,6 +70,13 @@ class Settings(BaseSettings):
     github_client_secret: str = ""
 
     model_config = {"env_file": ".env", "env_file_encoding": "utf-8", "extra": "ignore"}
+
+    @model_validator(mode="after")
+    def validate_secret(self):
+        if not self.session_secret:
+            if not any("pytest" in a for a in sys.argv):
+                warnings.warn("SESSION_SECRET not set. Using auto-generated key. Sessions invalidated on restart!")
+        return self
 
     @property
     def db_url(self) -> str:

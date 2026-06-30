@@ -50,7 +50,11 @@ class RateLimitMiddleware(BaseHTTPMiddleware):
         self._hits: dict[str, list[float]] = {}
 
     async def dispatch(self, request: Request, call_next: RequestResponseEndpoint) -> Response:
-        client_ip = request.client.host if request.client else "unknown"
+        client_ip = (
+            request.headers.get("X-Forwarded-For", "").split(",")[0].strip()
+            or request.headers.get("X-Real-IP", "")
+            or (request.client.host if request.client else "unknown")
+        )
         now = time.time()
 
         # Determine RPM based on path
