@@ -115,8 +115,23 @@ class FusionEngine:
             )
 
         model_request = ModelRequest(model=fallback_model, messages=request.messages, temperature=self.config.temperature, max_tokens=self.config.max_tokens, stream=False)
-        response = await adapter.chat(model_request)
-        return self._build_response(request_id, response, [response], None, start_time, fallback=True)
+        try:
+            response = await adapter.chat(model_request)
+        except Exception:
+            return self._error_response(request_id, fallback_model, start_time)
+        return self._build_response(request_id, response, [], None, start_time, fallback=True)
+
+    def _error_response(self, request_id, model, start_time):
+        return ChatResponse(
+            id=request_id, model=model,
+            choices=[{"index": 0, "message": {"role": "assistant", "content": f"All models unavailable, including fallback '{model}'."}, "finish_reason": "error"}],
+            usage=UsageInfo(prompt_tokens=0, completion_tokens=0, total_tokens=0),
+            fusion_meta=FusionMeta(
+                panel_models=self.config.panel, judge_model="", synthesizer_model="",
+                judge_confidence=0.0, latency_ms=int((time.monotonic() - start_time) * 1000),
+                fallback_triggered=True,
+            ),
+        )
 
     def _build_response(self, request_id: str, final: ModelResponse, panel_responses: list[ModelResponse | None], judge_analysis: dict | None, start_time: float, fallback: bool = False) -> ChatResponse:
         latency_ms = int((time.monotonic() - start_time) * 1000)

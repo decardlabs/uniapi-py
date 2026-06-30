@@ -398,6 +398,49 @@ class TestFusionEngine:
         response = await engine.execute(sample_request)
         assert response.fusion_meta.fallback_triggered is False
 
+    @pytest.mark.asyncio
+    async def test_fallback_double_count(self, sample_request):
+        """Fallback should NOT double-count tokens."""
+        registry = AdapterRegistry()
+        _reg(registry, "result-A", fail=True)
+        _reg(registry, "result-B", fail=True)
+        _reg(registry, "result-C", fail=True)
+        _reg(registry, "fallback-model")
+        config = FusionConfig(
+            panel=["result-A", "result-B", "result-C"],
+            judge="", synthesizer="",
+            fallback_model="fallback-model",
+        )
+        engine = FusionEngine(registry, config)
+        response = await engine.execute(sample_request)
+        assert response.fusion_meta.fallback_triggered is True
+        # Verify tokens: the fallback response has 100 prompt + 50 completion
+        assert response.usage.prompt_tokens == 100
+        assert response.usage.completion_tokens == 50
+        assert response.usage.total_tokens == 150
+        # The breakdown should be empty (no panel responses to break down)
+        fb = response.usage.fusion_breakdown
+        assert fb is not None
+        # Panel is not empty — the breakdown dict is empty because panel_responses=[]
+        assert len(fb.panel) == 0
+
+    @pytest.mark.asyncio
+    async def test_fallback_adapter_exception(self, sample_request):
+        """Fallback model adapter exception -> error response."""
+        registry = AdapterRegistry()
+        _reg(registry, "result-A", fail=True)
+        _reg(registry, "fallback-model", fail=True)
+        config = FusionConfig(
+            panel=["result-A"],
+            judge="", synthesizer="",
+            fallback_model="fallback-model",
+        )
+        engine = FusionEngine(registry, config)
+        response = await engine.execute(sample_request)
+        assert response.fusion_meta.fallback_triggered is True
+        assert "unavailable" in response.choices[0]["message"]["content"]
+        assert response.usage.total_tokens == 0
+
 
 # ===================================================================
 # ChatRequest helpers
