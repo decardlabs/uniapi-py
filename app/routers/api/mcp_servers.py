@@ -5,6 +5,7 @@ import json
 import time
 
 from fastapi import APIRouter, Depends, HTTPException, Query, Request
+from pydantic import BaseModel, Field
 from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -14,6 +15,44 @@ from app.models.mcp_server import MCPServer
 from app.schemas.common import GenericApiResponse, PaginatedResponse
 
 router = APIRouter(tags=["mcp"])
+
+
+# ── Request schemas ─────────────────────────────────────────────────────
+
+class MCPServerCreateRequest(BaseModel):
+    model_config = {"extra": "forbid"}
+    name: str = Field(..., min_length=1, max_length=128)
+    description: str | None = None
+    status: int = Field(default=1, ge=0, le=1)
+    priority: int = Field(default=0)
+    base_url: str | None = Field(default=None, max_length=1024)
+    protocol: str = Field(default="streamable_http")
+    auth_type: str = Field(default="none")
+    api_key: str | None = Field(default=None, max_length=512)
+    headers: dict | None = None
+    tool_whitelist: list | None = None
+    tool_blacklist: list | None = None
+    tool_pricing: dict | None = None
+    auto_sync_enabled: bool = True
+    auto_sync_interval_minutes: int = 60
+
+
+class MCPServerUpdateRequest(BaseModel):
+    model_config = {"extra": "forbid"}
+    name: str | None = Field(default=None, min_length=1, max_length=128)
+    description: str | None = None
+    status: int | None = Field(default=None, ge=0, le=1)
+    priority: int | None = None
+    base_url: str | None = Field(default=None, max_length=1024)
+    protocol: str | None = None
+    auth_type: str | None = None
+    api_key: str | None = Field(default=None, max_length=512)
+    headers: dict | None = None
+    tool_whitelist: list | None = None
+    tool_blacklist: list | None = None
+    tool_pricing: dict | None = None
+    auto_sync_enabled: bool | None = None
+    auto_sync_interval_minutes: int | None = None
 
 
 # ── Serialization helpers ──────────────────────────────────────────────
@@ -103,32 +142,33 @@ async def list_mcp_servers(
 
 @router.post("/api/mcp_servers/")
 async def create_mcp_server(
+    body: MCPServerCreateRequest,
     request: Request,
     db: AsyncSession = Depends(get_db),
     _=Depends(admin_auth),
 ):
-    body = await request.json()
     now_ms = int(time.time() * 1000)
+    data = body.model_dump()
 
-    auto_sync_enabled = body.get("auto_sync_enabled", True)
+    auto_sync_enabled = data.get("auto_sync_enabled", True)
     if isinstance(auto_sync_enabled, bool):
         auto_sync_enabled = 1 if auto_sync_enabled else 0
 
     server = MCPServer(
-        name=body.get("name", ""),
-        description=body.get("description"),
-        status=body.get("status", 1),
-        priority=body.get("priority", 0),
-        base_url=body.get("base_url", ""),
-        protocol=body.get("protocol", "streamable_http"),
-        auth_type=body.get("auth_type", "none"),
-        api_key=body.get("api_key"),
-        headers=_json_str(body.get("headers")),
-        tool_whitelist=_json_str(body.get("tool_whitelist")),
-        tool_blacklist=_json_str(body.get("tool_blacklist")),
-        tool_pricing=_json_str(body.get("tool_pricing")),
+        name=data.get("name", ""),
+        description=data.get("description"),
+        status=data.get("status", 1),
+        priority=data.get("priority", 0),
+        base_url=data.get("base_url", ""),
+        protocol=data.get("protocol", "streamable_http"),
+        auth_type=data.get("auth_type", "none"),
+        api_key=data.get("api_key"),
+        headers=_json_str(data.get("headers")),
+        tool_whitelist=_json_str(data.get("tool_whitelist")),
+        tool_blacklist=_json_str(data.get("tool_blacklist")),
+        tool_pricing=_json_str(data.get("tool_pricing")),
         auto_sync_enabled=auto_sync_enabled,
-        auto_sync_interval_minutes=body.get("auto_sync_interval_minutes", 60),
+        auto_sync_interval_minutes=data.get("auto_sync_interval_minutes", 60),
         created_at=now_ms,
         updated_at=now_ms,
     )
@@ -202,6 +242,7 @@ async def get_mcp_server(
 @router.put("/api/mcp_servers/{server_id}")
 async def update_mcp_server(
     server_id: int,
+    body: MCPServerUpdateRequest,
     request: Request,
     db: AsyncSession = Depends(get_db),
     _=Depends(admin_auth),
@@ -211,7 +252,7 @@ async def update_mcp_server(
     if not server:
         raise HTTPException(status_code=404, detail="MCP server not found")
 
-    body = await request.json()
+    data = body.model_dump(exclude_none=True)
 
     for field in (
         "name",
@@ -228,15 +269,15 @@ async def update_mcp_server(
         "tool_pricing",
         "auto_sync_interval_minutes",
     ):
-        if field in body:
-            val = body[field]
+        if field in data:
+            val = data[field]
             if field in _JSON_FIELDS:
                 val = _json_str(val)
             setattr(server, field, val)
 
     # Handle auto_sync_enabled with bool -> int conversion
-    if "auto_sync_enabled" in body:
-        val = body["auto_sync_enabled"]
+    if "auto_sync_enabled" in data:
+        val = data["auto_sync_enabled"]
         server.auto_sync_enabled = 1 if val else 0
 
     server.updated_at = int(time.time() * 1000)

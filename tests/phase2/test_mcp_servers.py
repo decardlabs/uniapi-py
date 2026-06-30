@@ -78,6 +78,15 @@ class TestCreate:
         assert "get_weather" in srv["tool_whitelist"]
 
     @pytest.mark.asyncio
+    async def test_create_rejects_extra_fields(self, client, cookies):
+        """MCP create should reject unexpected fields."""
+        resp = await client.post(BASE + "/", json={
+            "name": "valid-server",
+            "injected_field": "malicious",
+        }, cookies=cookies)
+        assert resp.status_code == 422  # Validation error
+
+    @pytest.mark.asyncio
     async def test_create_with_auth(self, client: AsyncClient, cookies: dict):
         resp = await self._create(client, cookies,
             auth_type="bearer",
@@ -166,6 +175,15 @@ class TestUpdate:
 
         get_resp = await client.get(f"{BASE}/{sid}", cookies=cookies)
         assert get_resp.json()["data"]["auto_sync_enabled"] == 0
+
+    @pytest.mark.asyncio
+    async def test_update_rejects_extra_fields(self, client, cookies, created_server_id):
+        """MCP update should reject unexpected fields."""
+        resp = await client.put(f"{BASE}/{created_server_id}", json={
+            "name": "still-valid",
+            "injected_field": "malicious",
+        }, cookies=cookies)
+        assert resp.status_code == 422  # Validation error
 
     @pytest.mark.asyncio
     async def test_update_not_found(self, client: AsyncClient, cookies: dict):
