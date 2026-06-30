@@ -309,3 +309,50 @@ class TestChannelModelConfigsPricing:
 
         estimated = estimate_cost("deepseek-v4-pro", input_tokens=1000, output_tokens=500)
         assert estimated == pytest.approx(0.0072, rel=1e-3)
+
+
+class TestAllProviderPricing:
+    """Verify billing formula correctness for all 5 providers."""
+
+    def test_deepseek_v4_pro_cost(self):
+        """deepseek-v4-pro: 1000in+500out, 100 cache_hit."""
+        from app.budget.pricing import calculate_cost
+
+        cost = calculate_cost("deepseek-v4-pro", 1000, 500, 100)
+        # input_miss=900, cache=100, output=500
+        # (900/1M)*3 + (100/1M)*0.025 + (500/1M)*6
+        expected = round((900 / 1e6) * 3 + (100 / 1e6) * 0.025 + (500 / 1e6) * 6, 6)
+        assert cost == expected, f"deepseek-v4-pro: expected {expected}, got {cost}"
+
+    def test_glm_5_cost(self):
+        """GLM-5: 2000in+1000out (no cache)."""
+        from app.budget.pricing import calculate_cost
+
+        cost = calculate_cost("glm-5", 2000, 1000)
+        expected = round((2000 / 1e6) * 7.2 + (1000 / 1e6) * 23.0, 6)
+        assert cost == expected, f"glm-5: expected {expected}, got {cost}"
+
+    def test_qwen37_plus_cost(self):
+        """Qwen3.7-plus: 1500in+800out."""
+        from app.budget.pricing import calculate_cost
+
+        cost = calculate_cost("qwen3.7-plus", 1500, 800)
+        expected = round((1500 / 1e6) * 2.0 + (800 / 1e6) * 8.0, 6)
+        assert cost == expected, f"qwen3.7-plus: expected {expected}, got {cost}"
+
+    def test_minimax_m3_cost(self):
+        """MiniMax-M3: 500in+300out."""
+        from app.budget.pricing import calculate_cost
+
+        cost = calculate_cost("MiniMax-M3", 500, 300)
+        expected = round((500 / 1e6) * 2.16 + (300 / 1e6) * 8.64, 6)
+        assert cost == expected, f"MiniMax-M3: expected {expected}, got {cost}"
+
+    def test_kimi_k2_cost(self):
+        """Kimi-k2: 800in+400out, 200 cache_hit."""
+        from app.budget.pricing import calculate_cost
+
+        cost = calculate_cost("kimi-k2", 800, 400, 200)
+        # input_miss=600, cache=200, output=400
+        expected = round((600 / 1e6) * 2.0 + (200 / 1e6) * 0.4 + (400 / 1e6) * 10.0, 6)
+        assert cost == expected, f"kimi-k2: expected {expected}, got {cost}"
