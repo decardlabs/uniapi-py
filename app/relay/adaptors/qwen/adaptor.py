@@ -29,7 +29,7 @@ class QwenAdaptor(BaseAdaptor):
 
     def _get_path_for_mode(self, relay_mode: int) -> str:
         if relay_mode == RelayMode.CLAUDE_MESSAGES:
-            return f"{ANTHROPIC_BASE_URL}/v1/messages"
+            return "/v1/messages"
         return "/chat/completions"
 
     def setup_request_headers(self, api_key: str) -> dict[str, str]:

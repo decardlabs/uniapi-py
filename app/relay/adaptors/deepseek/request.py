@@ -11,6 +11,7 @@ Port of Go's deepseekcompat package for handling DeepSeek-specific requirements:
 6. response_format downgrade (json_schema not supported)
 """
 
+import json
 from typing import Any, Optional
 
 
@@ -132,7 +133,8 @@ def downgrade_response_format(body: dict) -> dict:
     if rf and isinstance(rf, dict) and rf.get("type") == "json_schema":
         schema = rf.get("json_schema", {})
         name = schema.get("name", "")
-        instruction = schema.get("strict", False)
+        json_schema = schema.get("schema", {})
+        instruction = f"Schema instruction: {json.dumps(json_schema, ensure_ascii=False)}"
         # Ensure instruction is in system message or first user message
         if name and body.get("messages"):
             for msg in body["messages"]:
