@@ -19,6 +19,7 @@ from app.budget.pricing import (
     calculate_cost,
     calculate_cost_micro,
     estimate_cost_micro,
+    get_model_pricing,
 )
 from app.config import settings
 from app.database import get_db
@@ -27,6 +28,8 @@ from app.exceptions import RelayException, UpstreamException
 from app.models.budget import CostRecord
 from app.models.channel import Channel
 from app.models.log import Log
+from app.models.token import Token
+from app.models.user import User
 from app.relay.adaptor import BaseAdaptor
 from app.relay.meta import RelayMeta
 from app.relay.mode import RelayMode, relay_mode_from_path
@@ -356,6 +359,103 @@ def _check_token_model(token, model_name: str) -> bool:
         if model_name not in allowed:
             return False
     return True
+
+
+async def _select_auto_channel(
+    db: AsyncSession,
+    user: User,
+    token: Token,
+) -> tuple[str, Channel]:
+    """Select the best available channel for model='auto' requests.
+
+    Queries all enabled channels, filters by group access, 429 cooldown,
+    token model allowlist, and adaptor support. Then picks the channel
+    with the highest priority and lowest price (sorted by -priority, price).
+
+    Falls back to cooldown channels if all matching channels are in cooldown
+    to avoid total outage.
+
+    Returns:
+        tuple[str, Channel]: (model_name, channel) for the best match.
+
+    Raises:
+        RelayException: If no suitable channel/model is found.
+    """
+    result = await db.execute(
+        select(Channel).where(Channel.status == 1)
+    )
+    channels = list(result.scalars().all())
+
+    if not channels:
+        raise RelayException(
+            code="UNIAPI_CHANNEL_UNAVAILABLE",
+            message="No enabled channels available for auto selection",
+        )
+
+    # Filter by user group access
+    group_channels = [ch for ch in channels if ch.group == user.group]
+    if group_channels:
+        channels = group_channels
+
+    # Determine token-allowed models
+    allowed_models: list[str] | None = None
+    if hasattr(token, "models") and token.models:
+        allowed_models = [m.strip() for m in token.models.split(",")]
+
+    # Build (channel, model_name) candidates
+    candidates: list[tuple[Channel, str]] = []
+
+    for ch in channels:
+        ch_models = [m.strip() for m in ch.models.split(",")] if ch.models else []
+        adaptor = _get_adaptor(ch.type)
+        if not adaptor:
+            continue
+
+        supported = adaptor.get_supported_models()
+        model_list = ch_models or list(supported.keys())
+
+        for m_name in model_list:
+            if allowed_models is not None and m_name not in allowed_models:
+                continue
+            if m_name not in supported:
+                continue
+            candidates.append((ch, m_name))
+
+    if not candidates:
+        if allowed_models:
+            raise RelayException(
+                code="UNIAPI_TOKEN_MODEL_NOT_ALLOWED",
+                message=f"Token has no authorized model for auto selection. Allowed: {', '.join(allowed_models)}",
+            )
+        raise RelayException(
+            code="UNIAPI_MODEL_NOT_SUPPORTED",
+            message="No suitable model found for auto selection",
+        )
+
+    # 429 cooldown: skip channels in cooldown unless all are in cooldown
+    available = [(ch, m) for ch, m in candidates if not _is_channel_in_cooldown(ch.id)]
+    if not available:
+        available = candidates  # all in cooldown — allow any to avoid total outage
+
+    # Score and sort by (-priority, price): highest priority first, then cheapest
+    def _sort_key(item: tuple[Channel, str]) -> tuple:
+        ch, model = item
+        try:
+            ch_model_configs = {}
+            if ch.model_configs:
+                try:
+                    ch_model_configs = json.loads(ch.model_configs)
+                except (json.JSONDecodeError, TypeError, ValueError):
+                    pass
+            p = get_model_pricing(model, channel_model_configs=ch_model_configs)
+            price = p["input"] + p["output"]
+        except (KeyError, ValueError, TypeError):
+            price = float("inf")
+        return (-ch.priority, price)
+
+    available.sort(key=_sort_key)
+    best_ch, best_model = available[0]
+    return best_model, best_ch
 
 
 async def _record_channel_failure(channel_id: int, db: AsyncSession) -> bool:
