@@ -1,5 +1,8 @@
 from __future__ import annotations
 
+import logging
+import os
+import secrets
 import time
 from contextlib import asynccontextmanager
 from typing import AsyncGenerator
@@ -32,6 +35,8 @@ from app.middleware import (
 )
 from app.models.base import Base
 from app.version import VERSION
+
+logger = logging.getLogger(__name__)
 
 
 def _build_fusion_registry():
@@ -120,15 +125,31 @@ async def _seed_defaults():
         result = await db.execute(select(User).where(User.username == "root"))
         if not result.scalar_one_or_none():
             now = int(time.time() * 1000)
+            default_root_password = os.environ.get("UNIAPI_ROOT_PASSWORD", "")
+            if default_root_password:
+                root_password = hash_password(default_root_password)
+                root_token = secrets.token_urlsafe(32)
+                logger.info(
+                    "Root user created with UNIAPI_ROOT_PASSWORD env var. "
+                    "Access token generated randomly."
+                )
+            else:
+                root_password = hash_password("123456")
+                root_token = "root-access-token"
+                logger.warning(
+                    "UNIAPI_ROOT_PASSWORD not set. "
+                    "Using dev default credentials (insecure)."
+                )
+
             root = User(
                 username="root",
-                password=hash_password("123456"),
+                password=root_password,
                 display_name="Root",
                 role=100,
                 status=1,
                 balance=2_000_000_000,  # ¥2000 微元
                 group="default",
-                access_token="root-access-token",
+                access_token=root_token,
                 created_at=now,
                 updated_at=now,
             )
