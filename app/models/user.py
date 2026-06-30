@@ -18,6 +18,7 @@ class User(Base):
     role: Mapped[int] = mapped_column(Integer, default=1)  # 0=Guest, 1=Common, 10=Admin, 100=Root
     status: Mapped[int] = mapped_column(Integer, default=1)  # 1=Enabled, 2=Disabled, 3=Deleted
     email: Mapped[Optional[str]] = mapped_column(String(50), index=True, nullable=True)
+    session_version: Mapped[int] = mapped_column(Integer, default=1)
     github_id: Mapped[Optional[str]] = mapped_column("github_id", String(64), index=True, nullable=True)
     access_token: Mapped[Optional[str]] = mapped_column(String(64), unique=True, nullable=True)
     balance: Mapped[int] = mapped_column(BigInteger, default=0)  # micro-yuan (10^-6 yuan), ¥1 = 1_000_000

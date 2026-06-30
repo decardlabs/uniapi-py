@@ -147,3 +147,42 @@ async def test_update_user_self_strong_password(client: AsyncClient):
         "password": "123456",
         "old_password": new_strong_pwd,
     }, cookies=cookies)
+
+
+@pytest.mark.asyncio
+async def test_session_rotated_on_password_change(client: AsyncClient):
+    """Password change rotates the session cookie, making old sessions invalid."""
+    # Login and capture old session cookie
+    resp = await client.post("/api/user/login", json={
+        "username": "root", "password": "123456",
+    })
+    old_session_value = resp.cookies.get("session")
+    assert old_session_value is not None
+
+    # Change password — should return a new session cookie
+    resp = await client.put("/api/user/self", json={
+        "password": "NewPass789",
+        "old_password": "123456",
+    }, cookies=resp.cookies)
+    assert resp.status_code == 200
+    assert resp.json()["success"] is True
+
+    new_session_value = resp.cookies.get("session")
+    assert new_session_value is not None
+    assert new_session_value != old_session_value, "session token must change after password update"
+
+    # Old session should be invalid now (session_version mismatch)
+    get = await client.get("/api/user/self", cookies={"session": old_session_value})
+    data = get.json()
+    assert data["success"] is False
+    assert "not logged in" in data["message"].lower()
+
+    # New session should still work
+    get2 = await client.get("/api/user/self", cookies={"session": new_session_value})
+    assert get2.json()["success"] is True
+
+    # Restore original password
+    await client.put("/api/user/self", json={
+        "password": "123456",
+        "old_password": "NewPass789",
+    }, cookies={"session": new_session_value})

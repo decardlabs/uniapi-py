@@ -40,6 +40,7 @@ def create_session(user: User) -> str:
         "username": user.username,
         "role": user.role,
         "status": user.status,
+        "session_version": user.session_version,
     }
     return _get_serializer().dumps(data)
 
@@ -69,7 +70,13 @@ async def get_session_user(request: Request, db: AsyncSession) -> Optional[User]
         return None
 
     result = await db.execute(select(User).where(User.id == data["id"]))
-    return result.scalar_one_or_none()
+    user = result.scalar_one_or_none()
+    if user is None:
+        return None
+    # Reject sessions created before the latest password change
+    if data.get("session_version", 0) < user.session_version:
+        return None
+    return user
 
 
 def generate_token_key() -> str:

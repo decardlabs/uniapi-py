@@ -201,6 +201,7 @@ async def update_self(
         if strength_error:
             return GenericApiResponse(success=False, message=strength_error)
         user.password = hash_password(new_password)
+        user.session_version += 1
 
     if body.display_name is not None:
         user.display_name = body.display_name
