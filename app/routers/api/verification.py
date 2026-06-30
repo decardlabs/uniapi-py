@@ -93,7 +93,7 @@ async def reset_password_request(
 
     smtp_config = await load_smtp_config(db)
     if smtp_config["host"]:
-        reset_link = f"/reset-password?email={email}&token={token}"
+        reset_link = f"/reset-password?token={token}"
         sent = await send_email(
             email,
             subject="密码重置",
