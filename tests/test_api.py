@@ -147,3 +147,43 @@ async def test_root_login(client: AsyncClient):
     data = response.json()
     assert data["success"] is True
     assert data["data"]["role"] == 100
+
+
+@pytest.mark.asyncio
+async def test_update_token_with_expired_time(client: AsyncClient):
+    """Token update should accept expired_time as string (frontend sends '-1')."""
+    from app.database import async_session_factory
+    from app.models.token import Token
+
+    # Create a token directly
+    async with async_session_factory() as db:
+        token = Token(name="update-test", key="sk-update-test-key", user_id=1, status=1, created_time=1000)
+        db.add(token)
+        await db.commit()
+        token_id = token.id
+
+    # Login
+    login_resp = await client.post(
+        "/api/user/login",
+        json={"username": "root", "password": "123456"},
+    )
+    assert login_resp.status_code == 200
+
+    # Update with all fields the frontend sends (expired_time as string)
+    update_resp = await client.put(
+        "/api/token/",
+        json={
+            "id": token_id,
+            "name": "updated-name",
+            "expired_time": "-1",
+            "models": "",
+            "subnet": "",
+            "status": 1,
+        },
+        cookies=login_resp.cookies,
+    )
+    assert update_resp.status_code == 200, f"Update failed: {update_resp.text}"
+    data = update_resp.json()
+    assert data["success"] is True
+    assert data["data"]["name"] == "updated-name"
+    assert data["data"]["status"] == 1

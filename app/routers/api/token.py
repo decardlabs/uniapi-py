@@ -138,12 +138,21 @@ async def update_token(
     if not token_id:
         return GenericApiResponse(success=False, message="Token ID required")
 
+    # Convert str → int for expired_time (frontend sends "-1" string)
+    raw_expired = body.expired_time
+    expired_time_int: int | None = None
+    if raw_expired is not None:
+        try:
+            expired_time_int = int(raw_expired)
+        except (ValueError, TypeError):
+            expired_time_int = -1
+
     token = await token_service.update_token(
         db,
         user_id=user.id,
         token_id=token_id,
         name=body.name,
-        expired_time=body.expired_time,
+        expired_time=expired_time_int,
         models=body.models,
         subnet=body.subnet,
         status=body.status,
