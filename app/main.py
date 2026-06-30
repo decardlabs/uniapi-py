@@ -116,105 +116,108 @@ async def lifespan(app: FastAPI) -> AsyncGenerator:
 
 async def _seed_defaults():
     """Create root user and default options if they don't exist."""
-    from app.models.option import Option
-    from app.models.user import User
-    from app.services.auth import hash_password
+    try:
+        from app.models.option import Option
+        from app.models.user import User
+        from app.services.auth import hash_password
 
-    async with async_session_factory() as db:
-        # Create root user if not exists
-        result = await db.execute(select(User).where(User.username == "root"))
-        if not result.scalar_one_or_none():
-            now = int(time.time() * 1000)
-            default_root_password = os.environ.get("UNIAPI_ROOT_PASSWORD", "")
-            if default_root_password:
-                root_password = hash_password(default_root_password)
-                root_token = secrets.token_urlsafe(32)
-                logger.info(
-                    "Root user created with UNIAPI_ROOT_PASSWORD env var. "
-                    "Access token generated randomly."
-                )
-            else:
-                root_password = hash_password("123456")
-                root_token = "root-access-token"
-                logger.warning(
-                    "UNIAPI_ROOT_PASSWORD not set. "
-                    "Using dev default credentials (insecure)."
-                )
-
-            root = User(
-                username="root",
-                password=root_password,
-                display_name="Root",
-                role=100,
-                status=1,
-                balance=2_000_000_000,  # ¥2000 微元
-                group="default",
-                access_token=root_token,
-                created_at=now,
-                updated_at=now,
-            )
-            db.add(root)
-            await db.flush()
-
-            from app.services.auth import create_default_token
-
-            await create_default_token(db, root.id)
-
-        # Add default options
-
-        default_options = {
-            # 品牌
-            "SystemName": "UniAPI",
-            "Logo": "",
-            "Footer": "",
-            "Notice": "",
-            "About": "",
-            "HomePageContent": "",
-            "Theme": "modern",
-            "TopUpLink": "",
-            "ChatLink": "",
-            "ServerAddress": "",
-            # 登录/注册
-            "PasswordLoginEnabled": "true",
-            "PasswordRegisterEnabled": "true",
-            "RegisterEnabled": "true",
-            "EmailVerificationEnabled": "false",
-            "EmailDomainRestrictionEnabled": "false",
-            "EmailDomainWhitelist": "",
-            # Turnstile（非密钥部分）
-            "TurnstileCheckEnabled": "false",
-            "TurnstileSiteKey": "",
-            # GitHub OAuth（非密钥部分）
-            "GitHubOAuthEnabled": "false",
-            "GitHubClientId": "",
-            # SMTP（非密钥部分）
-            "SMTPServer": "",
-            "SMTPPort": "587",
-            "SMTPAccount": "",
-            "SMTPFrom": "",
-            # 额度与计费
-            "QuotaForNewUser": "1000000",
-            "QuotaRemindThreshold": "10000",
-            "PreConsumedQuota": "5000",
-            "QuotaPerUnit": "500000",
-            "DisplayInCurrencyEnabled": "false",
-            "DisplayTokenStatEnabled": "true",
-            "ApproximateTokenEnabled": "true",
-            # 渠道与可靠性
-            "AutomaticDisableChannelEnabled": "false",
-            "AutomaticEnableChannelEnabled": "false",
-            "ChannelDisableThreshold": "10",
-            "RetryTimes": "3",
-            # 日志与集成
-            "LogConsumeEnabled": "true",
-            "MessagePusherAddress": "",
-        }
-        for key, value in default_options.items():
-            result = await db.execute(select(Option).where(Option.key == key))
+        async with async_session_factory() as db:
+            # Create root user if not exists
+            result = await db.execute(select(User).where(User.username == "root"))
             if not result.scalar_one_or_none():
-                db.add(Option(key=key, value=value, created_at=int(time.time() * 1000)))
+                now = int(time.time() * 1000)
+                default_root_password = os.environ.get("UNIAPI_ROOT_PASSWORD", "")
+                if default_root_password:
+                    root_password = hash_password(default_root_password)
+                    root_token = secrets.token_urlsafe(32)
+                    logger.info(
+                        "Root user created with UNIAPI_ROOT_PASSWORD env var. "
+                        "Access token generated randomly."
+                    )
+                else:
+                    root_password = hash_password("123456")
+                    root_token = "root-access-token"
+                    logger.warning(
+                        "UNIAPI_ROOT_PASSWORD not set. "
+                        "Using dev default credentials (insecure)."
+                    )
 
-        await db.commit()
+                root = User(
+                    username="root",
+                    password=root_password,
+                    display_name="Root",
+                    role=100,
+                    status=1,
+                    balance=2_000_000_000,  # ¥2000 微元
+                    group="default",
+                    access_token=root_token,
+                    created_at=now,
+                    updated_at=now,
+                )
+                db.add(root)
+                await db.flush()
+
+                from app.services.auth import create_default_token
+
+                await create_default_token(db, root.id)
+
+            # Add default options
+
+            default_options = {
+                # 品牌
+                "SystemName": "UniAPI",
+                "Logo": "",
+                "Footer": "",
+                "Notice": "",
+                "About": "",
+                "HomePageContent": "",
+                "Theme": "modern",
+                "TopUpLink": "",
+                "ChatLink": "",
+                "ServerAddress": "",
+                # 登录/注册
+                "PasswordLoginEnabled": "true",
+                "PasswordRegisterEnabled": "true",
+                "RegisterEnabled": "true",
+                "EmailVerificationEnabled": "false",
+                "EmailDomainRestrictionEnabled": "false",
+                "EmailDomainWhitelist": "",
+                # Turnstile（非密钥部分）
+                "TurnstileCheckEnabled": "false",
+                "TurnstileSiteKey": "",
+                # GitHub OAuth（非密钥部分）
+                "GitHubOAuthEnabled": "false",
+                "GitHubClientId": "",
+                # SMTP（非密钥部分）
+                "SMTPServer": "",
+                "SMTPPort": "587",
+                "SMTPAccount": "",
+                "SMTPFrom": "",
+                # 额度与计费
+                "QuotaForNewUser": "1000000",
+                "QuotaRemindThreshold": "10000",
+                "PreConsumedQuota": "5000",
+                "QuotaPerUnit": "500000",
+                "DisplayInCurrencyEnabled": "false",
+                "DisplayTokenStatEnabled": "true",
+                "ApproximateTokenEnabled": "true",
+                # 渠道与可靠性
+                "AutomaticDisableChannelEnabled": "false",
+                "AutomaticEnableChannelEnabled": "false",
+                "ChannelDisableThreshold": "10",
+                "RetryTimes": "3",
+                # 日志与集成
+                "LogConsumeEnabled": "true",
+                "MessagePusherAddress": "",
+            }
+            for key, value in default_options.items():
+                result = await db.execute(select(Option).where(Option.key == key))
+                if not result.scalar_one_or_none():
+                    db.add(Option(key=key, value=value, created_at=int(time.time() * 1000)))
+
+            await db.commit()
+    except Exception as e:
+        logger.error("Seed failed: %s", e, exc_info=True)
 
 
 def create_app() -> FastAPI:

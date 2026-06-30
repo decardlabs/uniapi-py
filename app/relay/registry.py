@@ -1,8 +1,11 @@
 from __future__ import annotations
 
+import logging
 from typing import Optional
 
 from app.relay.adaptor import BaseAdaptor
+
+logger = logging.getLogger(__name__)
 
 
 class AdaptorRegistry:
@@ -41,14 +44,32 @@ class AdaptorRegistry:
 # Global registry - auto-register all known adaptors
 registry = AdaptorRegistry()
 
-from app.relay.adaptors.deepseek.adaptor import DEEPSEEK_CHANNEL_TYPE, DeepSeekAdaptor  # noqa: E402
-from app.relay.adaptors.glm.adaptor import GLM_CHANNEL_TYPE, GLMAdaptor  # noqa: E402
-from app.relay.adaptors.kimi.adaptor import KIMI_CHANNEL_TYPE, KimiAdaptor  # noqa: E402
-from app.relay.adaptors.minimax.adaptor import MINIMAX_CHANNEL_TYPE, MiniMaxAdaptor  # noqa: E402
-from app.relay.adaptors.qwen.adaptor import QWEN_CHANNEL_TYPE, QwenAdaptor  # noqa: E402
+try:
+    from app.relay.adaptors.deepseek.adaptor import DEEPSEEK_CHANNEL_TYPE, DeepSeekAdaptor  # noqa: E402
+    registry.register(DEEPSEEK_CHANNEL_TYPE, DeepSeekAdaptor)
+except ImportError as e:
+    logger.warning("Failed to load DeepSeek adaptor: %s", e)
 
-registry.register(DEEPSEEK_CHANNEL_TYPE, DeepSeekAdaptor)
-registry.register(GLM_CHANNEL_TYPE, GLMAdaptor)
-registry.register(QWEN_CHANNEL_TYPE, QwenAdaptor)
-registry.register(KIMI_CHANNEL_TYPE, KimiAdaptor)
-registry.register(MINIMAX_CHANNEL_TYPE, MiniMaxAdaptor)
+try:
+    from app.relay.adaptors.glm.adaptor import GLM_CHANNEL_TYPE, GLMAdaptor  # noqa: E402
+    registry.register(GLM_CHANNEL_TYPE, GLMAdaptor)
+except ImportError as e:
+    logger.warning("Failed to load GLM adaptor: %s", e)
+
+try:
+    from app.relay.adaptors.kimi.adaptor import KIMI_CHANNEL_TYPE, KimiAdaptor  # noqa: E402
+    registry.register(KIMI_CHANNEL_TYPE, KimiAdaptor)
+except ImportError as e:
+    logger.warning("Failed to load Kimi adaptor: %s", e)
+
+try:
+    from app.relay.adaptors.minimax.adaptor import MINIMAX_CHANNEL_TYPE, MiniMaxAdaptor  # noqa: E402
+    registry.register(MINIMAX_CHANNEL_TYPE, MiniMaxAdaptor)
+except ImportError as e:
+    logger.warning("Failed to load MiniMax adaptor: %s", e)
+
+try:
+    from app.relay.adaptors.qwen.adaptor import QWEN_CHANNEL_TYPE, QwenAdaptor  # noqa: E402
+    registry.register(QWEN_CHANNEL_TYPE, QwenAdaptor)
+except ImportError as e:
+    logger.warning("Failed to load Qwen adaptor: %s", e)

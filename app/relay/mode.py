@@ -56,4 +56,4 @@ def relay_mode_from_path(path: str) -> RelayMode:
         return RelayMode.OCR
     if path.startswith("/v1/oneapi/proxy"):
         return RelayMode.PROXY
-    return RelayMode.CHAT_COMPLETIONS  # default
+    return RelayMode.UNKNOWN  # unknown path

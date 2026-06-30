@@ -13,6 +13,8 @@ from typing import Any, Optional
 
 from fastapi.responses import JSONResponse
 
+from app.error_codes import get_error_meta  # noqa: E402 — no circular dependency; error_codes only imports from typing.
+
 # ── Base exception ───────────────────────────────────────────────────────────
 
 
@@ -112,8 +114,6 @@ class RelayException(AppException):
         suggestion: Optional[str] = None,
         upstream: Optional[dict[str, Any]] = None,
     ):
-        from app.error_codes import get_error_meta
-
         inferred_status, inferred_type = get_error_meta(code)
         super().__init__(
             status_code=status_code if status_code is not None else inferred_status,

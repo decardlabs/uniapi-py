@@ -254,9 +254,9 @@ def test_relay_mode_proxy():
 def test_relay_mode_default_fallback():
     from app.relay.mode import RelayMode, relay_mode_from_path
 
-    # Unknown paths fall back to CHAT_COMPLETIONS
-    assert relay_mode_from_path("/v1/unknown/path") == RelayMode.CHAT_COMPLETIONS
-    assert relay_mode_from_path("/") == RelayMode.CHAT_COMPLETIONS
+    # Unknown paths return UNKNOWN
+    assert relay_mode_from_path("/v1/unknown/path") == RelayMode.UNKNOWN
+    assert relay_mode_from_path("/") == RelayMode.UNKNOWN
 
 
 # ---------------------------------------------------------------------------
