@@ -406,7 +406,7 @@ async def _select_auto_channel(
     # Determine token-allowed models
     allowed_models: list[str] | None = None
     if hasattr(token, "models") and token.models:
-        allowed_models = [m.strip() for m in token.models.split(",")]
+        allowed_models = [m.strip() for m in token.models.split(",") if m.strip()]
 
     # Build (channel, model_name) candidates
     candidates: list[tuple[Channel, str]] = []

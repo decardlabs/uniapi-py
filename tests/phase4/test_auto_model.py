@@ -6,7 +6,6 @@ cooldown skipping, group access control, and empty-model fallback.
 """
 
 import pytest
-from sqlalchemy import select
 
 from app.database import async_session_factory, engine
 from app.exceptions import RelayException
