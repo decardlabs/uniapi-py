@@ -175,7 +175,7 @@ async def test_auto_select_skips_cooldown(db):
     await db.flush()
 
     # Put ch_b into 429 cooldown
-    _cooldown_channel(6002)
+    await _cooldown_channel(6002)
 
     user = User(id=999, username="test", password="x", group="default")
     token = Token(id=999, models="")

@@ -272,6 +272,10 @@ async def _select_channel(
 _channel_failures: dict[int, int] = {}
 _CHANNEL_DISABLE_THRESHOLD = 3  # consecutive 5xx before disabling
 
+# Lock protecting _channel_failures, _channel_429_counts, and _channel_cooldowns
+# mutations to prevent TOCTOU races under async concurrency.
+_channel_lock = asyncio.Lock()
+
 # ── 429 cooldown: slow down, don't disable ──
 
 # Map channel_id → cooldown expiry timestamp (time.monotonic())
@@ -286,17 +290,18 @@ _COOLDOWN_BASE_SECONDS = 10.0
 _COOLDOWN_MAX_SECONDS = 120.0  # cap at 2 minutes
 
 
-def _cooldown_channel(channel_id: int) -> float:
+async def _cooldown_channel(channel_id: int) -> float:
     """Place a channel into 429 cooldown. Returns the cooldown duration.
 
     Cooldown grows exponentially: base → 2× → 4× → … capped at _COOLDOWN_MAX_SECONDS.
     When the channel successfully serves a request, its 429 count resets.
     """
-    count = _channel_429_counts.get(channel_id, 0) + 1
-    _channel_429_counts[channel_id] = count
-    duration = min(_COOLDOWN_BASE_SECONDS * (2 ** (count - 1)), _COOLDOWN_MAX_SECONDS)
-    expiry = time.monotonic() + duration
-    _channel_cooldowns[channel_id] = expiry
+    async with _channel_lock:
+        count = _channel_429_counts.get(channel_id, 0) + 1
+        _channel_429_counts[channel_id] = count
+        duration = min(_COOLDOWN_BASE_SECONDS * (2 ** (count - 1)), _COOLDOWN_MAX_SECONDS)
+        expiry = time.monotonic() + duration
+        _channel_cooldowns[channel_id] = expiry
     logger.warning(
         "429 COOLDOWN | channel=%d duration=%.1fs 429_strike=%d",
         channel_id, duration, count,
@@ -305,21 +310,20 @@ def _cooldown_channel(channel_id: int) -> float:
 
 
 def _is_channel_in_cooldown(channel_id: int) -> bool:
-    """Check if a channel is currently in 429 cooldown. Auto-cleans expired entries."""
+    """Check if a channel is currently in 429 cooldown."""
     expiry = _channel_cooldowns.get(channel_id)
     if expiry is None:
         return False
     if time.monotonic() > expiry:
-        # Cooldown expired — clean up
-        _channel_cooldowns.pop(channel_id, None)
-        return False
+        return False  # Don't pop — let _reset_channel_429_count handle cleanup
     return True
 
 
-def _reset_channel_429_count(channel_id: int):
+async def _reset_channel_429_count(channel_id: int):
     """Reset 429 strike counter after a successful request."""
-    _channel_429_counts.pop(channel_id, None)
-    _channel_cooldowns.pop(channel_id, None)
+    async with _channel_lock:
+        _channel_429_counts.pop(channel_id, None)
+        _channel_cooldowns.pop(channel_id, None)
 
 
 async def _find_fallback_channel(
@@ -466,24 +470,26 @@ async def _select_auto_channel(
 
 async def _record_channel_failure(channel_id: int, db: AsyncSession) -> bool:
     """Record a channel failure. Returns True if channel was auto-disabled."""
-    count = _channel_failures.get(channel_id, 0) + 1
-    _channel_failures[channel_id] = count
-    if count >= _CHANNEL_DISABLE_THRESHOLD:
-        logger.warning("Auto-disabling channel %d after %d consecutive failures", channel_id, count)
-        result = await db.execute(select(Channel).where(Channel.id == channel_id))
-        ch = result.scalar_one_or_none()
-        if ch:
-            ch.status = 0
-            await db.commit()
-        _channel_failures.pop(channel_id, None)
-        return True
-    return False
+    async with _channel_lock:
+        count = _channel_failures.get(channel_id, 0) + 1
+        _channel_failures[channel_id] = count
+        if count >= _CHANNEL_DISABLE_THRESHOLD:
+            logger.warning("Auto-disabling channel %d after %d consecutive failures", channel_id, count)
+            result = await db.execute(select(Channel).where(Channel.id == channel_id))
+            ch = result.scalar_one_or_none()
+            if ch:
+                ch.status = 0
+                await db.commit()
+            _channel_failures.pop(channel_id, None)
+            return True
+        return False
 
 
-def _reset_channel_failures(channel_id: int):
+async def _reset_channel_failures(channel_id: int):
     """Reset failure count AND 429 cooldown after a successful call."""
-    _channel_failures.pop(channel_id, None)
-    _reset_channel_429_count(channel_id)
+    async with _channel_lock:
+        _channel_failures.pop(channel_id, None)
+    await _reset_channel_429_count(channel_id)
 
 
 async def _refund_and_raise_connection_error(
@@ -1057,7 +1063,7 @@ async def _handle_relay(request: Request, db: AsyncSession):
                 on_stream_usage=stream_usage_cb,
                 raw_passthrough=native_claude_stream,
             )
-            _reset_channel_failures(_channel_id)
+            await _reset_channel_failures(_channel_id)
             break  # success, exit retry loop
 
         except httpx.HTTPStatusError as exc:
@@ -1123,7 +1129,7 @@ async def _handle_relay(request: Request, db: AsyncSession):
                                         "FALLBACK | 429 -> model=%s | channel_type=%d",
                                         model_name, channel_type,
                                     )
-                                    _cooldown_channel(failed_channel_id)
+                                    await _cooldown_channel(failed_channel_id)
                                     # Execute fallback inline (last iteration — can't continue)
                                     try:
                                         upstream_response = await relay_chat_completion(
@@ -1136,7 +1142,8 @@ async def _handle_relay(request: Request, db: AsyncSession):
                                             on_stream_usage=stream_usage_cb,
                                             raw_passthrough=native_claude_stream,
                                         )
-                                        _reset_channel_failures(_channel_id)
+                                        await _reset_channel_failures(_channel_id)
+                                        await _reset_channel_failures(failed_channel_id)  # also reset original failed channel
                                         break  # fallback succeeded
                                     except httpx.HTTPStatusError as exc2:
                                         exc = exc2
@@ -1192,7 +1199,7 @@ async def _handle_relay(request: Request, db: AsyncSession):
             # ── All retries and fallbacks exhausted → record failure/cooldown, refund, raise ──
             if status == 429:
                 # 429 is NOT a server failure — use cooldown instead of disabling
-                _cooldown_channel(_channel_id)
+                await _cooldown_channel(_channel_id)
             elif is_recoverable:
                 await _record_channel_failure(_channel_id, db)
 

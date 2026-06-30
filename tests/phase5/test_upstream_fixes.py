@@ -232,7 +232,7 @@ class TestChannelFailureStatePersistence:
         _channel_429_counts.clear()
 
         # Simulate a 429 cooldown on channel 1
-        _cooldown_channel(1)
+        await _cooldown_channel(1)
 
         # Should be in cooldown now
         assert _is_channel_in_cooldown(1), "Channel should be in cooldown after 429"
@@ -257,20 +257,20 @@ class TestChannelFailureStatePersistence:
 
         # Set up some state
         _channel_failures[99] = 2
-        _cooldown_channel(99)
+        await _cooldown_channel(99)
 
         assert _channel_failures.get(99) == 2
         assert _is_channel_in_cooldown(99) or len(_channel_cooldowns) > 0
 
         # Reset
-        _reset_channel_failures(99)
+        await _reset_channel_failures(99)
 
         # Everything should be cleared
         assert 99 not in _channel_failures, "Failure counter should be cleared"
         assert 99 not in _channel_429_counts, "429 count should be cleared"
 
     def test_is_channel_in_cooldown_autocleans_expired(self):
-        """Expired cooldowns should be auto-cleaned."""
+        """Expired cooldowns should return False (cleanup is done by _reset_channel_429_count)."""
         from app.routers.v1.relay import _channel_cooldowns, _is_channel_in_cooldown
 
         _channel_cooldowns.clear()
@@ -278,10 +278,9 @@ class TestChannelFailureStatePersistence:
         # Set cooldown that expired 10 seconds ago
         _channel_cooldowns[42] = time.monotonic() - 10
 
-        # Should return False (expired) AND remove from dict
+        # Should return False (expired) — no longer auto-pops
         result = _is_channel_in_cooldown(42)
         assert result is False, "Expired cooldown should return False"
-        assert 42 not in _channel_cooldowns, "Expired cooldown should be auto-cleaned"
 
 
 # ═══════════════════════════════════════════════════════════════════════════════
