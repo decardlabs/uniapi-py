@@ -10,7 +10,7 @@ from typing import Any
 
 import httpx
 from fastapi import APIRouter, Depends, Request
-from sqlalchemy import select
+from sqlalchemy import select, update
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.budget.arbiter import ActualUsage, BudgetArbiter
@@ -161,12 +161,14 @@ def _make_stream_usage_callback(
             await session.commit()
             _lg.getLogger(__name__).debug("_on_usage: COMMITTED log %d", log_id)
 
-            # Refund overcharge to user's micro-yuan balance
+            # Refund/charge difference to user's micro-yuan balance (atomic)
             diff_micro = estimated_micro - actual_micro
-            if diff_micro > 0:
-                user = await session.get(User, user_id)
-                if user:
-                    user.balance += diff_micro
+            if diff_micro != 0:
+                await session.execute(
+                    update(User).where(User.id == user_id).values(
+                        balance=User.balance + diff_micro
+                    )
+                )
                 await session.commit()
 
             # Write CostRecord
