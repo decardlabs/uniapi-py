@@ -66,7 +66,7 @@ async def _replace_channel_with_keys(
 
     # Delete current channel and all siblings with the same name
     await db.execute(
-        sa_delete(Channel).where(Channel.name == current_channel.name)
+        sa_delete(Channel).where(Channel.id == current_channel.id)
     )
 
     def _get(field: str, default=None):

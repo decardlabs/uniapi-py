@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+import time
+
 from fastapi import APIRouter, Depends, Query
 from fastapi.responses import JSONResponse
 from sqlalchemy import select
@@ -22,6 +24,8 @@ from app.services.email import (
 from app.services.user import verify_turnstile
 
 router = APIRouter(tags=["verification"])
+
+_reset_attempts: dict[str, list[float]] = {}  # email -> [timestamps]
 
 
 @router.get("/api/verification")
@@ -121,6 +125,17 @@ async def reset_password_confirm(
     email = body.email
     token = body.token
     new_password = body.password
+
+    # In-memory rate limit: max 3 attempts per email per hour
+    now = time.time()
+    _reset_attempts[email] = [t for t in _reset_attempts.get(email, []) if now - t < 3600]
+    if len(_reset_attempts[email]) >= 3:
+        from app.relay.exceptions import RelayException
+        raise RelayException(
+            code="UNIAPI_RATE_LIMIT",
+            message="Too many password reset attempts. Try again in an hour.",
+        )
+    _reset_attempts[email].append(now)
 
     if not email or not token or not new_password:
         return GenericApiResponse(success=False, message="缺少必要参数")
