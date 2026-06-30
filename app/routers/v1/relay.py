@@ -501,8 +501,13 @@ async def _refund_and_raise_connection_error(
     Extracted so both the main ``except Exception`` handler and the inline
     429 fallback handler can share the same refund+raise logic.
     """
-    # Refund micro-yuan balance on failure
-    user.balance += estimated_micro
+    # Refund micro-yuan balance on failure (with FOR UPDATE locking)
+    ref_result = await db.execute(
+        select(User).where(User.id == user.id).with_for_update()
+    )
+    ref_locked = ref_result.scalar_one()
+    ref_locked.balance += estimated_micro
+    user.balance = ref_locked.balance
 
     # Patch the provisional log so it doesn't remain as stale type=6
     provisional_log.type = 2
@@ -671,8 +676,13 @@ async def _handle_relay(request: Request, db: AsyncSession):
                     except KeyError:
                         logger.warning("Fusion billing: unknown synthesizer model %s", fb.synthesizer_model)
 
-            # Deduct balance
-            user.balance -= total_cost_micro
+            # Deduct balance with FOR UPDATE locking
+            fus_result = await db.execute(
+                select(User).where(User.id == user.id).with_for_update()
+            )
+            fus_locked = fus_result.scalar_one()
+            fus_locked.balance -= total_cost_micro
+            user.balance = fus_locked.balance
 
             # Write Log
             now_ms = int(time.time() * 1000)
@@ -790,6 +800,13 @@ async def _handle_relay(request: Request, db: AsyncSession):
         logger.warning("estimate_cost_micro failed for model=%r, using default", model_name)
         estimated_micro = 1000  # fallback: ~1k micro-yuan
 
+    # Lock user row to prevent concurrent overdraft (SELECT ... FOR UPDATE)
+    result = await db.execute(
+        select(User).where(User.id == user.id).with_for_update()
+    )
+    locked_user = result.scalar_one()
+    user.balance = locked_user.balance  # sync cached balance with locked DB row
+
     # Allow ¥1 overdraft — conservative estimation is imprecise
     if user.balance < estimated_micro and user.balance - estimated_micro < -MAX_OVERDRAFT_MICRO:
         raise RelayException(
@@ -837,8 +854,9 @@ async def _handle_relay(request: Request, db: AsyncSession):
     )
     db.add(provisional_log)
 
-    user.balance -= estimated_micro
+    locked_user.balance -= estimated_micro
     await db.flush()
+    user.balance = locked_user.balance  # keep cached user in sync
 
     # SMART ROUTING: use NATIVE_FORMATS to decide proxy vs convert
     meta = RelayMeta(
@@ -1110,8 +1128,13 @@ async def _handle_relay(request: Request, db: AsyncSession):
             elif is_recoverable:
                 await _record_channel_failure(_channel_id, db)
 
-            # Refund micro-yuan balance
-            user.balance += estimated_micro
+            # Refund micro-yuan balance (with FOR UPDATE locking)
+            ref2_result = await db.execute(
+                select(User).where(User.id == user.id).with_for_update()
+            )
+            ref2_locked = ref2_result.scalar_one()
+            ref2_locked.balance += estimated_micro
+            user.balance = ref2_locked.balance
 
             # Mark log as failed so it doesn't remain as stale type=6
             provisional_log.type = 2
@@ -1244,10 +1267,15 @@ async def _handle_relay(request: Request, db: AsyncSession):
         logger.warning("calculate_cost_micro failed for model=%r, using estimate", model_name)
         actual_micro = estimated_micro
 
-    # Refund/charge difference to user's balance
+    # Refund/charge difference to user's balance (with FOR UPDATE locking)
     diff_micro = estimated_micro - actual_micro
     if diff_micro != 0:
-        user.balance += diff_micro
+        ref3_result = await db.execute(
+            select(User).where(User.id == user.id).with_for_update()
+        )
+        ref3_locked = ref3_result.scalar_one()
+        ref3_locked.balance += diff_micro
+        user.balance = ref3_locked.balance
 
     provisional_log.type = 2
     provisional_log.cost = actual_micro
