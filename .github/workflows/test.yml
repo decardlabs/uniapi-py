@@ -36,7 +36,7 @@ jobs:
 
       - name: Run tests
         run: |
-          python -m pytest tests/ -v --tb=short --no-header 2>&1 | tail -80
+          python -m pytest tests/ -v --tb=short --no-header -q
 
       - name: Upload coverage to Codecov
         uses: codecov/codecov-action@v4
