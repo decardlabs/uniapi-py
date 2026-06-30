@@ -1262,7 +1262,10 @@ async def _handle_relay(request: Request, db: AsyncSession):
 
     # Calculate actual cost in micro-yuan
     try:
-        actual_micro = calculate_cost_micro(model_name, prompt_tokens, completion_tokens, cache_hit)
+        actual_micro = calculate_cost_micro(
+            model_name, prompt_tokens, completion_tokens, cache_hit,
+            channel_model_configs=_channel_model_configs,
+        )
     except KeyError:
         logger.warning("calculate_cost_micro failed for model=%r, using estimate", model_name)
         actual_micro = estimated_micro
