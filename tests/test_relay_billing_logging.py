@@ -1,6 +1,5 @@
 """Test that billing path exceptions are logged, not silently swallowed."""
 import inspect
-import logging
 
 import pytest
 
