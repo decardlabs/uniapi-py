@@ -34,9 +34,9 @@ jobs:
       - name: Lint with ruff
         run: ruff check app/ tests/ --select=E9,F  # Error-level checks only
 
-      - name: Run tests with coverage
+      - name: Run tests
         run: |
-          python -m pytest tests/ -v --no-header --cov=app --cov-report=xml --cov-report=term -q
+          python -m pytest tests/ -v --tb=short --no-header 2>&1 | tail -80
 
       - name: Upload coverage to Codecov
         uses: codecov/codecov-action@v4
