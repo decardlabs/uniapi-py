@@ -15,7 +15,7 @@ from fastapi import APIRouter, Depends, Query, Request
 from sqlalchemy import case, func, literal_column, select, text
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.budget.pricing import get_model_pricing
+from app.budget.pricing import MODEL_PRICING_YUAN, get_model_pricing
 from app.database import get_db
 from app.dependencies import admin_auth
 from app.models.channel import Channel
@@ -23,6 +23,12 @@ from app.models.log import Log
 from app.schemas.common import GenericApiResponse
 
 router = APIRouter(tags=["cache-analytics"])
+
+# Average (input + output) price per million tokens across all known models,
+# used as fallback when per-model pricing is unavailable.
+_AVG_INPUT_OUTPUT_PRICE_1M = sum(
+    p["input"] + p["output"] for p in MODEL_PRICING_YUAN.values()
+) / max(len(MODEL_PRICING_YUAN), 1)
 
 # ── Helpers ────────────────────────────────────────────────────────
 
@@ -120,14 +126,16 @@ def _enrich_timeseries_with_rates(
 
 
 def _estimate_savings_rate_from_row(row: dict[str, Any]) -> float:
-    """Compute estimated_savings_rate from summary row alone using 1:1 default pricing.
+    """Compute estimated_savings_rate from summary row alone using average model pricing.
 
     Used by compare path where per-model breakdown is not available.
+    Falls back to the average of all known model prices instead of 1:1.
     """
     pt = row.get("prompt_tokens", 0) or 0
     ct = row.get("completion_tokens", 0) or 0
     q = row.get("quota", 0) or 0
-    cost_without = pt + ct  # default 1:1 price per token
+    per_token = _AVG_INPUT_OUTPUT_PRICE_1M / 1_000_000
+    cost_without = pt * per_token + ct * per_token
     if cost_without > 0:
         return (cost_without - q) / cost_without
     return 0.0
