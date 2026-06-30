@@ -28,46 +28,68 @@ async def _capture_stream_usage(
     1. OpenAI Chat format: ``choices[0].finish_reason`` present
     2. Anthropic SSE format: ``type == "message_delta"``
     3. Usage-only chunk: ``choices`` is empty but ``usage`` present (GLM)
+
+    Uses a queue-based architecture with a background reader task so the
+    usage callback is invoked from task context, not from a generator's
+    ``finally`` block.  This is safe against ``GeneratorExit`` (Python 3.14
+    drops ``asyncio.ensure_future`` tasks scheduled during ``GeneratorExit``).
     """
-    last_usage: dict[str, Any] | None = None
-    captured_usage: list[dict[str, Any] | None] = [None]
-    done = asyncio.Event()
-    try:
-        async for line in raw_stream:
-            if line.startswith("data: ") and '"usage"' in line:
-                try:
-                    data = json.loads(line[6:].strip())
-                    choices = data.get("choices") or []
-                    usage = data.get("usage")
-                    # Skip empty usage dicts — some providers send usage={} early
-                    # without overwriting a previously captured valid last_usage
-                    if usage and not any(usage.values()):
-                        usage = None
-                    # OpenAI Chat format: final chunk has choices[0].finish_reason
-                    if choices and choices[0].get("finish_reason") and usage:
-                        last_usage = usage
-                    # Anthropic SSE format: message_delta carries usage at stream end
-                    elif data.get("type") == "message_delta" and usage:
-                        last_usage = usage
-                    # Usage-only chunk: empty choices but usage present (e.g. GLM)
-                    elif usage:
-                        last_usage = usage
-                except json.JSONDecodeError:
-                    pass
-            yield line
-    finally:
-        captured_usage[0] = last_usage
-        done.set()
-        if on_usage is not None:
-            async def _report():
-                await done.wait()
-                u = captured_usage[0]
-                if u is not None:
+    queue: asyncio.Queue[str | None] = asyncio.Queue(maxsize=100)
+
+    async def _reader():
+        last_usage: dict[str, Any] | None = None
+        try:
+            async for line in raw_stream:
+                if line.startswith("data: ") and '"usage"' in line:
                     try:
-                        await on_usage(u)
-                    except Exception:
+                        data = json.loads(line[6:].strip())
+                        choices = data.get("choices") or []
+                        usage = data.get("usage")
+                        # Skip empty usage dicts — some providers send usage={} early
+                        # without overwriting a previously captured valid last_usage
+                        if usage and not any(usage.values()):
+                            usage = None
+                        # OpenAI Chat format: final chunk has choices[0].finish_reason
+                        if choices and choices[0].get("finish_reason") and usage:
+                            last_usage = usage
+                        # Anthropic SSE format: message_delta carries usage at stream end
+                        elif data.get("type") == "message_delta" and usage:
+                            last_usage = usage
+                        # Usage-only chunk: empty choices but usage present (e.g. GLM)
+                        elif usage:
+                            last_usage = usage
+                    except json.JSONDecodeError:
                         pass
-            asyncio.ensure_future(_report())
+                await queue.put(line)
+        except Exception:
+            pass
+        finally:
+            await queue.put(None)
+            # Fire usage callback from reader task context (safe to await)
+            if on_usage is not None and last_usage is not None:
+                try:
+                    await on_usage(last_usage)
+                except Exception:
+                    pass
+
+    reader_task = asyncio.create_task(_reader())
+
+    try:
+        while True:
+            line = await asyncio.wait_for(queue.get(), timeout=30)
+            if line is None:
+                break
+            yield line
+    except (asyncio.TimeoutError, GeneratorExit):
+        reader_task.cancel()
+        raise
+    finally:
+        if not reader_task.done():
+            reader_task.cancel()
+        try:
+            await reader_task
+        except (asyncio.CancelledError, Exception):
+            pass
 
 
 
@@ -256,6 +278,12 @@ async def relay_chat_completion(
                                 break
                         elif line.strip():
                             yield f"data: {line}\n\n"
+                except GeneratorExit:
+                    # Client disconnected — close upstream connection immediately
+                    # to avoid leaking the HTTP connection.
+                    await resp.aclose()
+                    await client.aclose()
+                    raise
                 finally:
                     await resp.aclose()
             finally:
