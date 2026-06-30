@@ -164,6 +164,16 @@ class BudgetArbiter:
             user_id, period, frozen_amount, actual
         )
 
+        # Step 2b: update Budget.consumed in DB (for DB fallback when Redis is unavailable)
+        async with self.db_session_factory() as session:
+            budget_row = await session.execute(
+                select(Budget).where(Budget.user_id == user_id, Budget.budget_period == period).with_for_update()
+            )
+            budget_row = budget_row.scalar_one_or_none()
+            if budget_row:
+                budget_row.consumed = (budget_row.consumed or 0.0) + actual
+                await session.commit()
+
         # Step 3: overage warning
         if actual > frozen_amount:
             logger.warning(
@@ -223,7 +233,7 @@ class BudgetArbiter:
         """Get user's Budget record, creating with defaults if missing."""
         async with self.db_session_factory() as session:
             result = await session.execute(
-                select(Budget).where(Budget.user_id == user_id)
+                select(Budget).where(Budget.user_id == user_id).with_for_update()
             )
             budget = result.scalar_one_or_none()
             if budget:
