@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import ipaddress
 import time
 from typing import Optional
 
@@ -61,6 +62,25 @@ async def root_auth(
     return user
 
 
+def _is_ip_allowed(client_ip: str, subnet_cfg: str) -> bool:
+    """Check if client_ip matches any entry in subnet_cfg.
+
+    Supports: single IP, CIDR ranges, comma-separated combinations.
+    Invalid entries are silently skipped.
+    """
+    for entry in subnet_cfg.split(","):
+        entry = entry.strip()
+        if not entry:
+            continue
+        try:
+            net = ipaddress.ip_network(entry, strict=False)
+            if ipaddress.ip_address(client_ip) in net:
+                return True
+        except ValueError:
+            continue
+    return False
+
+
 async def token_auth(
     request: Request,
     db: AsyncSession = Depends(get_db),
@@ -107,7 +127,11 @@ async def token_auth(
     if token.expired_time > 0 and token.expired_time < time.time():
         raise UnauthorizedException(message="Token has expired")
 
-
+    # Enforce IP/subnet restriction if configured on the token
+    if token.subnet:
+        client_ip = request.client.host if request.client else ""
+        if not client_ip or not _is_ip_allowed(client_ip, token.subnet):
+            raise UnauthorizedException(message="IP not allowed")
 
     result = await db.execute(select(User).where(User.id == token.user_id))
     user = result.scalar_one_or_none()

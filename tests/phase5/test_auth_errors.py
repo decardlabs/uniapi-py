@@ -108,3 +108,61 @@ class TestManagementAuthErrors:
             if resp2.status_code == 403:
                 data2 = resp2.json()
                 assert "error" in data2 or "detail" in data2
+
+
+class TestTokenSubnetRestriction:
+    """Token subnet/IP restriction enforcement — TDD.
+
+    Token.subnet field is stored but never checked in token_auth().
+    These tests verify that after fixing, the subnet is enforced.
+    """
+
+    @pytest.fixture(autouse=True)
+    async def _setup(self, client):
+        self.client = client
+
+    async def _create_token_with_subnet(self, subnet: str) -> str:
+        """Helper: create a token with a subnet restriction and return its key."""
+        from uuid import uuid4
+
+        from app.database import async_session_factory
+        from app.models.token import Token
+
+        async with async_session_factory() as db:
+            token = Token(
+                name="subnet-test-token",
+                key=f"sk-subnet-test-{uuid4().hex[:12]}",
+                user_id=1,
+                status=1,
+                subnet=subnet,
+                created_time=int(__import__("time").time()),
+            )
+            db.add(token)
+            await db.commit()
+            return token.key
+
+    async def test_subnet_allowed_ip_passes(self):
+        """Token with subnet=127.0.0.1 should allow requests from localhost."""
+        token_key = await self._create_token_with_subnet("127.0.0.1")
+        resp = await _post_relay(self.client, token=token_key)
+        # Should NOT be 401 — IP 127.0.0.1 is allowed
+        assert resp.status_code not in (401, 403)
+
+    async def test_subnet_blocks_wrong_ip(self):
+        """Token with subnet=10.0.0.0/8 should block 127.0.0.1."""
+        token_key = await self._create_token_with_subnet("10.0.0.0/8")
+        resp = await _post_relay(self.client, token=token_key)
+        assert resp.status_code == 401
+
+    async def test_subnet_empty_means_no_restriction(self):
+        """Token with empty subnet should allow all IPs."""
+        token_key = await self._create_token_with_subnet("")
+        resp = await _post_relay(self.client, token=token_key)
+        assert resp.status_code not in (401, 403)
+
+    async def test_subnet_multi_cidr(self):
+        """Token with multiple CIDRs should match any of them."""
+        token_key = await self._create_token_with_subnet("192.168.0.0/16,10.0.0.0/8")
+        # localhost (127.0.0.1) NOT in either range
+        resp = await _post_relay(self.client, token=token_key)
+        assert resp.status_code == 401
