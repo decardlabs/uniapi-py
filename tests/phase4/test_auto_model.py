@@ -203,8 +203,8 @@ async def test_auto_select_all_cooldown_fallback(db):
     await db.flush()
 
     # Put both into cooldown
-    _cooldown_channel(7001)
-    _cooldown_channel(7002)
+    await _cooldown_channel(7001)
+    await _cooldown_channel(7002)
 
     user = User(id=999, username="test", password="x", group="default")
     token = Token(id=999, models="")
