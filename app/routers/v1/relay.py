@@ -553,7 +553,7 @@ async def _handle_relay(request: Request, db: AsyncSession):
         token_allowed_models = [m.strip() for m in token.models.split(",") if m.strip()]
 
     # If model is specified, validate it against token permissions
-    if model_name and token_allowed_models and model_name not in token_allowed_models:
+    if model_name and token_allowed_models and model_name != "auto" and model_name not in token_allowed_models:
         raise RelayException(
             code="UNIAPI_TOKEN_MODEL_NOT_ALLOWED",
             message=f"Token not allowed to use model '{model_name}'. "
@@ -640,67 +640,7 @@ async def _handle_relay(request: Request, db: AsyncSession):
     channel: Channel | None = None
     channel_type: int | None = None
     if model_name == "auto":
-        from sqlalchemy import select as _select
-
-        # Determine token-allowed models
-        allowed_models: list[str] | None = None
-        if hasattr(token, "models") and token.models:
-            allowed_models = [m.strip() for m in token.models.split(",")]
-
-        # Collect all enabled channels with their models and pricing
-        result = await db.execute(
-            _select(Channel).where(Channel.status == 1)
-        )
-        channels = result.scalars().all()
-        if not channels:
-            raise RelayException(
-                code="UNIAPI_CHANNEL_UNAVAILABLE",
-                message="No enabled channels available for auto selection",
-            )
-
-        # Build (price, model_name, channel) candidates
-        candidates: list[tuple[float, str, Channel]] = []
-        for ch in channels:
-            ch_models = [m.strip() for m in ch.models.split(",")] if ch.models else []
-            adaptor = _get_adaptor(ch.type)
-            if not adaptor:
-                continue
-            supported = adaptor.get_supported_models()
-            model_list = ch_models or list(supported.keys())
-            for m_name in model_list:
-                if allowed_models is not None and m_name not in allowed_models:
-                    continue
-                if m_name not in supported:
-                    continue
-                # Use combined yuan price as sort key (lower = cheaper)
-                # Respect per-channel model_configs pricing overrides
-                try:
-                    ch_model_configs = {}
-                    if ch.model_configs:
-                        try:
-                            ch_model_configs = json.loads(ch.model_configs)
-                        except (json.JSONDecodeError, TypeError, ValueError):
-                            pass
-                    p = get_model_pricing(m_name, channel_model_configs=ch_model_configs)
-                    price = p["input"] + p["output"]
-                except KeyError:
-                    price = 999.0
-                candidates.append((price, m_name, ch))
-
-        if not candidates:
-            if allowed_models:
-                raise RelayException(
-                    code="UNIAPI_TOKEN_MODEL_NOT_ALLOWED",
-                    message=f"Token has no authorized model for auto selection. Allowed: {', '.join(allowed_models)}",
-                )
-            raise RelayException(
-                code="UNIAPI_MODEL_NOT_SUPPORTED",
-                message="No suitable model found for auto selection",
-            )
-
-        # Pick the cheapest
-        candidates.sort(key=lambda x: x[0])
-        price, model_name, channel = candidates[0]
+        model_name, channel = await _select_auto_channel(db, user, token)
         channel_type = channel.type
         body["model"] = model_name
 
