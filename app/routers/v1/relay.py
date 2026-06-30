@@ -392,10 +392,16 @@ async def _select_auto_channel(
             message="No enabled channels available for auto selection",
         )
 
-    # Filter by user group access
-    group_channels = [ch for ch in channels if ch.group == user.group]
-    if group_channels:
-        channels = group_channels
+    # Group access filter: channels with no group or group="default" are public.
+    # Only non-default group restrictions are enforced.
+    filtered = []
+    user_effective_group = getattr(user, "group", "default") or "default"
+    for ch in channels:
+        if ch.group and ch.group != "default":
+            if ch.group != user_effective_group:
+                continue
+        filtered.append(ch)
+    channels = filtered
 
     # Determine token-allowed models
     allowed_models: list[str] | None = None
