@@ -200,9 +200,9 @@ export function EditTokenPage() {
           });
           return;
         }
-        payload.expired_time = timestamp as unknown as number;
+        payload.expired_time = String(timestamp);
       } else {
-        payload.expired_time = -1 as unknown as number;
+        payload.expired_time = "-1";
       }
 
       // Convert models array to string
