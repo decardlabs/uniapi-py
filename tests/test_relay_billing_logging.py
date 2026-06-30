@@ -42,7 +42,6 @@ class TestBillingExceptionLogging:
         for i, line in enumerate(lines):
             stripped = line.strip()
             if stripped == "except Exception:" and i > 0:
-                prev = lines[i - 1].strip()
                 # Look for context around CostRecord
                 context = "\n".join(lines[max(0, i - 5):i + 3])
                 if "CostRecord" in context or "cost_record" in context.lower() or "cr)" in context or "session.add" in context:
@@ -62,7 +61,6 @@ class TestBillingExceptionLogging:
         for i, line in enumerate(lines):
             stripped = line.strip()
             if stripped == "except Exception:" and i > 0:
-                prev = lines[i - 1].strip()
                 context = "\n".join(lines[max(0, i - 5):i + 3])
                 if "sync_consumption_to_pool" in context or "pool_sync" in context:
                     pool_exceptions.append((i + 1, lines[i + 1].strip() if i + 1 < len(lines) else ""))
