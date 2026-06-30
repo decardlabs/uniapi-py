@@ -8,7 +8,7 @@
 
 ---
 
-## Round 1: Security Fixes (P0/P1 — 4 Critical, 6 Important)
+## Round 1: Security Fixes (P0/P1 — 4 Critical, 6 Important) ✅ COMPLETE
 
 **Files touched:** `app/main.py`, `app/dependencies.py`, `app/routers/api/channel.py`, `app/routers/api/mcp_servers.py`, `app/services/auth.py`, `app/routers/api/verification.py`
 
@@ -120,7 +120,7 @@ The email address should already be known from the session when the user clicks 
 
 ---
 
-## Round 2: Billing & Budget Fixes (P0/P1 — 4 Critical, 4 Important)
+## Round 2: Billing & Budget Fixes (P0/P1 — 4 Critical, 4 Important) ✅ COMPLETE
 
 **Files touched:** `app/routers/v1/relay.py`, `app/budget/arbiter.py`, `app/fusion/core/engine.py`, `app/fusion/adapters/glm.py`, `app/routers/api/cache_analytics.py`
 
@@ -241,7 +241,7 @@ def _estimate_savings_rate_from_row(row):
 
 ---
 
-## Round 3: Relay Stability Fixes (P0/P1 — 3 Critical, 6 Important)
+## Round 3: Relay Stability Fixes (P0/P1 — 3 Critical, 6 Important) ✅ COMPLETE
 
 **Files touched:** `app/routers/v1/relay.py`, `app/relay/openai_compatible.py`
 
@@ -373,7 +373,7 @@ finally:
 
 ---
 
-## Round 4: Architecture & Code Quality (P1/P2 — 20 Important, 15 Minor)
+## Round 4: Architecture & Code Quality (P1/P2 — 20 Important, 15 Minor) ✅ COMPLETE
 
 **Files touched:** Multiple files — see individual tasks.
 
@@ -468,7 +468,7 @@ async def _seed_defaults():
 
 ---
 
-## Round 5: Tests & Documentation (P1/P2 — 6 Important, 16 Minor)
+## Round 5: Tests & Documentation (P1/P2 — 6 Important, 16 Minor) ✅ COMPLETE
 
 ### Task R5-1: Add concurrent billing test
 

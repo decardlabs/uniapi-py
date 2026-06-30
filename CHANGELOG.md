@@ -5,6 +5,43 @@ All notable changes to UniAPI are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.0.5] - 2026-06-30
+
+### Security
+- Replaced hardcoded root credentials with UNIAPI_ROOT_PASSWORD env var
+- Fixed token expiry unit mismatch (ms vs s) — tokens now expire correctly
+- Added sort parameter allowlist to prevent attribute enumeration
+- Added Pydantic validation to MCP server endpoints
+- Added session rotation on password change (session_version field)
+- Removed email from reset-password URL to prevent log exposure
+- Added FOR UPDATE locking to all balance operations
+
+### Billing
+- Added channel-level pricing overrides to non-stream billing path
+- Integrated budget arbiter (pre_check/post_settle) with fusion engine
+- Fixed GLM fusion adapter auth (Bearer to JWT)
+- Fixed budget arbiter DB fallback race condition
+- Fixed cache analytics fallback pricing (1:1 to average model prices)
+
+### Stability
+- Added asyncio.Lock to channel failure/429 tracking dicts
+- Fixed fallback not resetting original channel failure count
+- Fixed TOCTOU race in _is_channel_in_cooldown
+- Added safe model lookup (supported.get vs dict access)
+- Migrated SSE stream usage callback to queue-based architecture
+- Added GeneratorExit handling to SSE streaming
+
+### Quality
+- Fixed CORS config (wildcard + credentials)
+- Added session_secret warning when not configured
+- Made rate limiter proxy-aware (X-Forwarded-For)
+- Fixed channel bulk-delete (by name to by ID)
+- Added password reset rate limiting
+- Fixed _get_path_for_mode returning absolute URLs
+- Fixed downgrade_response_format reading wrong field
+- Added try/except to _seed_defaults and adaptor registry imports
+- Added RelayMode.UNKNOWN for unknown request paths
+
 ## [1.0.4] — 2026-06-30
 
 ### Fixed
