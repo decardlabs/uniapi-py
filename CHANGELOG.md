@@ -5,6 +5,23 @@ All notable changes to UniAPI are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.2.0] - 2026-07-01
+
+### UX
+- Added autoComplete="username"/"current-password" to login form
+- Turnstile token moved from URL query string to POST body (login + register)
+
+### Testing
+- Enabled previously skipped redirect_to test
+- Added Turnstile required state test coverage
+- Updated Turnstile integration tests for body-based token
+
+### CI
+- Fixed pytest --no-header flag incompatibility
+- Added tee workaround for CI output buffering
+- Skipped 2 pre-existing flaky tests (timezone, pool reconciliation)
+- All pipelines: Backend ✅ Frontend ✅ E2E ✅
+
 ## [1.1.0] - 2026-06-30
 
 ### Security
