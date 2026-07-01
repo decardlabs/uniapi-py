@@ -71,10 +71,65 @@ describe('LoginPage', () => {
     expect(screen.getByRole('button', { name: /sign in/i })).toBeInTheDocument();
   });
 
-  // TODO: Fix this test - it has mocking issues with the current setup
-  it.skip('handles redirect_to parameter correctly on successful login', async () => {
-    // This test is skipped due to mocking issues. If you want to enable it, ensure the mock is set up before importing the component.
-    // See Vitest docs for module mocking best practices.
+  it('handles redirect_to parameter correctly on successful login', async () => {
+    mockApiPost.mockResolvedValueOnce({
+      data: {
+        success: true,
+        data: { id: 1, username: 'testuser', role: 1 },
+      },
+    });
+
+    renderLoginPage(['/login?redirect_to=%2Fdashboard']);
+
+    fireEvent.change(screen.getByLabelText(/username/i), { target: { value: 'testuser' } });
+    fireEvent.change(screen.getByLabelText(/password/i), { target: { value: 'password123' } });
+    fireEvent.click(screen.getByRole('button', { name: /sign in/i }));
+
+    await waitFor(() => {
+      expect(mockLogin).toHaveBeenCalled();
+    });
+  });
+
+  it('shows Turnstile required state after failed login', async () => {
+    // Override system status to enable Turnstile checking
+    mockApiGet.mockReset();
+    mockApiGet.mockResolvedValue({
+      data: {
+        success: true,
+        data: { turnstile_check: true, turnstile_site_key: '1x00000000000000000000AA' },
+      },
+    } as any);
+    mockLocalStorage.setItem(
+      'status',
+      JSON.stringify({
+        system_name: 'Test API',
+        turnstile_check: true,
+        turnstile_site_key: '1x00000000000000000000AA',
+        github_oauth: false,
+      })
+    );
+
+    const errorMsg = 'Turnstile required';
+    mockApiPost.mockResolvedValueOnce({
+      data: {
+        success: false,
+        message: errorMsg,
+        data: { turnstile_required: true },
+      },
+    });
+
+    renderLoginPage();
+
+    fireEvent.change(screen.getByLabelText(/username/i), { target: { value: 'testuser' } });
+    fireEvent.change(screen.getByLabelText(/password/i), { target: { value: 'wrong' } });
+    fireEvent.click(screen.getByRole('button', { name: /sign in/i }));
+
+    await waitFor(() => {
+      // After server returns turnstile_required, the Turnstile state is set
+      // The submit button should become disabled (turnstileRequired=true but no token yet)
+      expect(screen.getByRole('button', { name: /sign in/i })).toBeDisabled();
+      expect(screen.getByText(errorMsg)).toBeInTheDocument();
+    });
   });
 
   // ── Loading State ──

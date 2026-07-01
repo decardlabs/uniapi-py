@@ -117,8 +117,10 @@ export function RegisterPage() {
       };
 
       // Unified API call - complete URL with /api prefix
-      const path = `/api/user/register${systemStatus?.turnstile_check ? `?turnstile=${encodeURIComponent(turnstileToken)}` : ''}`;
-      const response = await api.post(path, payload);
+      if (systemStatus?.turnstile_check && turnstileToken) {
+        (payload as any).turnstile = turnstileToken;
+      }
+      const response = await api.post('/api/user/register', payload);
       const body = response.data;
 
       // Handle both GenericApiResponse format ({success, message}) and

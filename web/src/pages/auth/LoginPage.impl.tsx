@@ -85,9 +85,10 @@ export function LoginPage() {
         username: data.username,
         password: data.password,
       };
-      // Only include Turnstile token when it's required and available.
-      const query = turnstileRequired && turnstileToken ? `?turnstile=${encodeURIComponent(turnstileToken)}` : '';
-      const response = await api.post(`/api/user/login${query}`, payload);
+      if (turnstileRequired && turnstileToken) {
+        payload.turnstile = turnstileToken;
+      }
+      const response = await api.post('/api/user/login', payload);
       const { success, message, data: respData } = response.data;
 
       // Check if the server is now requiring Turnstile (after failed login).
@@ -180,7 +181,7 @@ export function LoginPage() {
                   <FormItem>
                     <FormLabel htmlFor="login-username">{t('common.username')}</FormLabel>
                     <FormControl>
-                      <Input id="login-username" {...field} />
+                      <Input id="login-username" autoComplete="username" {...field} />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -193,7 +194,7 @@ export function LoginPage() {
                   <FormItem>
                     <FormLabel htmlFor="login-password">{t('common.password')}</FormLabel>
                     <FormControl>
-                      <Input id="login-password" type="password" {...field} />
+                      <Input id="login-password" type="password" autoComplete="current-password" {...field} />
                     </FormControl>
                     <FormMessage />
                   </FormItem>

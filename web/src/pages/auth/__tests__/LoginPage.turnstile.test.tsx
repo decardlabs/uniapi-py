@@ -196,8 +196,9 @@ describe('LoginPage Turnstile integration', () => {
     await user.click(submitButton);
 
     await waitFor(() => expect(postSpy).toHaveBeenCalledTimes(2));
-    const [secondPath] = postSpy.mock.calls[1];
-    expect(secondPath).toBe('/api/user/login?turnstile=mock-token');
+    const [secondPath, secondPayload] = postSpy.mock.calls[1] as [string, Record<string, string>];
+    expect(secondPath).toBe('/api/user/login');
+    expect(secondPayload.turnstile).toBe('mock-token');
   });
 
   test('does not show Turnstile when turnstile_check is disabled', async () => {
