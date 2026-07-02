@@ -56,6 +56,13 @@ class Settings(BaseSettings):
     budget_enabled: bool = True
     default_monthly_budget: float = 800.0
 
+    # Login lockout
+    login_max_attempts: int = 5
+    login_lockout_minutes: int = 15
+
+    # Verification code rate limit
+    verification_email_max_per_minute: int = 3
+
     # Turnstile (Cloudflare anti-bot)
     turnstile_secret_key: str = ""
 

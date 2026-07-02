@@ -27,6 +27,7 @@ export function LoginPage() {
   const { t } = useTranslation();
   const [isLoading, setIsLoading] = useState(false);
   const [successMessage, setSuccessMessage] = useState<string>('');
+  const [accountLocked, setAccountLocked] = useState(false);
   const [turnstileToken, setTurnstileToken] = useState('');
   const [turnstileRequired, setTurnstileRequired] = useState(false);
   const navigate = useNavigate();
@@ -74,6 +75,9 @@ export function LoginPage() {
   };
 
   const onSubmit = async (data: LoginForm) => {
+    // Clear previous error states
+    setAccountLocked(false);
+
     // Only gate on Turnstile if it's been required (after a prior failed attempt).
     if (turnstileRequired && turnstileEnabled && !turnstileToken) {
       form.setError('root', { message: t('auth.login.turnstile_required') });
@@ -124,14 +128,38 @@ export function LoginPage() {
           navigate('/dashboard');
         }
       } else {
+        // Handle attempts_remaining from server error data
+        if (respData?.locked) {
+          setAccountLocked(true);
+        }
+        if (respData && typeof respData.attempts_remaining === 'number') {
+          form.setError('root', {
+            message: `${t('auth.login.wrong_password')} ${t('auth.login.attempts_remaining', { count: respData.attempts_remaining })}`,
+          });
+        } else {
+          form.setError('root', {
+            message: message || t('auth.login.failed'),
+          });
+        }
+      }
+    } catch (error: any) {
+      // Try to extract server response data from the axios error
+      const respData = error?.response?.data;
+      const extraData = respData?.data;
+
+      if (extraData?.locked) {
+        setAccountLocked(true);
+      }
+
+      if (extraData && typeof extraData.attempts_remaining === 'number') {
         form.setError('root', {
-          message: message || t('auth.login.failed'),
+          message: `${t('auth.login.wrong_password')} ${t('auth.login.attempts_remaining', { count: extraData.attempts_remaining })}`,
+        });
+      } else {
+        form.setError('root', {
+          message: respData?.message || error?.message || t('auth.login.failed'),
         });
       }
-    } catch (error) {
-      form.setError('root', {
-        message: error instanceof Error ? error.message : t('auth.login.failed'),
-      });
     } finally {
       setIsLoading(false);
     }
@@ -206,6 +234,18 @@ export function LoginPage() {
               )}
               {form.formState.errors.root && (
                 <div className="text-sm text-destructive">{form.formState.errors.root.message}</div>
+              )}
+              {accountLocked && (
+                <div className="text-sm text-destructive bg-destructive/10 p-4 rounded-md border border-destructive space-y-2">
+                  <div className="font-semibold">{t('auth.login.locked_title')}</div>
+                  <p>{t('auth.login.locked_message')}</p>
+                  <Link
+                    to="/reset"
+                    className="text-primary hover:underline font-medium inline-block"
+                  >
+                    {t('auth.login.locked_action')}
+                  </Link>
+                </div>
               )}
               <Button
                 type="submit"

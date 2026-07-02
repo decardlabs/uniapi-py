@@ -1,9 +1,9 @@
 """Verification & password reset endpoints."""
-
 from __future__ import annotations
 
 from fastapi import APIRouter, Depends, Query
 from fastapi.responses import JSONResponse
+from pydantic import BaseModel, Field
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -24,10 +24,15 @@ from app.services.user import verify_turnstile
 router = APIRouter(tags=["verification"])
 
 
-@router.get("/api/verification")
+class SendVerificationRequest(BaseModel):
+    """POST /api/verification"""
+    email: str = Field(..., pattern=r"^[^\s@]+@[^\s@]+\.[^\s@]+$")
+    turnstile: str = Field(default="", description="Cloudflare Turnstile token")
+
+
+@router.post("/api/verification")
 async def send_verification(
-    email: str = Query(..., description="Email to send verification code"),
-    turnstile: str = Query("", description="Cloudflare Turnstile token"),
+    body: SendVerificationRequest,
     db: AsyncSession = Depends(get_db),
 ):
     """Send a verification code to the given email."""
@@ -37,7 +42,7 @@ async def send_verification(
     )
     turnstile_enabled = turnstile_enabled_result.scalar_one_or_none()
     if turnstile_enabled and turnstile_enabled.value.lower() == "true":
-        if not await verify_turnstile(turnstile):
+        if not await verify_turnstile(body.turnstile):
             return JSONResponse(
                 status_code=400,
                 content=GenericApiResponse(
@@ -45,12 +50,11 @@ async def send_verification(
                 ).model_dump(),
             )
 
-    # Check if email is already registered
-    result = await db.execute(select(User).where(User.email == email))
-    if result.scalar_one_or_none():
-        return GenericApiResponse(success=False, message="该邮箱已被注册")
-
-    success, message = await send_verification_code(db, email)
+    # NOTE: Email uniqueness check is intentionally NOT done here
+    # to avoid leaking which emails are registered. The check
+    # happens at the bind (POST /api/oauth/email/bind) or
+    # register (POST /api/user/register) endpoint instead.
+    success, message = await send_verification_code(db, body.email)
     if success:
         return GenericApiResponse(success=True, message=message)
     return GenericApiResponse(success=False, message=message)

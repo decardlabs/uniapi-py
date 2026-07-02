@@ -98,7 +98,11 @@ describe('PersonalSettings', () => {
         });
       }
 
-      if (url.startsWith('/api/verification?email=')) {
+      return Promise.resolve({ data: { success: true } });
+    });
+
+    (api.post as any).mockImplementation((url: string, _data: any) => {
+      if (url === '/api/verification') {
         return Promise.resolve({
           data: {
             success: true,
@@ -107,10 +111,6 @@ describe('PersonalSettings', () => {
         });
       }
 
-      return Promise.resolve({ data: { success: true } });
-    });
-
-    (api.post as any).mockImplementation((url: string, _data: any) => {
       if (url === '/api/oauth/email/bind') {
         currentProfile = {
           ...currentProfile,
@@ -178,7 +178,7 @@ describe('PersonalSettings', () => {
     fireEvent.click(screen.getByRole('button', { name: 'personal_settings.profile_info.send_code' }));
 
     await waitFor(() => {
-      expect(api.get).toHaveBeenCalledWith('/api/verification?email=new%40example.com');
+      expect(api.post).toHaveBeenCalledWith('/api/verification', { email: 'new@example.com' });
     });
 
     const codeInput = screen.getByPlaceholderText('personal_settings.profile_info.email_verification_code_placeholder');
@@ -200,5 +200,81 @@ describe('PersonalSettings', () => {
     });
 
     expect(useAuthStore.getState().user?.email).toBe('new@example.com');
+  });
+
+  // ── Error handling tests ──
+
+  it('shows server error message when send code fails', async () => {
+    (api.post as any).mockRejectedValue({
+      response: {
+        status: 400,
+        data: { success: false, message: 'Send code server error' },
+      },
+    });
+
+    render(<PersonalSettings />);
+
+    const emailInput = (await screen.findByPlaceholderText('personal_settings.profile_info.email_placeholder')) as HTMLInputElement;
+    fireEvent.change(emailInput, { target: { value: 'test@example.com' } });
+
+    fireEvent.click(screen.getByRole('button', { name: 'personal_settings.profile_info.send_code' }));
+
+    await waitFor(() => {
+      expect(screen.getByText('Send code server error')).toBeInTheDocument();
+    });
+  });
+
+  it('shows server error message when bind email fails', async () => {
+    // Mock send code success
+    (api.post as any).mockImplementation((url: string) => {
+      if (url === '/api/verification') {
+        return Promise.resolve({ data: { success: true, message: 'sent' } });
+      }
+      if (url === '/api/oauth/email/bind') {
+        return Promise.reject({
+          response: {
+            status: 400,
+            data: { success: false, message: 'Bind server error' },
+          },
+        });
+      }
+      return Promise.resolve({ data: { success: true } });
+    });
+
+    render(<PersonalSettings />);
+
+    const emailInput = (await screen.findByPlaceholderText('personal_settings.profile_info.email_placeholder')) as HTMLInputElement;
+    fireEvent.change(emailInput, { target: { value: 'test@example.com' } });
+
+    // Send code
+    fireEvent.click(screen.getByRole('button', { name: 'personal_settings.profile_info.send_code' }));
+
+    await waitFor(() => {
+      expect(api.post).toHaveBeenCalledWith('/api/verification', { email: 'test@example.com' });
+    });
+
+    // Enter code and click bind
+    const codeInput = screen.getByPlaceholderText('personal_settings.profile_info.email_verification_code_placeholder');
+    fireEvent.change(codeInput, { target: { value: '123456' } });
+    fireEvent.click(screen.getByRole('button', { name: 'personal_settings.profile_info.bind_email' }));
+
+    await waitFor(() => {
+      expect(screen.getByText('Bind server error')).toBeInTheDocument();
+    });
+  });
+
+  it('shows fallback message on network error for send code', async () => {
+    (api.post as any).mockRejectedValue(new Error('Network Error'));
+
+    render(<PersonalSettings />);
+
+    const emailInput = (await screen.findByPlaceholderText('personal_settings.profile_info.email_placeholder')) as HTMLInputElement;
+    fireEvent.change(emailInput, { target: { value: 'test@example.com' } });
+
+    fireEvent.click(screen.getByRole('button', { name: 'personal_settings.profile_info.send_code' }));
+
+    await waitFor(() => {
+      expect(screen.getByText('Network Error')).toBeInTheDocument();
+    });
   });
 });

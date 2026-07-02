@@ -17,6 +17,8 @@ class User(Base):
     display_name: Mapped[Optional[str]] = mapped_column(String(20), index=True, nullable=True)
     role: Mapped[int] = mapped_column(Integer, default=1)  # 0=Guest, 1=Common, 10=Admin, 100=Root
     status: Mapped[int] = mapped_column(Integer, default=1)  # 1=Enabled, 2=Disabled, 3=Deleted
+    failed_login_attempts: Mapped[int] = mapped_column(Integer, default=0)
+    locked_until: Mapped[Optional[int]] = mapped_column(BigInteger, nullable=True)
     email: Mapped[Optional[str]] = mapped_column(String(50), index=True, nullable=True)
     github_id: Mapped[Optional[str]] = mapped_column("github_id", String(64), index=True, nullable=True)
     access_token: Mapped[Optional[str]] = mapped_column(String(64), unique=True, nullable=True)

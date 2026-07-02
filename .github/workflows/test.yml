@@ -57,6 +57,8 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: "22"
+          cache: "yarn"
+          cache-dependency-path: web/yarn.lock
 
       - name: Install dependencies
         run: |
@@ -75,12 +77,13 @@ jobs:
           # Run all tests. usePlaygroundParameters.test.ts is a known memory hog
           # (jsdom leak in the hook dependency chain — OOMs a worker on every
           # run). We exclude it from the main suite and run it last in isolation;
-          # its two assertions pass but the worker always crashes, so we ignore
-          # its exit code to keep CI green.
+          # its two assertions pass but the worker OOM-crashes (137/134).
+          # We selectively ignore OOM signals but still fail on assertion errors.
           NODE_OPTIONS=--max-old-space-size=4096 yarn test --run \
             --exclude='src/pages/chat/playground/hooks/__tests__/usePlaygroundParameters*'
           NODE_OPTIONS=--max-old-space-size=4096 yarn test --run \
-            src/pages/chat/playground/hooks/__tests__/usePlaygroundParameters.test.ts || true
+            src/pages/chat/playground/hooks/__tests__/usePlaygroundParameters.test.ts \
+          || { code=$?; [ $code -eq 137 ] || [ $code -eq 134 ]; } || exit $code
 
       - name: Lint
         run: |
@@ -91,6 +94,7 @@ jobs:
     name: E2E Tests (Playwright)
     runs-on: ubuntu-latest
     timeout-minutes: 30
+    needs: [backend, frontend]
     continue-on-error: true
 
     steps:
@@ -111,6 +115,8 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: "22"
+          cache: "yarn"
+          cache-dependency-path: web/yarn.lock
 
       - name: Install Playwright and browsers
         run: |
@@ -254,6 +260,7 @@ jobs:
             --exclude='web/src' \
             --exclude='web/test-results' \
             --exclude='web/playwright-report' \
+            --exclude='.claude' \
             --exclude='.codegraph' \
             --exclude='DeepSeek-Reasonix' \
             --exclude='logs' \
@@ -366,6 +373,13 @@ jobs:
             QWEN_API_KEY=
             KIMI_API_KEY=
             MINIMAX_API_KEY=
+
+            # Login lockout
+            LOGIN_MAX_ATTEMPTS=5
+            LOGIN_LOCKOUT_MINUTES=15
+
+            # Verification code rate limit
+            VERIFICATION_EMAIL_MAX_PER_MINUTE=3
 
             # Budget (disabled)
             BUDGET_REDIS_URL=

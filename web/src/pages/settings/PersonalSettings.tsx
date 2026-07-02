@@ -98,8 +98,8 @@ export function PersonalSettings() {
         });
       }
       return false;
-    } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : t('personal_settings.profile_info.load_failed');
+    } catch (error: any) {
+      const errorMessage = error?.response?.data?.message || error?.message || t('personal_settings.profile_info.load_failed');
       form.setError('root', { message: errorMessage });
       if (showNotification) {
         notify({
@@ -138,8 +138,11 @@ export function PersonalSettings() {
     setEmailVerificationError('');
 
     try {
-      const turnstileParam = turnstileEnabled && turnstileToken ? `&turnstile=${encodeURIComponent(turnstileToken)}` : '';
-      const response = await api.get(`/api/verification?email=${encodeURIComponent(email)}${turnstileParam}`);
+      const body: Record<string, string> = { email };
+      if (turnstileEnabled && turnstileToken) {
+        body.turnstile = turnstileToken;
+      }
+      const response = await api.post('/api/verification', body);
       const { success, message } = response.data;
 
       if (success) {
@@ -154,13 +157,9 @@ export function PersonalSettings() {
         return;
       }
 
-      form.setError('email', {
-        message: message || t('personal_settings.profile_info.failed'),
-      });
-    } catch (error) {
-      form.setError('email', {
-        message: error instanceof Error ? error.message : t('personal_settings.profile_info.failed'),
-      });
+      setEmailVerificationError(message || t('personal_settings.profile_info.failed'));
+    } catch (error: any) {
+      setEmailVerificationError(error?.response?.data?.message || error?.message || t('personal_settings.profile_info.failed'));
     } finally {
       setEmailAction(null);
     }
@@ -202,8 +201,8 @@ export function PersonalSettings() {
       }
 
       setEmailVerificationError(message || t('personal_settings.profile_info.failed'));
-    } catch (error) {
-      setEmailVerificationError(error instanceof Error ? error.message : t('personal_settings.profile_info.failed'));
+    } catch (error: any) {
+      setEmailVerificationError(error?.response?.data?.message || error?.message || t('personal_settings.profile_info.failed'));
     } finally {
       setEmailAction(null);
     }
@@ -231,9 +230,9 @@ export function PersonalSettings() {
           message: message || t('personal_settings.profile_info.failed'),
         });
       }
-    } catch (error) {
+    } catch (error: any) {
       form.setError('root', {
-        message: error instanceof Error ? error.message : t('personal_settings.profile_info.failed'),
+        message: error?.response?.data?.message || error?.message || t('personal_settings.profile_info.failed'),
       });
     } finally {
       setLoading(false);
@@ -267,8 +266,8 @@ export function PersonalSettings() {
       } else {
         setPasswordError(message || t('personal_settings.security.password.failed'));
       }
-    } catch (error) {
-      setPasswordError(error instanceof Error ? error.message : t('personal_settings.security.password.failed'));
+    } catch (error: any) {
+      setPasswordError(error?.response?.data?.message || error?.message || t('personal_settings.security.password.failed'));
     } finally {
       setPasswordLoading(false);
     }

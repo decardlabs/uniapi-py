@@ -53,9 +53,9 @@ export function PasswordResetPage() {
       } else {
         form.setError('root', { message: message || t('auth.reset.failed') });
       }
-    } catch (error) {
+    } catch (error: any) {
       form.setError('root', {
-        message: error instanceof Error ? error.message : t('auth.reset.failed'),
+        message: error?.response?.data?.message || error?.message || t('auth.reset.failed'),
       });
     } finally {
       setIsLoading(false);
