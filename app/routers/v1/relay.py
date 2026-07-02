@@ -6,7 +6,7 @@ import logging
 import random
 import time
 import uuid
-from typing import Any
+from typing import Any, Awaitable, Callable
 
 import httpx
 from fastapi import APIRouter, Depends, Request
@@ -263,6 +263,29 @@ async def _select_channel(
     # Weighted random selection (default weight=1 ensures basic distribution)
     weights = [max(ch.weight, 1) for ch in matching]
     return random.choices(matching, weights=weights, k=1)[0]
+
+
+async def _make_channel_picker(
+    db: AsyncSession,
+    model_name: str,
+    channel_type: int,
+) -> Callable[[], Awaitable[tuple[Channel, str]]]:
+    """Create an async callable that picks a channel for the given model.
+
+    Returns a closure that, each time it is called, calls ``_select_channel``
+    to pick a channel (weighted random with 429 cooldown).  This is used by
+    ``ChannelRelayAdapter`` to dispatch each fusion step through a fresh channel.
+    """
+    async def _pick() -> tuple[Channel, str]:
+        channel = await _select_channel(db, model_name, channel_type)
+        if channel is None:
+            raise RelayException(
+                code="UNIAPI_CHANNEL_UNAVAILABLE",
+                message=f"No available channel for model '{model_name}' during fusion relay",
+                details={"model": model_name},
+            )
+        return channel, model_name
+    return _pick
 
 
 # ── Channel failover & auto-disable ──
@@ -585,30 +608,38 @@ async def _handle_relay(request: Request, db: AsyncSession):
             suggestion="Specify a model in the request body, or use model='auto'.",
         )
 
-    # Fusion: multi-model ensemble from token-authorized models
+    # Fusion: multi-model ensemble routed through the channel system
+    #
+    # Instead of using a separate fusion_registry with direct provider API keys,
+    # the panel models are derived from the token's authorized models and
+    # dispatched through the channel system (channel selection → upstream relay).
     if model_name == "fusion":
-        fusion_registry = getattr(request.app.state, "fusion_registry", None)
-        if not fusion_registry:
-            raise RelayException(
-                code="UNIAPI_SERVICE_DISABLED",
-                message="Fusion engine not available (no API keys configured)",
-            )
-
-        # Select panel from token-authorized models that are in the fusion registry
+        # 1. Get token-authorized models
         token_models: list[str] = []
         if hasattr(token, "models") and token.models:
             token_models = [m.strip() for m in token.models.split(",")]
 
-        available = fusion_registry.list_models()
-        if token_models:
-            panel = [m for m in token_models if m in available]
-        else:
-            panel = available[:]
+        if not token_models:
+            raise RelayException(
+                code="UNIAPI_TOKEN_MODEL_NOT_ALLOWED",
+                message="No token-authorized models available for fusion. "
+                        "Token must have at least one model specified for fusion.",
+                suggestion="Configure allowed models on the token.",
+            )
+
+        # 2. Filter to models supported by available channels
+        panel = []
+        for m in token_models:
+            ct = registry.resolve_channel_type(m)
+            if ct is not None:
+                panel.append(m)
 
         if not panel:
             raise RelayException(
-                code="UNIAPI_TOKEN_MODEL_NOT_ALLOWED",
-                message="No fusion-authorized models available for this token",
+                code="UNIAPI_MODEL_NOT_SUPPORTED",
+                message=f"No fusion models are supported by available channels. "
+                        f"Token allows: {', '.join(token_models)}",
+                details={"token_allowed_models": token_models},
             )
 
         if len(panel) < 2:
@@ -620,6 +651,8 @@ async def _handle_relay(request: Request, db: AsyncSession):
             # Use top models: strongest as judge/synthesizer
             # Score models by price (higher = more capable = better for judge/synth)
             from app.budget.pricing import get_model_pricing
+            from app.fusion.adapters.channel_relay import ChannelRelayAdapter
+            from app.fusion.adapters.registry import AdapterRegistry as FusionRegistry
             from app.fusion.core.engine import FusionConfig, FusionEngine
 
             scored = []
@@ -630,11 +663,42 @@ async def _handle_relay(request: Request, db: AsyncSession):
                 except KeyError:
                     continue
             scored.sort(reverse=True)
+            best_model = scored[0][1] if scored else panel[0]
+
+            # Build a ChannelRelayAdapter for each panel model —
+            # every fusion step (dispatch, judge, synthesizer) selects a
+            # fresh channel via weighted random selection.
+            fusion_registry = FusionRegistry()
+            for panel_model in panel:
+                ct = registry.resolve_channel_type(panel_model)
+                rel_adaptor = registry.get(ct)
+                if rel_adaptor is None:
+                    continue
+                picker = await _make_channel_picker(db, panel_model, ct)
+                adapter = ChannelRelayAdapter(
+                    provider_name=panel_model,
+                    channel_picker=picker,
+                    adaptor=rel_adaptor,
+                )
+                fusion_registry.register(panel_model, adapter)
+
+            # Build Judge and Synthesizer adapters (using best_model)
+            ct = registry.resolve_channel_type(best_model)
+            rel_adaptor = registry.get(ct)
+            if rel_adaptor:
+                judge_picker = await _make_channel_picker(db, best_model, ct)
+                judge_adapter = ChannelRelayAdapter(
+                    provider_name=best_model,
+                    channel_picker=judge_picker,
+                    adaptor=rel_adaptor,
+                )
+                fusion_registry.register("judge", judge_adapter)
+                fusion_registry.register("synth", judge_adapter)
 
             fusion_config = FusionConfig(
                 panel=panel,
-                judge=scored[0][1] if scored else panel[0],
-                synthesizer=scored[0][1] if scored else panel[-1],
+                judge="judge",
+                synthesizer="synth",
                 timeout_seconds=30,
                 retry_count=1,
                 fallback_model=panel[0],

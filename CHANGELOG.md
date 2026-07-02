@@ -5,6 +5,19 @@ All notable changes to UniAPI are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.5.0] - 2026-07-02
+
+### Fusion
+- Fusion engine now routes through the channel system instead of requiring separate provider API keys
+- Panel models are derived from token-authorized models × available channels
+- Each fusion step (panel dispatch, judge, synthesizer) selects a fresh channel via weighted random selection with 429 cooldown
+- No changes to FusionEngine, JudgeModule, or SynthesizerModule internals
+- Added `ChannelRelayAdapter` — a `BaseAdapter` subclass that calls upstream through channel selection
+- Added `_make_channel_picker` helper in relay.py
+
+### Tests
+- 11 new tests covering ChannelRelayAdapter unit tests + fusion pipeline integration + panel selection logic
+
 ## [1.2.0] - 2026-07-01
 
 ### UX
