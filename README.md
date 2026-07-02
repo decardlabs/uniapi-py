@@ -8,7 +8,7 @@
 
 ## Status
 
-🚧 **All phases complete** — 815 tests, all GREEN (11 skipped)
+🚧 **All phases complete** — 879 tests (864 passed, 14 skipped, 1 known failure)
 
 | Phase | 内容 | 状态 | 测试数 |
 |-------|------|------|--------|
@@ -160,7 +160,6 @@ Claude Code → POST /v1/messages → relay_mode=CLAUDE_MESSAGES
 | `POST /api/token/` | UserAuth | 创建令牌 |
 | `PUT /api/token/` | UserAuth | 更新令牌 |
 | `DELETE /api/token/{token_id}` | UserAuth | 删除令牌 |
-| `POST /api/token/consume` | TokenAuth | 外部配额消费 |
 | `GET /api/token/balance` | TokenAuth | 令牌余额 |
 | `GET /api/token/transactions` | TokenAuth | 交易记录 |
 | `GET /api/token/logs` | TokenAuth | 令牌使用日志 |
@@ -193,12 +192,13 @@ Claude Code → POST /v1/messages → relay_mode=CLAUDE_MESSAGES
 | `GET /api/channel/metadata` | 渠道元数据 |
 | `DELETE /api/channel/disabled` | 清理已禁用渠道 |
 
-#### 系统配置 (Root, role >= 100)
+#### 系统配置 (Admin/Root)
 
-| Endpoint | 描述 |
-|----------|------|
-| `GET /api/option/` | 系统配置列表 |
-| `PUT /api/option/` | 更新系统配置 |
+| Endpoint | Auth | 描述 |
+|----------|------|------|
+| `GET /api/option/` | RootAuth | 系统配置列表 |
+| `PUT /api/option/` | RootAuth | 更新系统配置 |
+| `GET /api/admin/stats` | AdminAuth | 管理统计概览 |
 
 #### 充值 & 兑换
 
@@ -212,6 +212,7 @@ Claude Code → POST /v1/messages → relay_mode=CLAUDE_MESSAGES
 | `GET /api/recharge/` | AdminAuth | 全部充值请求 |
 | `POST /api/recharge/{recharge_id}/approve` | AdminAuth | 审批充值 |
 | `POST /api/recharge/{recharge_id}/reject` | AdminAuth | 拒绝充值 |
+| `POST /api/recharge/{recharge_id}` | AdminAuth | 更新充值状态 |
 | `GET /api/redemption/` | AdminAuth | 兑换码列表 |
 | `GET /api/redemption/search` | AdminAuth | 搜索兑换码 |
 | `GET /api/redemption/{redemption_id}` | AdminAuth | 兑换码详情 |
@@ -225,6 +226,22 @@ Claude Code → POST /v1/messages → relay_mode=CLAUDE_MESSAGES
 |----------|------|------|
 | `GET /api/user/dashboard` | UserAuth | 使用量仪表盘（admin 可看全局） |
 | `GET /api/user/dashboard/users` | AdminAuth | 用户列表（仪表盘筛选用） |
+
+#### 预算池管理 (Admin)
+
+| Endpoint | Auth | 描述 |
+|----------|------|------|
+| `GET /api/pool/` | AdminAuth | 列出预算池 |
+| `POST /api/pool/` | AdminAuth | 创建预算池 |
+| `GET /api/pool/{pool_id}` | AdminAuth | 预算池详情 |
+| `POST /api/pool/{pool_id}/fund` | AdminAuth | 注入资金 |
+| `POST /api/pool/{pool_id}/allocate` | AdminAuth | 分配资金 |
+| `POST /api/pool/{pool_id}/recall` | AdminAuth | 回收资金 |
+| `POST /api/pool/{pool_id}/recall_all` | AdminAuth | 全部回收 |
+| `POST /api/pool/{pool_id}/close` | AdminAuth | 关闭预算池 |
+| `POST /api/pool/{pool_id}/rollover` | AdminAuth | 滚动到新周期 |
+| `GET /api/pool/{pool_id}/reconciliation` | AdminAuth | 对账 |
+| `GET /api/pool/{pool_id}/transactions` | AdminAuth | 交易记录 |
 
 #### 预算 (Budget)
 
@@ -241,11 +258,14 @@ Claude Code → POST /v1/messages → relay_mode=CLAUDE_MESSAGES
 
 | Endpoint | Auth | 描述 |
 |----------|------|------|
-| `GET /api/verification?email=x&turnstile=x` | Public | 发送邮箱验证码 |
+| `GET /health` | Public | 健康检查 |
+| `POST /api/verification` | Public | 发送邮箱验证码（JSON body: email, turnstile） |
 | `GET /api/reset_password?email=x&turnstile=x` | Public | 发送密码重置邮件 |
 | `POST /api/user/reset` | Public | 确认密码重置 |
 | `GET /api/oauth/state` | Public | OAuth CSRF state |
 | `GET /api/oauth/github` | Public | GitHub OAuth 回调 |
+| `POST /api/oauth/email/bind` | UserAuth | 绑定邮箱（含验证码） |
+| `GET /api/internal/verification-code` | Debug | 调试：获取验证码（仅 `DEBUG=true`） |
 | `GET /api/user/cache-analytics` | UserAuth | 缓存命中分析 |
 
 #### MCP 服务器管理
@@ -296,9 +316,16 @@ Claude Code → POST /v1/messages → relay_mode=CLAUDE_MESSAGES
 | `SQL_DSN` | — | MySQL/PostgreSQL DSN |
 | `SESSION_SECRET` | auto (随机生成) | Session cookie 签名密钥 |
 | `SESSION_COOKIE_SECURE` | true | Secure cookie 标志（生产必 true） |
+| `COOKIE_MAX_AGE_HOURS` | 168 | Session Cookie 有效期（小时） |
 | `TOKEN_KEY_PREFIX` | sk- | Token 密钥前缀 |
 | `API_RATE_LIMIT` | 480 | 管理 API 每分钟请求上限 |
 | `RELAY_RATE_LIMIT` | 480 | 中继 API 每分钟请求上限 |
+| `PASSWORD_MIN_LENGTH` | 8 | 密码最小长度 |
+| `PASSWORD_REQUIRE_UPPERCASE` | true | 密码必须含大写字母 |
+| `PASSWORD_REQUIRE_DIGIT` | true | 密码必须含数字 |
+| `PASSWORD_REQUIRE_SPECIAL` | false | 密码必须含特殊字符 |
+| `LOGIN_MAX_ATTEMPTS` | 5 | 登录最大失败次数（超出后锁定） |
+| `LOGIN_LOCKOUT_MINUTES` | 15 | 锁定持续时间（分钟） |
 | `DEEPSEEK_API_KEY` | — | DeepSeek API key |
 | `GLM_API_KEY` | — | GLM (智谱) API key |
 | `QWEN_API_KEY` | — | Qwen (百炼) API key |
@@ -309,14 +336,13 @@ Claude Code → POST /v1/messages → relay_mode=CLAUDE_MESSAGES
 | `TURNSTILE_SECRET_KEY` | — | Cloudflare Turnstile Secret Key |
 | `SMTP_TOKEN` | — | SMTP 密码（邮箱验证） |
 | `GITHUB_CLIENT_SECRET` | — | GitHub OAuth Client Secret |
-| `COOKIE_MAX_AGE_HOURS` | 168 | Session Cookie 有效期（小时） |
 | `BUDGET_REDIS_URL` | — | Redis 地址 (留空且 BUDGET_ENABLED=false 禁用) |
 | `BUDGET_ENABLED` | true | 启用预算系统 |
 | `DEFAULT_MONTHLY_BUDGET` | 800.0 | 默认月预算 |
 
 ## 测试
 
-### 单元测试 (745 tests, 11 skipped)
+### 单元测试 (879 tests, 14 skipped, 1 known failure)
 
 ```bash
 pytest tests/ -v
@@ -375,17 +401,23 @@ registry.register(MY_CHANNEL_TYPE, MyProviderAdaptor)
 
 ## 版本历史
 
+### v1.4.0 — 登录锁定 & 邮箱安全修复 & 文档一致性
+
+| 版本 | 日期 | 变更 |
+|------|------|------|
+| **v1.4.0** | 2026-07-02 | **安全**: 登录错误返回统一消息（防用户名枚举）；5 次失败锁定 15 分钟；验证码发送接口 POST 化（防邮箱 URL 泄露）+ 移除注册状态枚举；每邮箱 3次/60s 频率限制。**前端**: 登录页显示锁定/剩余次数 UI；7 处 catch 块改用 `error.response.data.message`（防丢失服务器错误信息）。**CI**: 修复 `|| true` 静默掩盖；添加 yarn cache；`.claude/` 排除部署包；E2E needs 依赖。**文档**: 修复 13 处与实际代码不一致。41 测试 |
+
 ### v0.14.0 — 预算池对账修复 & 充值 E2E
 
 | 版本 | 日期 | 变更 |
 |------|------|------|
-| **v0.14.0** | 2026-06-26 | 预算池：修复 `_reconcile_pool` 遗漏 PoolTransaction；池子列表字段 `available`/`total_quota`/`allocated` 补全；前端池子可用余额计算 bug（`total_allocated`→`total_consumed`）；充值 E2E 测试；仪表盘 PoolSummaryCards 修复（API 参数、字段名、金额格式）；SearchableDropdown auto-search 空查询修复；分配弹窗改用原生 select；模型页价格 $→¥；缓存分析 >100% 修复（MiniMax cached_tokens 截断）；815 测试 |
+| **v0.14.0** | 2026-06-26 | 预算池：修复 `_reconcile_pool` 遗漏 PoolTransaction；池子列表字段 `available`/`total_quota`/`allocated` 补全；前端池子可用余额计算 bug（`total_allocated`→`total_consumed`）；充值 E2E 测试；仪表盘 PoolSummaryCards 修复（API 参数、字段名、金额格式）；SearchableDropdown auto-search 空查询修复；分配弹窗改用原生 select；模型页价格 $→¥；缓存分析 >100% 修复（MiniMax cached_tokens 截断） |
 
 ### v0.11.x — 负载均衡 & 计费货币化
 
 | 版本 | 日期 | 变更 |
 |------|------|------|
-| **v0.11.6** | 2026-06-25 | 服务器错误修复：GLM API key 格式错误→结构化异常；流式 5xx 故障转移；httpx.Timeout 分离连接/读取超时；pricing.py 空模型名保护；channel.py 废弃 input_ratio→calculate_cost_micro()；converter.py 图片丢弃加 warning 日志；deploy.sh 加入 alembic upgrade head；服务器运维信息文档；27 新测试（604 total） |
+| **v0.11.6** | 2026-06-25 | 服务器错误修复：GLM API key 格式错误→结构化异常；流式 5xx 故障转移；httpx.Timeout 分离连接/读取超时；pricing.py 空模型名保护；channel.py 废弃 input_ratio→calculate_cost_micro()；converter.py 图片丢弃加 warning 日志；deploy.sh 加入 alembic upgrade head；服务器运维信息文档 |
 | **v0.11.5** | 2026-06-24 | 登录锁定：5 次失败锁定账户，邮箱重置 |
 | **v0.11.4** | 2026-06-24 | 版本号修正 |
 | **v0.11.3** | 2026-06-23 | 前端修复：MCP servers 404、TopUpPage 余额显示、models/display 废弃字段引用 |

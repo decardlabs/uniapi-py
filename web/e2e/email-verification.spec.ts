@@ -14,7 +14,7 @@ test.describe('邮箱验证', () => {
   /** Send verification code and retrieve it from the debug endpoint */
   async function sendAndGetCode(request: import('@playwright/test').APIRequestContext): Promise<string> {
     // Send verification code (stored in memory even without SMTP)
-    await request.get(`/api/verification?email=${encodeURIComponent(TEST_EMAIL)}`);
+    await request.post(`/api/verification`, { data: { email: TEST_EMAIL } });
 
     // Retrieve via debug endpoint
     const debugResp = await request.get(`/api/internal/verification-code?email=${encodeURIComponent(TEST_EMAIL)}`);

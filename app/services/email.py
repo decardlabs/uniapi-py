@@ -19,6 +19,38 @@ from app.models.option import Option
 # {email: {"code": str, "expires": int}}
 _verification_codes: dict[str, dict] = {}
 
+# Per-email rate limiting for verification code sending
+# {email: [list of timestamps]}
+_email_send_limits: dict[str, list[float]] = {}
+
+
+def check_email_rate_limit(
+    email: str,
+    max_per_minute: int | None = None,
+) -> tuple[bool, int]:
+    """Check if this email has exceeded the send rate limit.
+
+    Returns (is_allowed, remaining_attempts_in_window).
+    """
+    now = time.time()
+    window = 60.0
+    limit = max_per_minute if max_per_minute is not None else settings.verification_email_max_per_minute
+
+    # Clean old entries
+    timestamps = _email_send_limits.get(email, [])
+    timestamps = [t for t in timestamps if now - t < window]
+
+    remaining = max(0, limit - len(timestamps))
+
+    if remaining <= 0:
+        _email_send_limits[email] = timestamps
+        return False, 0
+
+    # Record this attempt
+    timestamps.append(now)
+    _email_send_limits[email] = timestamps
+    return True, remaining - 1
+
 # Reset token serializer (same library as session management)
 _reset_serializer: Optional[URLSafeTimedSerializer] = None
 
@@ -91,6 +123,11 @@ async def send_verification_code(
 
     Returns (success, message).
     """
+    # Rate limit check — must be first
+    allowed, _remaining = check_email_rate_limit(to_email)
+    if not allowed:
+        return False, "发送验证码过于频繁，请稍后再试"
+
     code = generate_verification_code()
     smtp_config = await load_smtp_config(db)
 

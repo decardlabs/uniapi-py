@@ -100,6 +100,14 @@ async def register_user(
     return user
 
 
+class LoginError(HTTPException):
+    """HTTPException with optional data payload for lockout/attempts info."""
+
+    def __init__(self, status_code: int, message: str, data: dict | None = None):
+        super().__init__(status_code=status_code, detail=message)
+        self.data = data
+
+
 async def login_user(
     db: AsyncSession,
     username: str,
@@ -110,13 +118,50 @@ async def login_user(
 
     if not user:
         await db.flush()
-        raise HTTPException(status_code=401, detail="用户名或密码错误")
+        raise LoginError(status_code=401, message="用户名或密码错误")
+
+    now = int(time.time() * 1000)
+
+    # Check lockout BEFORE password check (prevents revealing locked vs wrong-password)
+    if user.locked_until is not None and user.locked_until > now:
+        raise LoginError(
+            status_code=423,
+            message="用户名或密码错误",
+            data={"locked": True},
+        )
 
     if user.status != 1:
-        raise HTTPException(status_code=401, detail="Account is disabled")
+        raise LoginError(status_code=401, message="用户名或密码错误")
 
     if not verify_password(password, user.password):
-        raise HTTPException(status_code=401, detail="密码错误")
+        user.failed_login_attempts += 1
+        remaining = settings.login_max_attempts - user.failed_login_attempts
+
+        if user.failed_login_attempts >= settings.login_max_attempts:
+            # Lock account for configurable duration
+            user.locked_until = now + (settings.login_lockout_minutes * 60 * 1000)
+            user.updated_at = now
+            await db.commit()
+            raise LoginError(
+                status_code=423,
+                message="用户名或密码错误",
+                data={"locked": True},
+            )
+
+        user.updated_at = now
+        await db.commit()
+        raise LoginError(
+            status_code=401,
+            message="用户名或密码错误",
+            data={"attempts_remaining": remaining},
+        )
+
+    # Successful login: reset failed attempts
+    if user.failed_login_attempts > 0 or user.locked_until is not None:
+        user.failed_login_attempts = 0
+        user.locked_until = None
+        user.updated_at = now
+        await db.commit()
 
     return user
 

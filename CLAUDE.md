@@ -165,7 +165,7 @@ tests/
 - Live tests in `tests/live/` connect to a running instance with real provider API keys
 - All pricing data (yuan/1M tokens) is tested in `test_channeltype.py` and `tests/phase2/test_budget_pricing.py`
 - Security tests in `tests/security/` cover RBAC isolation, SQL injection, and path traversal
-- CI enforces ≥60% coverage via `pytest-cov`
+- Coverage collected via `pytest-cov` and uploaded to Codecov (no hard threshold)
 - Concurrent billing is tested in `tests/phase4/test_concurrent_billing.py`
 - SSE disconnect cleanup is tested in `tests/phase4/test_sse_disconnect.py`
 - Token expiry enforcement is tested in `tests/phase4/test_token_expiry.py`
@@ -174,4 +174,4 @@ tests/
 
 ### Config
 
-All configuration via env vars ([app/config.py](app/config.py)): `SERVER_PORT`, `SQLITE_PATH`, `SQL_DSN` (for MySQL/PostgreSQL), `SESSION_SECRET`, `CORS_ORIGINS`, `session_cookie_secure`, `cookie_max_age_hours`, `password_min_length`, `password_require_uppercase`, `password_require_digit`, `password_require_special`, `totp_pending_ttl_seconds`, `webauthn_rp_id`, provider API keys, `TOKEN_KEY_PREFIX`, `API_RATE_LIMIT`/`RELAY_RATE_LIMIT`, optional `BUDGET_REDIS_URL` + `budget_enabled`, `debug`, `upstream_retry_max`, `upstream_retry_backoff_base`, `default_monthly_budget`, `turnstile_secret_key`, `smtp_token`, `github_client_secret`. Root password is configured via `UNIAPI_ROOT_PASSWORD` env var at seed time ([app/main.py](app/main.py)).
+All configuration via env vars ([app/config.py](app/config.py)): `SERVER_PORT`, `SQLITE_PATH`, `SQL_DSN` (for MySQL/PostgreSQL), `SESSION_SECRET`, `CORS_ORIGINS`, `session_cookie_secure`, `cookie_max_age_hours`, `password_min_length`, `password_require_uppercase`, `password_require_digit`, `password_require_special`, `login_max_attempts`, `login_lockout_minutes`, provider API keys, `TOKEN_KEY_PREFIX`, `API_RATE_LIMIT`/`RELAY_RATE_LIMIT`, optional `BUDGET_REDIS_URL` + `budget_enabled`, `debug`, `upstream_retry_max`, `upstream_retry_backoff_base`, `default_monthly_budget`, `turnstile_secret_key`, `smtp_token`, `github_client_secret`. Root password is configured via `UNIAPI_ROOT_PASSWORD` env var at seed time ([app/main.py](app/main.py)).

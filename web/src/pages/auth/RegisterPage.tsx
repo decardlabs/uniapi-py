@@ -41,6 +41,7 @@ export function RegisterPage() {
   const { t } = useTranslation();
   const [isLoading, setIsLoading] = useState(false);
   const [isEmailSent, setIsEmailSent] = useState(false);
+  const [emailVerificationError, setEmailVerificationError] = useState('');
   const [turnstileToken, setTurnstileToken] = useState<string>('');
   const navigate = useNavigate();
   const { systemStatus } = useSystemStatus();
@@ -84,23 +85,21 @@ export function RegisterPage() {
 
     try {
       setIsLoading(true);
-      // Unified API call - complete URL with /api prefix
-      const url = `/api/verification?email=${encodeURIComponent(email)}${systemStatus?.turnstile_check ? `&turnstile=${encodeURIComponent(turnstileToken)}` : ''}`;
-      const response = await api.get(url);
+      const body: Record<string, string> = { email };
+      if (systemStatus?.turnstile_check && turnstileToken) {
+        body.turnstile = turnstileToken;
+      }
+      const response = await api.post('/api/verification', body);
       const { success, message } = response.data;
 
       if (success) {
         setIsEmailSent(true);
-        form.clearErrors('email');
+        setEmailVerificationError('');
       } else {
-        form.setError('email', {
-          message: message || t('auth.register.send_code_failed'),
-        });
+        setEmailVerificationError(message || t('auth.register.send_code_failed'));
       }
-    } catch (error) {
-      form.setError('email', {
-        message: error instanceof Error ? error.message : t('auth.register.send_code_failed'),
-      });
+    } catch (error: any) {
+      setEmailVerificationError(error?.response?.data?.message || error?.message || t('auth.register.send_code_failed'));
     } finally {
       setIsLoading(false);
     }
@@ -147,9 +146,9 @@ export function RegisterPage() {
           });
         }
       }
-    } catch (error) {
+    } catch (error: any) {
       form.setError('root', {
-        message: error instanceof Error ? error.message : t('auth.register.failed'),
+        message: error?.response?.data?.message || error?.message || t('auth.register.failed'),
       });
     } finally {
       setIsLoading(false);
@@ -231,6 +230,9 @@ export function RegisterPage() {
                           {isLoading ? t('auth.register.sending') : isEmailSent ? t('auth.register.sent') : t('auth.register.send_code')}
                         </Button>
                       </div>
+                      {emailVerificationError && (
+                        <div className="text-sm text-destructive">{emailVerificationError}</div>
+                      )}
                     </FormControl>
                     <FormMessage />
                   </FormItem>

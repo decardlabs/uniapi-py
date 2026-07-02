@@ -22,7 +22,7 @@ from app.schemas.user import (
     SelfResponse,
 )
 from app.services.auth import create_session, get_session_user
-from app.services.user import login_user, register_user, verify_turnstile
+from app.services.user import LoginError, login_user, register_user, verify_turnstile
 
 router = APIRouter(tags=["auth"])
 
@@ -45,8 +45,16 @@ async def login(body: LoginRequest, db: AsyncSession = Depends(get_db)):
             )
 
     from fastapi import HTTPException
+
     try:
         user = await login_user(db, body.username, body.password)
+    except LoginError as e:
+        content = GenericApiResponse(
+            success=False, message=e.detail
+        ).model_dump()
+        if e.data:
+            content["data"] = e.data
+        return JSONResponse(status_code=e.status_code, content=content)
     except HTTPException as e:
         return JSONResponse(
             status_code=e.status_code,
