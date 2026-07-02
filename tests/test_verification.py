@@ -6,7 +6,6 @@ import time
 import pytest
 from httpx import AsyncClient
 
-from app.config import settings
 from app.services.email import _verification_codes, _email_send_limits, check_email_rate_limit
 
 
